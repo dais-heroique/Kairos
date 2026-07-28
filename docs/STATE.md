@@ -36,6 +36,8 @@ Source de vérité du projet. Lu en premier à chaque session, mis à jour en de
 | `firestore.rules` + tests | Solides, tests réels et **verts** (30/30) |
 | App Check | Partiel côté serveur (1 callable), inactif côté client (bloqué par la décision #2) |
 | `<EstimatedValue>` | Composant déjà bien construit, réutilisable (Lot 4 s'en servira) |
+| Garde-fous de coût IA (`packages/ai-gateway`) | ✅ nouveau package — `callAI` unique point d'entrée (quota → plafond global → appel → log), quotas par plan (Free 3/mois, Creator 60, Pro 200), 12 tests verts. Écriture double : BigQuery `ai_spend` (audit) + Firestore (lecture rapide quota/plafond) |
+| `/admin/couts` | ✅ nouveau, hérite du garde admin existant, 1 requête BigQuery/page |
 
 **Chemin critique débloqué** : `apps/jobs` (Lot 3) sait maintenant produire les 9 documents de classement + feeds + `products/{id}.latestVerdict/latestEstimates/ranks` à partir de données BigQuery (ou fixtures en test). Reste à brancher `apps/collector` sur de vraies données (Lot 2 fait la plomberie, pas encore le scraping validé) et `apps/web` sur ces documents (Lot 4, bloqué par le `lib/` manquant pour la vérification complète).
 
@@ -48,6 +50,10 @@ Source de vérité du projet. Lu en premier à chaque session, mis à jour en de
 - `PROXY_LIST_URL`/`PROXY_USERNAME`/`PROXY_PASSWORD` pour le collector.
 - **Décision à prendre** : les nouvelles pages détail `/produit/[id]`, `/boutique/[id]`, `/createur/[id]` (Lot 4) sont du SSR dynamique — Firebase Hosting exige le plan **Blaze** (payant) pour ça, contrairement au reste du site qui reste volontairement sur Spark (gratuit). À confirmer avant déploiement, ou renoncer à ces pages / les rendre statiques avec un jeu de produits limité.
 - `COLLECTOR_SERVICE_TOKEN` pour sécuriser l'endpoint `/tasks/collect` en production (sans lui, l'auth est désactivée — ne pas déployer sans le fixer).
+- Configurer les alertes de budget GCP à 50/80/100% — non exécutable depuis cette session (nécessite un compte de facturation réel). Commande type à adapter :
+  `gcloud billing budgets create --billing-account=<ID> --display-name="Kairos IA" --budget-amount=<montant>EUR --threshold-rule=percent=0.5 --threshold-rule=percent=0.8 --threshold-rule=percent=1.0`
+- Vérifier/ajuster `DEFAULT_MODEL_PRICING` dans `packages/ai-gateway/src/spend-guard.ts` contre les tarifs réels de Gemini/Claude au moment du déploiement (valeurs actuelles provisoires).
+- Créer le document Firestore `config/costGuards` (`{ dailyCapCents: <valeur> }`) — sans lui, le plafond par défaut (50€/jour) s'applique silencieusement.
 
 ## Backlog des lots
 
@@ -57,12 +63,12 @@ Une seule branche pour tout ce round (voir décision #3), un commit par lot. Dé
 - [x] **Lot 2** — Collector : plomberie réelle + sources best-effort → [issue #2](https://github.com/dais-heroique/Kairos/issues/2) — fait, 39 tests verts
 - [x] **Lot 3** — `apps/jobs` : pipeline quotidien → [issue #3](https://github.com/dais-heroique/Kairos/issues/3) — fait, 18 tests verts dont 6 contre l'émulateur réel
 - [x] **Lot 4** — Brancher l'UI existante sur le réel → [issue #4](https://github.com/dais-heroique/Kairos/issues/4) — fait, 10 tests verts (règle ESLint + budget de lecture), reste bloqué au typecheck complet par le `lib/` manquant
-- [ ] **Lot 5** — Garde-fous de coût (`ai_spend`, quotas IA, `/admin/couts`) → [issue #5](https://github.com/dais-heroique/Kairos/issues/5)
+- [x] **Lot 5** — Garde-fous de coût (`ai_spend`, quotas IA, `/admin/couts`) → [issue #5](https://github.com/dais-heroique/Kairos/issues/5) — fait, 12 tests verts (`packages/ai-gateway`)
 - [ ] **Lot 6** — Créa DNA + Brief + Téléprompteur → [issue #6](https://github.com/dais-heroique/Kairos/issues/6)
 - [ ] **Lot 7** — Affiliation 30 % → [issue #7](https://github.com/dais-heroique/Kairos/issues/7)
 - [ ] **Lot 8** — Sample Radar + Compliance Guard → [issue #8](https://github.com/dais-heroique/Kairos/issues/8)
 
-**Point de reprise** : Lot 5 (garde-fous de coût IA) — doit être fait avant toute dépense IA du Lot 6.
+**Point de reprise** : Lot 6 (Créa DNA + Brief + Téléprompteur) — le wrapper `callAI` du Lot 5 est prêt à être utilisé.
 
 ## Coût mensuel projeté
 

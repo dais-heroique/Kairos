@@ -11,6 +11,7 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@google-cloud/bigquery": "^7.9.0",
     "@kairos/shared": "workspace:*",
     "@kairos/core": "workspace:*",
     "firebase": "^11.0.0",
