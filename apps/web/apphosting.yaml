@@ -1,0 +1,10 @@
+# Config de déploiement Firebase App Hosting — utilisée uniquement au
+# déploiement (`firebase deploy` / intégration GitHub), pas en dev local.
+# Le dev local tourne avec `pnpm dev` (Next.js) + `pnpm emulators` (Firebase).
+runConfig:
+  minInstances: 0
+  maxInstances: 3
+
+env:
+  - variable: NEXT_PUBLIC_USE_FIREBASE_EMULATORS
+    value: "false"

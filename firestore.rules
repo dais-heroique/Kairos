@@ -1,0 +1,206 @@
+rules_version = '2';
+
+// Principes §7 :
+//  - users/{uid}/** : propriétaire uniquement
+//  - users/{uid}/private/** : aucun accès client (Admin SDK only)
+//  - products / rankings / feeds / creators / shops / sounds / waves :
+//    lecture authentifiée, écriture serveur uniquement
+//  - affiliate* : aucune écriture client, tout passe par des Callables
+//  - plan sur le doc user : jamais modifiable par le client
+//  - App Check requis partout
+//
+// Tests de règles obligatoires avec @firebase/rules-unit-testing — Phase 1.
+
+// App Check n'est pas exprimable dans les rules elles-mêmes : l'enforcement
+// se configure au niveau du projet (Firebase Console > App Check > Firestore).
+
+function isSignedIn() {
+  return request.auth != null;
+}
+
+function isOwner(uid) {
+  return isSignedIn() && request.auth.uid == uid;
+}
+
+function isAdmin() {
+  return isSignedIn() &&
+    exists(/databases/(default)/documents/users/$(request.auth.uid)) &&
+    get(/databases/(default)/documents/users/$(request.auth.uid)).data.role == "admin";
+}
+
+// Le rôle n'est jamais modifiable par le client — sinon n'importe qui peut
+// se déclarer admin. Seule exception : le bootstrap ponctuel ci-dessous,
+// à retirer dès que le premier admin est promu (voir tâche associée).
+function roleUnchanged() {
+  return request.resource.data.role == resource.data.role;
+}
+
+// BOOTSTRAP TEMPORAIRE — à supprimer après la première promotion admin.
+function isBootstrapAdminEmail() {
+  return request.auth.token.email == "contact.conforva@gmail.com";
+}
+
+// Transition radar → essai Pro via un code d'invitation valide (voir
+// inviteCodes/{code} et isValidCodeRedemption()). Ne s'applique qu'une
+// fois : appliedInviteCode doit passer de null à une chaîne.
+function isValidTrialGrant() {
+  let newPlan = request.resource.data.plan;
+  return resource != null && resource.data.appliedInviteCode == null &&
+    request.resource.data.appliedInviteCode is string &&
+    newPlan.slug == "pro" && newPlan.status == "active" &&
+    newPlan.stripeCustomerId == null && newPlan.currentPeriodEnd is string;
+}
+
+// Un update de users/{uid} ne peut jamais toucher au champ `plan` — celui-ci
+// n'est écrit que par les webhooks Stripe via Admin SDK.
+function planUnchanged() {
+  return request.resource.data.plan == resource.data.plan;
+}
+
+// Le code de parrainage capturé à l'inscription (§5.3) ne peut plus changer
+// une fois écrit — sinon on pourrait réattribuer un compte après coup.
+function referredByCodeUnchanged() {
+  return request.resource.data.referredByCode == resource.data.referredByCode;
+}
+
+// À la création du compte (onboarding), le plan doit être le plan gratuit
+// par défaut — sinon un client pourrait se créer directement en "pro".
+function defaultPlanOnCreate() {
+  let plan = request.resource.data.plan;
+  return plan.slug == "radar" && plan.status == "active" &&
+    plan.currentPeriodEnd == null && plan.stripeCustomerId == null;
+}
+
+function defaultStatsOnCreate() {
+  let stats = request.resource.data.stats;
+  return stats.briefsGenerated == 0 && stats.videosPosted == 0 &&
+    stats.estimatedEarningsCents == 0;
+}
+
+// Rédemption d'un code : seul usedCount peut bouger (+1 exactement), tout
+// le reste du document inviteCodes doit rester identique — empêche un
+// client de se fabriquer un code illimité ou de le réactiver lui-même.
+function isValidCodeRedemption() {
+  return resource != null &&
+    request.resource.data.usedCount == resource.data.usedCount + 1 &&
+    resource.data.active == true &&
+    resource.data.usedCount < resource.data.maxUses &&
+    request.resource.data.code == resource.data.code &&
+    request.resource.data.trialDays == resource.data.trialDays &&
+    request.resource.data.maxUses == resource.data.maxUses &&
+    request.resource.data.active == resource.data.active &&
+    request.resource.data.createdAt == resource.data.createdAt &&
+    request.resource.data.createdBy == resource.data.createdBy;
+}
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    match /users/{uid} {
+      allow read: if isOwner(uid) || isAdmin();
+      allow create: if isOwner(uid) && defaultPlanOnCreate() && defaultStatsOnCreate();
+      allow update: if isOwner(uid) && referredByCodeUnchanged() &&
+        (planUnchanged() || isValidTrialGrant()) &&
+        (roleUnchanged() ||
+          (isBootstrapAdminEmail() && request.resource.data.role == "admin"));
+      // Pas de Cloud Functions (plan Spark) — la suppression RGPD (art. 17)
+      // se fait depuis le client : il peut donc supprimer son propre doc.
+      allow delete: if isOwner(uid);
+
+      match /private/{document=**} {
+        allow read, write: if false;
+      }
+
+      match /{subcollection}/{docId} {
+        allow read, write: if isOwner(uid) && subcollection in
+          ["watchlist", "portfolio", "briefs", "notifications"];
+      }
+
+      // Sous-collection à document unique (§5) — {docId=**} pour couvrir le
+      // get() sur le document, pas seulement le list() sur la collection.
+      // delete autorisé pour la suppression RGPD du compte ; create/update
+      // restent serveur uniquement (Phase 6, quand les Callables existeront).
+      match /affiliate/{docId=**} {
+        allow read: if isOwner(uid);
+        allow delete: if isOwner(uid);
+        allow create, update: if false;
+      }
+    }
+
+    match /products/{productId} {
+      allow read: if isSignedIn();
+      allow write: if false;
+
+      match /videos/{videoId} {
+        allow read: if isSignedIn();
+        allow write: if false;
+      }
+    }
+
+    match /creators/{creatorId} {
+      allow read: if isSignedIn();
+      allow write: if false;
+    }
+
+    match /shops/{shopId} {
+      allow read: if isSignedIn();
+      allow write: if false;
+    }
+
+    match /sounds/{soundId} {
+      allow read: if isSignedIn();
+      allow write: if false;
+    }
+
+    match /rankings/{rankingId} {
+      allow read: if isSignedIn();
+      allow write: if false;
+    }
+
+    match /feeds/{feedId} {
+      allow read: if isSignedIn();
+      allow write: if false;
+    }
+
+    match /waves/{waveId} {
+      allow read: if isSignedIn();
+      allow write: if false;
+    }
+
+    // Perk "code d'invitation → essai Pro", pas le programme d'affiliation
+    // §5 (Phase 6). Lecture ouverte à tout signé (nécessaire pour valider
+    // un code avant rédemption) ; create/désactivation réservés à l'admin ;
+    // la rédemption elle-même passe par isValidCodeRedemption().
+    match /inviteCodes/{code} {
+      allow read: if isSignedIn();
+      allow create: if isAdmin();
+      allow update: if isAdmin() || (isSignedIn() && isValidCodeRedemption());
+      allow delete: if isAdmin();
+    }
+
+    match /affiliateClicks/{clickId} {
+      allow read, write: if false;
+    }
+
+    match /affiliateReferrals/{referralId} {
+      allow read: if isSignedIn() &&
+        (resource.data.referrerUid == request.auth.uid ||
+         resource.data.referredUid == request.auth.uid);
+      allow write: if false;
+    }
+
+    match /affiliatePayouts/{payoutId} {
+      allow read: if isSignedIn() && resource.data.affiliateUid == request.auth.uid;
+      allow write: if false;
+    }
+
+    match /stripeEvents/{eventId} {
+      allow read, write: if false;
+    }
+
+    match /config/{docId} {
+      allow read: if isSignedIn();
+      allow write: if false;
+    }
+  }
+}

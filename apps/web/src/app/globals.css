@@ -1,0 +1,158 @@
+@import "tailwindcss";
+
+/* Mobile-first : conçu à 390px de large, testé au pouce. Le desktop est
+   la version élargie du mobile, jamais l'inverse — voir §1. */
+
+/* Système de couleur KAIROS — fond blanc, propre. Trois accents avec un sens
+   produit (pas de la déco) : corail = action/urgence, vert = opportunité/
+   gain, ambre = nuance. Voir les badges verdict (M2). */
+:root {
+  --color-bg: #ffffff;
+  --color-surface: #f7f7f8;
+  --color-surface-raised: #ffffff;
+  --color-ink: #18181b;
+  --color-ink-muted: #6b7280;
+  --color-border: #e5e7eb;
+
+  --color-coral: #e4483d;
+  --color-coral-ink: #ffffff;
+  --color-coral-soft: #fdeceb;
+
+  --color-success: #16a34a;
+  --color-success-soft: #e8f7ec;
+
+  --color-warning: #b45309;
+  --color-warning-soft: #fdf1e2;
+}
+
+:root[data-theme="dark"] {
+  --color-bg: #0b0b0c;
+  --color-surface: #17171a;
+  --color-surface-raised: #1f1f22;
+  --color-ink: #f5f5f5;
+  --color-ink-muted: #a1a1aa;
+  --color-border: #2a2a2e;
+
+  --color-coral: #ff6b57;
+  --color-coral-ink: #0b0b0c;
+  --color-coral-soft: #2a1815;
+
+  --color-success: #4ade80;
+  --color-success-soft: #143222;
+
+  --color-warning: #fbbf24;
+  --color-warning-soft: #332409;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --color-bg: #0b0b0c;
+    --color-surface: #17171a;
+    --color-surface-raised: #1f1f22;
+    --color-ink: #f5f5f5;
+    --color-ink-muted: #a1a1aa;
+    --color-border: #2a2a2e;
+
+    --color-coral: #ff6b57;
+    --color-coral-ink: #0b0b0c;
+    --color-coral-soft: #2a1815;
+
+    --color-success: #4ade80;
+    --color-success-soft: #143222;
+
+    --color-warning: #fbbf24;
+    --color-warning-soft: #332409;
+  }
+}
+
+@theme inline {
+  --breakpoint-sm: 390px;
+  --breakpoint-md: 768px;
+  --breakpoint-lg: 1024px;
+
+  --color-bg: var(--color-bg);
+  --color-surface: var(--color-surface);
+  --color-surface-raised: var(--color-surface-raised);
+  --color-ink: var(--color-ink);
+  --color-ink-muted: var(--color-ink-muted);
+  --color-border: var(--color-border);
+  --color-coral: var(--color-coral);
+  --color-coral-ink: var(--color-coral-ink);
+  --color-coral-soft: var(--color-coral-soft);
+  --color-success: var(--color-success);
+  --color-success-soft: var(--color-success-soft);
+  --color-warning: var(--color-warning);
+  --color-warning-soft: var(--color-warning-soft);
+
+  --font-display: var(--font-bricolage), system-ui, sans-serif;
+  --font-body: var(--font-instrument), system-ui, sans-serif;
+  --font-mono: var(--font-jetbrains), ui-monospace, monospace;
+}
+
+html {
+  color-scheme: light dark;
+}
+
+body {
+  min-height: 100dvh;
+  background-color: var(--color-bg);
+  color: var(--color-ink);
+  font-family: var(--font-body);
+}
+
+@keyframes fadein {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@layer components {
+  .kai-btn-primary {
+    border-radius: 0.6rem;
+    background-color: var(--color-coral);
+    color: var(--color-coral-ink);
+    padding: 0.85rem 1.25rem;
+    text-align: center;
+    font-family: var(--font-display);
+    font-weight: 700;
+    transition: opacity 0.1s ease;
+  }
+  .kai-btn-primary:active {
+    opacity: 0.85;
+  }
+  .kai-btn-primary:disabled {
+    opacity: 0.5;
+  }
+
+  .kai-btn-outline {
+    border-radius: 0.6rem;
+    border: 1px solid var(--color-border);
+    padding: 0.75rem 1.25rem;
+    text-align: center;
+    font-weight: 600;
+    color: var(--color-ink);
+  }
+
+  .kai-input {
+    border-radius: 0.5rem;
+    border: 1px solid var(--color-border);
+    background-color: var(--color-surface-raised);
+    padding: 0.6rem 0.85rem;
+    color: var(--color-ink);
+  }
+  .kai-input::placeholder {
+    color: var(--color-ink-muted);
+  }
+
+  .kai-card {
+    border-radius: 0.75rem;
+    border: 1px solid var(--color-border);
+    background-color: var(--color-surface);
+    padding: 1rem;
+  }
+}

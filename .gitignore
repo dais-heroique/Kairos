@@ -1,0 +1,29 @@
+node_modules/
+.turbo/
+dist/
+lib/
+.next/
+out/
+.env
+.env.local
+.env.local.bak
+.env.*.local
+.emulator-data/
+# Cache local du CLI Firebase généré à chaque déploiement (build artifacts) —
+# jamais versionné, similaire à .next/ ou node_modules/.
+.firebase/
+firebase-debug.log
+firestore-debug.log
+ui-debug.log
+pubsub-debug.log
+*.tsbuildinfo
+.DS_Store
+# Le volume est en ExFAT : macOS génère un fichier ._<nom> (AppleDouble) à
+# côté de chaque fichier écrit. Inoffensif mais bruyant — voir aussi
+# vitest.config.ts (exclude) dans packages/shared et packages/core.
+._*
+
+# État local d'un outil d'orchestration d'agents, pas du code du projet.
+.claude-flow/
+.vscode/*
+!.vscode/extensions.json

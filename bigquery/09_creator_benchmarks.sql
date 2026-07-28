@@ -1,0 +1,11 @@
+CREATE TABLE IF NOT EXISTS `kairos.creator_benchmarks` (
+  niche STRING NOT NULL,
+  market STRING NOT NULL,
+  follower_bucket STRING NOT NULL,
+  metric STRING NOT NULL,
+  p25 FLOAT64 NOT NULL,
+  p50 FLOAT64 NOT NULL,
+  p75 FLOAT64 NOT NULL,
+  p90 FLOAT64 NOT NULL
+)
+CLUSTER BY niche, market;
