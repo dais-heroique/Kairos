@@ -5,6 +5,7 @@ import type { Market, ProductRanks, ProductSnapshot, RankingDoc, RankingPeriod }
 import { computeProductVerdictAndEstimates, type ComputedProduct } from "./compute.js";
 import { writeVerdictHistory } from "./idempotency.js";
 import type { SnapshotSource } from "./datasource/types.js";
+import { readProductMeta } from "./product-meta.js";
 import { buildFeed, buildRankings } from "./rank.js";
 import { writeFeedDoc, writeProductVerdicts, writeRankingDocs } from "./write-firestore.js";
 
@@ -60,15 +61,29 @@ export async function runDailyPipeline(
     return { productIds: ids, seriesByProduct: map };
   });
 
+  // Métadonnées produit existantes (titre, prix, commission, shopId) — une
+  // seule RPC batchée (db.getAll), réutilisée pour le calcul (commission
+  // réelle plutôt que le score neutre par défaut) et pour peupler les
+  // champs d'affichage des items de classement.
+  const metaByProduct = await timeStep("read", durationsMs, () => readProductMeta(db, productIds));
+
   const computed: ComputedProduct[] = await timeStep("compute", durationsMs, async () =>
-    productIds.map((id) => computeProductVerdictAndEstimates(id, seriesByProduct.get(id) ?? [])),
+    productIds.map((id) => {
+      const meta = metaByProduct.get(id);
+      return computeProductVerdictAndEstimates(
+        id,
+        seriesByProduct.get(id) ?? [],
+        meta?.commission,
+        meta?.sellerTrust,
+      );
+    }),
   );
 
   const allRankingDocs = new Map<string, RankingDoc>();
   const mergedProductRanks = new Map<string, ProductRanks>();
   await timeStep("rank", durationsMs, async () => {
     for (const period of periods) {
-      const { docs, productRanks } = buildRankings(computed, market, period);
+      const { docs, productRanks } = buildRankings(computed, market, period, metaByProduct);
       for (const [id, doc] of docs) allRankingDocs.set(id, doc);
       for (const [productId, ranks] of productRanks) {
         mergedProductRanks.set(productId, { ...mergedProductRanks.get(productId), ...ranks });
@@ -82,7 +97,7 @@ export async function runDailyPipeline(
   });
 
   await timeStep("feed", durationsMs, async () => {
-    const feed = buildFeed(computed, market, "all", today);
+    const feed = buildFeed(computed, market, "all", today, metaByProduct);
     await writeFeedDoc(db, `${market}_all_${today}`, feed, dryRun);
   });
 

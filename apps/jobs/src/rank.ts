@@ -1,6 +1,14 @@
 import { RANKING_TYPES } from "@kairos/shared";
-import type { FeedDoc, Market, ProductRanks, RankingDoc, RankingPeriod } from "@kairos/shared";
+import type {
+  FeedDoc,
+  Market,
+  Phase,
+  ProductRanks,
+  RankingDoc,
+  RankingPeriod,
+} from "@kairos/shared";
 import type { ComputedProduct } from "./compute.js";
+import type { ProductMeta } from "./product-meta.js";
 
 const MAX_RANKING_ITEMS = 100;
 const MAX_FEED_ITEMS = 40;
@@ -22,6 +30,35 @@ export interface RankingBuildResult {
   productRanks: Map<string, ProductRanks>;
 }
 
+const TREND_BY_PHASE: Record<Phase, "up" | "down" | "flat"> = {
+  emergence: "up",
+  growth: "up",
+  late_growth: "flat",
+  maturity: "flat",
+  decline: "down",
+};
+
+// items[] est un payload minimal mais doit rester auto-suffisant pour
+// l'affichage en liste (§ Lot 4 : les pages de classement ne doivent lire
+// que le document rankings/*, jamais un produit par ligne) — d'où
+// l'inclusion de ces quelques champs d'affichage plutôt que juste id+rank.
+function buildDisplayItem(
+  c: ComputedProduct,
+  rank: number,
+  meta: ProductMeta | undefined,
+): { id: string; rank: number } & Record<string, unknown> {
+  return {
+    id: c.productId,
+    rank,
+    title: meta?.title ?? "",
+    priceCents: meta?.priceCents ?? 0,
+    shopId: meta?.shopId ?? null,
+    commissionRatePct: meta?.commission.ratePct ?? 0,
+    verdict: c.verdict.verdict,
+    salesTrend: TREND_BY_PHASE[c.verdict.phase],
+  };
+}
+
 // Les 9 classements de M2. "products" (volume de ventes estimé) et
 // "opportunities" (score d'opportunité) sont réellement calculés à partir
 // des données produit. Les 7 autres (shops, creators, videos, sounds,
@@ -34,6 +71,7 @@ export function buildRankings(
   computed: ComputedProduct[],
   market: Market,
   period: RankingPeriod,
+  metaByProduct: Map<string, ProductMeta> = new Map(),
   generatedAt: string = new Date().toISOString(),
 ): RankingBuildResult {
   const docs = new Map<string, RankingDoc>();
@@ -48,7 +86,7 @@ export function buildRankings(
     market,
     period,
     category: null,
-    items: byVolume.map((c, i) => ({ id: c.productId, rank: i + 1 })),
+    items: byVolume.map((c, i) => buildDisplayItem(c, i + 1, metaByProduct.get(c.productId))),
   });
 
   const byOpportunity = [...computed]
@@ -60,7 +98,10 @@ export function buildRankings(
     market,
     period,
     category: null,
-    items: byOpportunity.map((c, i) => ({ id: c.productId, rank: i + 1, opportunityScore: c.opportunityScore })),
+    items: byOpportunity.map((c, i) => ({
+      ...buildDisplayItem(c, i + 1, metaByProduct.get(c.productId)),
+      opportunityScore: c.opportunityScore,
+    })),
   });
 
   // Le champ products/{id}.ranks (sales7d/opportunity) n'a de sens que
@@ -101,6 +142,7 @@ export function buildFeed(
   market: Market,
   nicheBucket: string,
   date: string,
+  metaByProduct: Map<string, ProductMeta> = new Map(),
   generatedAt: string = new Date().toISOString(),
 ): FeedDoc {
   const top = [...computed]
@@ -111,6 +153,6 @@ export function buildFeed(
     market,
     nicheBucket,
     date,
-    items: top.map((c, i) => ({ id: c.productId, rank: i + 1 })),
+    items: top.map((c, i) => buildDisplayItem(c, i + 1, metaByProduct.get(c.productId))),
   };
 }
