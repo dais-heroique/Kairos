@@ -1,0 +1,25 @@
+{
+  "name": "@kairos/affiliate",
+  "version": "0.0.0",
+  "private": true,
+  "main": "./lib/index.js",
+  "types": "./lib/index.d.ts",
+  "exports": {
+    ".": "./lib/index.js"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@kairos/shared": "workspace:*",
+    "qrcode": "^1.5.4",
+    "zod": "^3.24.0"
+  },
+  "devDependencies": {
+    "@types/qrcode": "^1.5.5",
+    "typescript": "^5.7.0",
+    "vitest": "^3.0.0"
+  }
+}
