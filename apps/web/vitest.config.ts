@@ -1,6 +1,12 @@
 import { configDefaults, defineConfig } from "vitest/config";
 
 export default defineConfig({
+  esbuild: {
+    // Next.js apps use the automatic JSX runtime (no `import React` needed
+    // per file) — esbuild needs to be told the same, or component tests
+    // fail with "React is not defined".
+    jsx: "automatic",
+  },
   test: {
     environment: "node",
     exclude: [...configDefaults.exclude, "**/._*", "e2e/**"],

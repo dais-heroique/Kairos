@@ -38,6 +38,9 @@ Source de vérité du projet. Lu en premier à chaque session, mis à jour en de
 | `<EstimatedValue>` | Composant déjà bien construit, réutilisable (Lot 4 s'en servira) |
 | Garde-fous de coût IA (`packages/ai-gateway`) | ✅ nouveau package — `callAI` unique point d'entrée (quota → plafond global → appel → log), quotas par plan (Free 3/mois, Creator 60, Pro 200), 12 tests verts. Écriture double : BigQuery `ai_spend` (audit) + Firestore (lecture rapide quota/plafond) |
 | `/admin/couts` | ✅ nouveau, hérite du garde admin existant, 1 requête BigQuery/page |
+| Créa DNA (`apps/creative-dna`) | ✅ nouveau service — filtre de sélection (phase émergence/croissance, ≥5 créateurs, commission ≥8%), sélection top 12 vidéos par `gmvPer1kViews`, analyse Gemini via `callAI` (1 retry puis échec propre par vidéo), agrégation `creativeSummary`. 15 tests verts. ⚠️ jamais appelé de vraie API Gemini (aucune clé dans ce bac à sable) |
+| Brief + cache (`packages/shared/src/brief.ts`) | ✅ schéma + clé de cache `(produit × niche × fourchette d'abonnés)`, testée déterministe. `briefCache/*` dans `firestore.rules` (lecture signée, écriture serveur), 31/31 tests de règles verts avec ce nouvel ajout. Génération du brief Claude elle-même pas encore câblée (texte du prompt à écrire une fois Gemini validé en conditions réelles) |
+| Téléprompteur | ✅ `apps/web/src/components/Teleprompter.tsx` — plein écran, vitesse réglable, mode miroir, fort contraste, 6 tests verts (React Testing Library + jsdom), zéro dépendance IA/Firebase |
 
 **Chemin critique débloqué** : `apps/jobs` (Lot 3) sait maintenant produire les 9 documents de classement + feeds + `products/{id}.latestVerdict/latestEstimates/ranks` à partir de données BigQuery (ou fixtures en test). Reste à brancher `apps/collector` sur de vraies données (Lot 2 fait la plomberie, pas encore le scraping validé) et `apps/web` sur ces documents (Lot 4, bloqué par le `lib/` manquant pour la vérification complète).
 
@@ -64,11 +67,11 @@ Une seule branche pour tout ce round (voir décision #3), un commit par lot. Dé
 - [x] **Lot 3** — `apps/jobs` : pipeline quotidien → [issue #3](https://github.com/dais-heroique/Kairos/issues/3) — fait, 18 tests verts dont 6 contre l'émulateur réel
 - [x] **Lot 4** — Brancher l'UI existante sur le réel → [issue #4](https://github.com/dais-heroique/Kairos/issues/4) — fait, 10 tests verts (règle ESLint + budget de lecture), reste bloqué au typecheck complet par le `lib/` manquant
 - [x] **Lot 5** — Garde-fous de coût (`ai_spend`, quotas IA, `/admin/couts`) → [issue #5](https://github.com/dais-heroique/Kairos/issues/5) — fait, 12 tests verts (`packages/ai-gateway`)
-- [ ] **Lot 6** — Créa DNA + Brief + Téléprompteur → [issue #6](https://github.com/dais-heroique/Kairos/issues/6)
+- [x] **Lot 6** — Créa DNA + Brief + Téléprompteur → [issue #6](https://github.com/dais-heroique/Kairos/issues/6) — fait, 21 tests verts (15 `apps/creative-dna` + 3 `packages/shared` brief + 6 Téléprompteur), génération du brief Claude lui-même pas câblée (dépend de la validation Gemini en conditions réelles)
 - [ ] **Lot 7** — Affiliation 30 % → [issue #7](https://github.com/dais-heroique/Kairos/issues/7)
 - [ ] **Lot 8** — Sample Radar + Compliance Guard → [issue #8](https://github.com/dais-heroique/Kairos/issues/8)
 
-**Point de reprise** : Lot 6 (Créa DNA + Brief + Téléprompteur) — le wrapper `callAI` du Lot 5 est prêt à être utilisé.
+**Point de reprise** : Lot 7 (affiliation 30%) — indépendant du reste, argent réel donc même rigueur que le Lot 1.
 
 ## Coût mensuel projeté
 

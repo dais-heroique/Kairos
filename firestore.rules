@@ -167,6 +167,14 @@ service cloud.firestore {
       allow write: if false;
     }
 
+    // Cache 7 jours des briefs Créa DNA (Lot 6), clé (produit × niche ×
+    // fourchette d'abonnés) — jamais par utilisateur, sinon zéro
+    // réutilisation. Écriture serveur uniquement (Cloud Run creative-dna).
+    match /briefCache/{cacheId} {
+      allow read: if isSignedIn();
+      allow write: if false;
+    }
+
     // Perk "code d'invitation → essai Pro", pas le programme d'affiliation
     // §5 (Phase 6). Lecture ouverte à tout signé (nécessaire pour valider
     // un code avant rédemption) ; create/désactivation réservés à l'admin ;

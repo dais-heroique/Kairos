@@ -12,3 +12,4 @@ export * from "./user";
 export * from "./affiliate";
 export * from "./invite-code";
 export * from "./comment";
+export * from "./brief";

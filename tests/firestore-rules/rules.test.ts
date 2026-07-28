@@ -286,6 +286,7 @@ describe("public read-only collections", () => {
     "feeds",
     "waves",
     "config",
+    "briefCache",
   ];
 
   for (const name of collections) {

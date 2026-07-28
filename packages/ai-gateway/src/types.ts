@@ -4,6 +4,9 @@ export interface AIClient {
   complete(params: {
     model: string;
     prompt: string;
+    // Vidéo native (Gemini Créa DNA, Lot 6) — optionnel, ignoré par les
+    // clients texte-seul (ex. brief Claude).
+    mediaUrl?: string;
   }): Promise<{ text: string; inputTokens: number; outputTokens: number }>;
 }
 
