@@ -27,7 +27,11 @@ Source de vérité du projet. Lu en premier à chaque session, mis à jour en de
 | `apps/jobs` | ✅ **pipeline complet et vérifié contre l'émulateur Firestore réel** (18 tests, idempotence + dry-run prouvés) (Lot 3) |
 | Auth, onboarding, compte, admin (`apps/web`) | Code réel mais non compilable (bloqué par la décision #2 ci-dessus) |
 | `/admin/couts` | Absent (Lot 5) |
-| Classements, watchlist, simulateur (`apps/web`) | Toujours 100 % maquette — pas encore branchés sur les documents que le Lot 3 sait maintenant produire (Lot 4) |
+| Classements, simulateur (`apps/web`) | ✅ branchés sur les vraies données (Lot 4) — `classements/produits`, `classements/opportunites` lisent `rankings/*` via `server/firestore/rankings.ts` (2 opérations Firestore/page, testé), simulateur utilise `computeEarnings` (Lot 1) sur de vrais produits |
+| Watchlist (`apps/web`) | ✅ pipeline affiché (statut watching→…→dropped, schéma déjà présent), affichage minimal (ID produit, pas encore de fiche enrichie) |
+| Pages détail `/produit/[id]`, `/boutique/[id]`, `/createur/[id]` | ✅ nouvelles, SSR indexables — ⚠️ nécessitent le plan Blaze Firebase (Cloud Functions/Cloud Run pour le SSR dynamique), contrairement au reste du site qui reste sur Spark (gratuit) ; décision de coût à confirmer avant déploiement |
+| Règle ESLint anti-nombre-nu | ✅ `kairos/no-raw-estimate-number`, testée (7 tests) |
+| Test de budget de lecture Firestore | ✅ `read-budget.test.ts`, prouve ≤5 opérations/page contre l'émulateur réel |
 | BigQuery | Schéma complet (11 tables DDL avec `video_comments`), 0 ligne de données réelles (aucune infra GCP branchée depuis cette session) |
 | `firestore.rules` + tests | Solides, tests réels et **verts** (30/30) |
 | App Check | Partiel côté serveur (1 callable), inactif côté client (bloqué par la décision #2) |
@@ -38,10 +42,11 @@ Source de vérité du projet. Lu en premier à chaque session, mis à jour en de
 ## Checklist de configuration utilisateur (grossit à chaque lot)
 
 À faire par l'utilisateur avant que les lots correspondants tournent en conditions réelles :
-- Pousser `apps/web/src/lib/` (8 modules) — bloque `apps/web` et donc la vérification complète des Lots 4/5/8.
+- Pousser `apps/web/src/lib/` (8 modules) — bloque `apps/web` et donc la vérification complète des Lots 4/5/8. Le vrai `lib/firestore/watchlist.ts` doit maintenant aussi exporter `updateWatchlistStatus(uid, productId, status: WatchlistStatus)` et `getWatchlistEntries(uid): Promise<WatchlistEntry[]>` (Lot 4, page watchlist).
 - Choisir un vrai fournisseur de données tierces et renseigner `THIRDPARTY_PROVIDER_BASE_URL`/`THIRDPARTY_PROVIDER_API_KEY` (Lot 2) — ou valider/corriger les endpoints hypothétiques de `tiktok-api.ts`/`tiktok-web.ts` contre le site réel.
 - Provisionner un vrai projet GCP (`GCP_PROJECT_ID`, `BIGQUERY_DATASET`, credentials) — rien n'a encore écrit de vraies données BigQuery.
 - `PROXY_LIST_URL`/`PROXY_USERNAME`/`PROXY_PASSWORD` pour le collector.
+- **Décision à prendre** : les nouvelles pages détail `/produit/[id]`, `/boutique/[id]`, `/createur/[id]` (Lot 4) sont du SSR dynamique — Firebase Hosting exige le plan **Blaze** (payant) pour ça, contrairement au reste du site qui reste volontairement sur Spark (gratuit). À confirmer avant déploiement, ou renoncer à ces pages / les rendre statiques avec un jeu de produits limité.
 - `COLLECTOR_SERVICE_TOKEN` pour sécuriser l'endpoint `/tasks/collect` en production (sans lui, l'auth est désactivée — ne pas déployer sans le fixer).
 
 ## Backlog des lots
@@ -51,13 +56,13 @@ Une seule branche pour tout ce round (voir décision #3), un commit par lot. Dé
 - [x] **Lot 1** — Consolider/implémenter les moteurs dans `packages/core` → [issue #1](https://github.com/dais-heroique/Kairos/issues/1) — fait, 17 tests verts
 - [x] **Lot 2** — Collector : plomberie réelle + sources best-effort → [issue #2](https://github.com/dais-heroique/Kairos/issues/2) — fait, 39 tests verts
 - [x] **Lot 3** — `apps/jobs` : pipeline quotidien → [issue #3](https://github.com/dais-heroique/Kairos/issues/3) — fait, 18 tests verts dont 6 contre l'émulateur réel
-- [ ] **Lot 4** — Brancher l'UI existante sur le réel → [issue #4](https://github.com/dais-heroique/Kairos/issues/4)
+- [x] **Lot 4** — Brancher l'UI existante sur le réel → [issue #4](https://github.com/dais-heroique/Kairos/issues/4) — fait, 10 tests verts (règle ESLint + budget de lecture), reste bloqué au typecheck complet par le `lib/` manquant
 - [ ] **Lot 5** — Garde-fous de coût (`ai_spend`, quotas IA, `/admin/couts`) → [issue #5](https://github.com/dais-heroique/Kairos/issues/5)
 - [ ] **Lot 6** — Créa DNA + Brief + Téléprompteur → [issue #6](https://github.com/dais-heroique/Kairos/issues/6)
 - [ ] **Lot 7** — Affiliation 30 % → [issue #7](https://github.com/dais-heroique/Kairos/issues/7)
 - [ ] **Lot 8** — Sample Radar + Compliance Guard → [issue #8](https://github.com/dais-heroique/Kairos/issues/8)
 
-**Point de reprise** : Lot 4 en cours (brancher l'UI existante sur les documents produits par le Lot 3).
+**Point de reprise** : Lot 5 (garde-fous de coût IA) — doit être fait avant toute dépense IA du Lot 6.
 
 ## Coût mensuel projeté
 

@@ -35,7 +35,9 @@ export default async function ClassementCategoryPage({
         {label}
       </p>
       <p className="text-sm text-[color:var(--color-ink-muted)]">
-        Ce classement arrive avec la collecte de données (Phase 3-4).
+        Ce classement n&apos;a pas encore d&apos;agrégation dédiée (boutiques,
+        créateurs, vidéos, sons...) — le pipeline quotidien écrit déjà un
+        document vide en attendant.
       </p>
     </div>
   );
