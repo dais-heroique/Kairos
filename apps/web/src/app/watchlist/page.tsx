@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import type { WatchlistEntry, WatchlistStatus } from "@kairos/shared";
 import { BottomNav } from "@/components/BottomNav";
 import { RequireAuth } from "@/components/RequireAuth";
+import { SampleRadarPrompt } from "@/components/SampleRadarPrompt";
 import { useAuth } from "@/lib/firebase/auth-context";
 import { getWatchlistEntries, updateWatchlistStatus } from "@/lib/firestore/watchlist";
 
@@ -65,22 +66,33 @@ function WatchlistContent() {
           </p>
         )}
         {entries?.map((entry) => (
-          <div key={entry.productId} className="kai-card flex items-center justify-between gap-3">
-            <span className="truncate text-sm font-semibold">{entry.productId}</span>
-            <select
-              value={entry.status}
-              onChange={(e) =>
-                handleStatusChange(entry.productId, e.target.value as WatchlistStatus)
-              }
-              className="kai-input w-auto shrink-0"
-              aria-label="Statut du pipeline"
-            >
-              {STATUS_ORDER.map((status) => (
-                <option key={status} value={status}>
-                  {STATUS_LABELS[status]}
-                </option>
-              ))}
-            </select>
+          <div key={entry.productId} className="flex flex-col gap-2">
+            <div className="kai-card flex items-center justify-between gap-3">
+              <span className="truncate text-sm font-semibold">{entry.productId}</span>
+              <select
+                value={entry.status}
+                onChange={(e) =>
+                  handleStatusChange(entry.productId, e.target.value as WatchlistStatus)
+                }
+                className="kai-input w-auto shrink-0"
+                aria-label="Statut du pipeline"
+              >
+                {STATUS_ORDER.map((status) => (
+                  <option key={status} value={status}>
+                    {STATUS_LABELS[status]}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {entry.status === "sample_requested" && (
+              <SampleRadarPrompt
+                productId={entry.productId}
+                onRespond={(productId, accepted) =>
+                  handleStatusChange(productId, accepted ? "sample_received" : "dropped")
+                }
+              />
+            )}
           </div>
         ))}
       </div>

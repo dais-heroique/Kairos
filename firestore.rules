@@ -210,5 +210,13 @@ service cloud.firestore {
       allow read: if isSignedIn();
       allow write: if false;
     }
+
+    // Règles Compliance Guard (Lot 8) — un chemin plus précis que
+    // config/{docId} ci-dessus l'emporte pour ce document précis : seul
+    // un admin peut l'écrire, éditable sans redéploiement.
+    match /config/complianceRules {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
+    }
   }
 }

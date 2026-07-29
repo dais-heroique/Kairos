@@ -4,9 +4,9 @@ Source de vérité du projet. Lu en premier à chaque session, mis à jour en de
 
 ## Snapshot
 
-- Date : 2026-07-28
+- Date : 2026-07-29
 - Branche : `claude/check-old-conversations-o3nwu4`
-- Dernier commit : LOT 3 (`3ce0b9d` au moment de cette mise à jour) — Lots 0, 1, 2, 3 faits et poussés.
+- **Lots 0 à 8 faits et poussés** — tous les lots du round demandé sont terminés.
 
 ## Décisions actées
 
@@ -43,6 +43,8 @@ Source de vérité du projet. Lu en premier à chaque session, mis à jour en de
 | Téléprompteur | ✅ `apps/web/src/components/Teleprompter.tsx` — plein écran, vitesse réglable, mode miroir, fort contraste, 6 tests verts (React Testing Library + jsdom), zéro dépendance IA/Firebase |
 | Affiliation 30% (`packages/affiliate`) | ✅ nouveau package pur (argent réel, même rigueur que le Lot 1) — commission 30%/12 mois + palier Ambassadeur à vie, rétention 30j, seuil 25€, déclenchement Stripe Connect (jamais à l'inscription), mode crédit, first-touch 90j + saisie manuelle 7j, anti-fraude (auto-parrainage = score 100), clawback, kit de partage (QR + légendes, offline). 37 tests verts, zéro import Firebase |
 | CGU affiliation | ✅ `apps/web/src/app/cgu-affiliation/page.tsx`, séparée des CGU générales |
+| Sample Radar | ✅ `SampleRadarPrompt.tsx`, boucle 1-tap sur `status === "sample_requested"` dans la watchlist, 4 tests verts |
+| Compliance Guard | ✅ `evaluateCompliance`/`hasBlockingIssues` (`packages/core`, pur, 8 tests verts), schéma `packages/shared/src/compliance.ts`, règle Firestore `config/complianceRules` admin-only (34/34 tests de règles verts avec cet ajout), page admin `/admin/compliance` (édition JSON, pas encore de formulaire dédié) |
 
 **Chemin critique débloqué** : `apps/jobs` (Lot 3) sait maintenant produire les 9 documents de classement + feeds + `products/{id}.latestVerdict/latestEstimates/ranks` à partir de données BigQuery (ou fixtures en test). Reste à brancher `apps/collector` sur de vraies données (Lot 2 fait la plomberie, pas encore le scraping validé) et `apps/web` sur ces documents (Lot 4, bloqué par le `lib/` manquant pour la vérification complète).
 
@@ -61,6 +63,7 @@ Source de vérité du projet. Lu en premier à chaque session, mis à jour en de
 - Créer le document Firestore `config/costGuards` (`{ dailyCapCents: <valeur> }`) — sans lui, le plafond par défaut (50€/jour) s'applique silencieusement.
 - **Lot 7** : `apps/web/src/server/stripe/connect.ts` (création de compte Connect + webhooks) n'a pas été écrit — la logique de déclenchement (`shouldCreateStripeConnectAccount`, testée) est prête, mais le paquet `stripe` n'est pas installé et il n'y a pas de clé de test pour vérifier un vrai appel API ; écrire ce wrapper une fois une clé Stripe test disponible plutôt que deviner l'intégration. Ajouter aussi `stripe`, `STRIPE_CONNECT_WEBHOOK_SECRET` déjà dans `.env.example`.
 - Fournir des templates de design pour les 3 visuels 1080×1920 du kit de partage (Lot 7) — seuls le QR code et les légendes texte sont générés (`packages/affiliate/src/share-kit.ts`), la composition d'image via `sharp` dépend d'assets non fournis dans cet environnement.
+- Peupler `config/complianceRules` (Lot 8) — le document n'existe pas encore, `evaluateCompliance` reçoit un tableau de règles vide tant que personne ne l'a rempli via `/admin/compliance`.
 
 ## Backlog des lots
 
@@ -73,9 +76,11 @@ Une seule branche pour tout ce round (voir décision #3), un commit par lot. Dé
 - [x] **Lot 5** — Garde-fous de coût (`ai_spend`, quotas IA, `/admin/couts`) → [issue #5](https://github.com/dais-heroique/Kairos/issues/5) — fait, 12 tests verts (`packages/ai-gateway`)
 - [x] **Lot 6** — Créa DNA + Brief + Téléprompteur → [issue #6](https://github.com/dais-heroique/Kairos/issues/6) — fait, 21 tests verts (15 `apps/creative-dna` + 3 `packages/shared` brief + 6 Téléprompteur), génération du brief Claude lui-même pas câblée (dépend de la validation Gemini en conditions réelles)
 - [x] **Lot 7** — Affiliation 30 % → [issue #7](https://github.com/dais-heroique/Kairos/issues/7) — fait, 37 tests verts (`packages/affiliate`), câblage Stripe Connect réel non écrit (voir checklist ci-dessus)
-- [ ] **Lot 8** — Sample Radar + Compliance Guard → [issue #8](https://github.com/dais-heroique/Kairos/issues/8)
+- [x] **Lot 8** — Sample Radar + Compliance Guard → [issue #8](https://github.com/dais-heroique/Kairos/issues/8) — fait, 12 tests verts (4 Sample Radar + 8 Compliance Guard), 34/34 tests de règles au global
 
-**Point de reprise** : Lot 8 (Sample Radar + Compliance Guard) — dernier lot du round.
+**Tous les lots (0 à 8) sont terminés et poussés sur cette branche.**
+
+**Point de reprise pour la prochaine session** : pousser `apps/web/src/lib/` (voir checklist ci-dessus) est le seul vrai bloqueur restant — une fois fait, relancer `pnpm typecheck` doit passer partout, et le round suivant peut porter sur les points de la checklist (Stripe Connect, fournisseur de données tierces, projet GCP réel, clés Gemini/Claude, assets de design) plutôt que sur de nouvelles fonctionnalités.
 
 ## Coût mensuel projeté
 
