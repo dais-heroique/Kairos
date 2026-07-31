@@ -1,7 +1,10 @@
 node_modules/
 .turbo/
 dist/
-/packages/*/lib/
+# Uniquement la sortie de build des packages (tsc), jamais un dossier
+# source nommé "lib" ailleurs (ex. apps/web/src/lib/) — un simple "lib/"
+# matchait par erreur ce dernier et l'excluait entièrement du repo.
+packages/*/lib/
 .next/
 out/
 .env
