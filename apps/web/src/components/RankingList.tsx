@@ -46,16 +46,19 @@ export function RankingList({ items }: { items: ProductRankItem[] }) {
   }
 
   const isFreePlan = (userDoc?.plan.slug ?? "radar") === "radar";
-  const visible = isFreePlan ? items.slice(0, FREE_PLAN_LIMIT) : items;
-  const lockedCount = items.length - visible.length;
+  const lockedCount = isFreePlan ? Math.max(0, items.length - FREE_PLAN_LIMIT) : 0;
 
   // Gains personnalisés — jamais du GMV global (règle invariante #5) :
   // computeEarnings (packages/core, Lot 1) à partir du profil réel de
-  // l'utilisateur (vues moyennes, fourchette d'abonnés).
+  // l'utilisateur (vues moyennes, fourchette d'abonnés). Uniquement pour
+  // les lignes déverrouillées — inutile de calculer un gain qu'on va
+  // masquer (voir ProductRankCard, pattern "ligne visible, chiffre flouté"
+  // repris de la concurrence plutôt que de cacher la ligne entière).
   const earningsByItem = useMemo(() => {
     const map = new Map<string, EstimatedRange>();
     if (!userDoc) return map;
-    for (const item of visible) {
+    const unlocked = isFreePlan ? items.slice(0, FREE_PLAN_LIMIT) : items;
+    for (const item of unlocked) {
       map.set(
         item.id,
         computeEarnings({
@@ -70,28 +73,30 @@ export function RankingList({ items }: { items: ProductRankItem[] }) {
       );
     }
     return map;
-  }, [visible, userDoc]);
+  }, [items, userDoc, isFreePlan]);
 
   return (
     <div className="flex flex-col gap-2">
-      {visible.map((item) => (
+      {items.map((item, index) => (
         <ProductRankCard
           key={item.id}
           item={item}
           saved={saved.has(item.id)}
           onToggleSave={handleToggleSave}
           estimatedEarnings={earningsByItem.get(item.id) ?? null}
+          locked={isFreePlan && index >= FREE_PLAN_LIMIT}
         />
       ))}
 
       {lockedCount > 0 && (
         <div className="kai-card flex flex-col items-center gap-2 text-center">
           <p className="font-[family-name:var(--font-display)] font-bold">
-            +{lockedCount} produits verrouillés
+            {lockedCount} gains verrouillés
           </p>
           <p className="text-sm text-[color:var(--color-ink-muted)]">
-            Le plan Radar (gratuit) affiche le top {FREE_PLAN_LIMIT}. Passe en
-            Creator ou Pro pour voir le classement complet.
+            Le plan Radar (gratuit) affiche le classement complet, mais masque
+            les gains estimés au-delà du top {FREE_PLAN_LIMIT}. Passe en
+            Creator ou Pro pour tout voir.
           </p>
         </div>
       )}

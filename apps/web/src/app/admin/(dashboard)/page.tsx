@@ -108,6 +108,19 @@ export default function AdminDashboardPage() {
 
       <section className="kai-card flex flex-col gap-2">
         <h2 className="font-[family-name:var(--font-display)] font-bold">
+          Produits & pipeline
+        </h2>
+        <p className="text-sm text-[color:var(--color-ink-muted)]">
+          Saisir les relevés quotidiens depuis ton espace affilié TikTok Shop,
+          puis faire tourner les moteurs de verdict sur l&apos;historique.
+        </p>
+        <Link href="/admin/produits" className="kai-btn-primary mt-2 block">
+          Gérer les produits
+        </Link>
+      </section>
+
+      <section className="kai-card flex flex-col gap-2">
+        <h2 className="font-[family-name:var(--font-display)] font-bold">
           {t("seedTitle")}
         </h2>
         <p className="text-sm text-[color:var(--color-ink-muted)]">

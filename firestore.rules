@@ -141,6 +141,15 @@ service cloud.firestore {
         allow read: if isSignedIn();
         allow write: if false;
       }
+
+      // Un relevé par produit par jour — forme d'entrée de computeVerdict
+      // (packages/core). Saisis à la main par l'admin depuis /admin/produits
+      // tant qu'aucune collecte automatisée n'est branchée. Lecture publique
+      // comme le reste du catalogue : le pipeline tourne côté client.
+      match /snapshots/{capturedDate} {
+        allow read: if true;
+        allow write: if isAdmin();
+      }
     }
 
     match /creators/{creatorId} {

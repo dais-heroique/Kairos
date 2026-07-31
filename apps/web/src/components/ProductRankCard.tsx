@@ -23,6 +23,7 @@ export function ProductRankCard({
   saved,
   onToggleSave,
   estimatedEarnings,
+  locked = false,
 }: {
   item: ProductRankItem;
   saved: boolean;
@@ -31,6 +32,11 @@ export function ProductRankCard({
   // personnalisé (ex. non connecté) — voir RankingList, computeEarnings
   // (packages/core).
   estimatedEarnings?: EstimatedRange | null;
+  // Plan Radar au-delà du top 10 (§6.5) : la ligne reste entièrement
+  // visible (produit, verdict, tendance) — seul le chiffre de gain est
+  // flouté, pattern repris de la concurrence (Kalodata) plutôt que de
+  // cacher la ligne entière derrière un mur générique.
+  locked?: boolean;
 }) {
   const [pending, setPending] = useState(false);
 
@@ -90,11 +96,23 @@ export function ProductRankCard({
 
         <p className="mt-2 text-sm">
           <span className="text-[color:var(--color-ink-muted)]">Gains estimés </span>
-          {estimatedEarnings ? (
+          {locked ? (
+            <span
+              className="select-none rounded font-[family-name:var(--font-mono)] blur-[3px]"
+              aria-hidden
+            >
+              **-**€
+            </span>
+          ) : estimatedEarnings ? (
             <EstimatedValue range={estimatedEarnings} format={(v) => `${v}€`} />
           ) : (
             <span className="text-[color:var(--color-ink-muted)] italic">
               connecte-toi pour voir tes gains
+            </span>
+          )}
+          {locked && (
+            <span className="ml-2 text-xs font-semibold" style={{ color: "var(--color-coral)" }}>
+              🔒 Creator/Pro
             </span>
           )}
         </p>
