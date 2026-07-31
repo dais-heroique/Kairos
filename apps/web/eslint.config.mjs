@@ -23,7 +23,9 @@ const eslintConfig = [
   {
     // Volume ExFAT : macOS sème des sidecars AppleDouble (._fichier) à côté
     // de chaque fichier écrit — à exclure sous peine de faux positifs.
-    ignores: ["**/._*"],
+    // next-env.d.ts : régénéré par Next.js à chaque build avec une
+    // triple-slash-reference — c'est Next qui l'écrit ainsi, pas nous.
+    ignores: ["**/._*", "next-env.d.ts"],
   },
   {
     plugins: { kairos: kairosPlugin },
