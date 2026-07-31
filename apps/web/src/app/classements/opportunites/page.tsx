@@ -1,8 +1,17 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import { RankingList } from "@/components/RankingList";
 import { getRankingPageData } from "@/server/firestore/rankings";
+import type { ProductRankItem } from "@/types/product-rank-item";
 
-export default async function OpportunitesPage() {
-  const { items } = await getRankingPageData("opportunities", "FR", "7d");
+// Voir classements/produits/page.tsx : chargement client, pas au build.
+export default function OpportunitesPage() {
+  const [items, setItems] = useState<ProductRankItem[] | null>(null);
+
+  useEffect(() => {
+    getRankingPageData("opportunities", "FR", "7d").then((data) => setItems(data.items));
+  }, []);
 
   return (
     <div className="flex flex-col gap-3">
@@ -10,7 +19,9 @@ export default async function OpportunitesPage() {
         Phase précoce × commission élevée × vendeur fiable × faible
         saturation.
       </p>
-      {items.length === 0 ? (
+      {items === null ? (
+        <p className="text-sm text-[color:var(--color-ink-muted)]">Chargement…</p>
+      ) : items.length === 0 ? (
         <p className="kai-card text-sm text-[color:var(--color-ink-muted)]">
           Pas encore de données — le pipeline quotidien n&apos;a pas encore
           tourné sur de vrais produits collectés.

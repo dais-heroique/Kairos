@@ -1,11 +1,24 @@
+import {
+  collection,
+  doc,
+  documentId,
+  getDoc,
+  getDocs,
+  query,
+  where,
+} from "firebase/firestore";
 import type { Market, RankingDoc, RankingPeriod } from "@kairos/shared";
-import { getAdminFirestore } from "../firebase-admin";
+import { getPublicFirestore } from "../firebase-client";
 import type { ProductRankItem } from "../../types/product-rank-item";
 import type { ReadCounter } from "./read-counter";
 
 // Segment "pas de catégorie" — doit rester cohérent avec
 // apps/jobs/src/rank.ts (NO_CATEGORY_SEGMENT).
 const NO_CATEGORY_SEGMENT = "all";
+
+// Une clause "in" Firestore est plafonnée à 30 valeurs — au-delà on
+// regroupe par lots plutôt que de faire un get() par boutique.
+const SHOP_LOOKUP_CHUNK_SIZE = 30;
 
 export async function getRankingDoc(
   type: string,
@@ -14,33 +27,36 @@ export async function getRankingDoc(
   category: string | null = null,
   counter?: ReadCounter,
 ): Promise<RankingDoc | null> {
-  const db = getAdminFirestore();
+  const db = getPublicFirestore();
   const id = `${type}_${market}_${period}_${category ?? NO_CATEGORY_SEGMENT}`;
-  const snap = await db.collection("rankings").doc(id).get();
+  const snap = await getDoc(doc(db, "rankings", id));
   counter?.increment();
-  if (!snap.exists) return null;
+  if (!snap.exists()) return null;
   return snap.data() as RankingDoc;
 }
 
-// Une seule RPC batchée pour tous les shopId de la page — jamais un get()
-// par ligne de classement.
+// 1 requête groupée par lot de 30 shopId — jamais un get() par ligne de
+// classement.
 export async function resolveShopNames(
   shopIds: string[],
   counter?: ReadCounter,
 ): Promise<Map<string, string>> {
-  const db = getAdminFirestore();
+  const db = getPublicFirestore();
   const uniqueIds = [...new Set(shopIds.filter((id): id is string => Boolean(id)))];
   const result = new Map<string, string>();
   if (uniqueIds.length === 0) return result;
 
-  const refs = uniqueIds.map((id) => db.collection("shops").doc(id));
-  const snaps = await db.getAll(...refs);
-  counter?.increment();
-
-  snaps.forEach((snap, i) => {
-    const name = (snap.data()?.name as string | undefined) ?? "Boutique";
-    result.set(uniqueIds[i]!, name);
-  });
+  for (let i = 0; i < uniqueIds.length; i += SHOP_LOOKUP_CHUNK_SIZE) {
+    const chunk = uniqueIds.slice(i, i + SHOP_LOOKUP_CHUNK_SIZE);
+    const snap = await getDocs(
+      query(collection(db, "shops"), where(documentId(), "in", chunk)),
+    );
+    counter?.increment();
+    snap.forEach((d) => {
+      const name = (d.data().name as string | undefined) ?? "Boutique";
+      result.set(d.id, name);
+    });
+  }
   return result;
 }
 
@@ -76,14 +92,13 @@ export interface RankingPageData {
 }
 
 // 2 opérations Firestore au total quelle que soit la taille du
-// classement (≤100 items) : 1 lecture du document rankings/*, 1 getAll()
-// batché pour les noms de boutique. Bien sous le budget de 5.
+// classement (≤100 items) : 1 lecture du document rankings/*, 1 requête
+// groupée pour les noms de boutique. Bien sous le budget de 5.
 //
-// Tant qu'aucun projet GCP réel n'est branché (GOOGLE_APPLICATION_CREDENTIALS
-// — voir docs/STATE.md), l'Admin SDK ne peut pas s'authentifier pendant le
-// build statique (contrainte plan Spark). On dégrade vers "aucune donnée"
-// plutôt que de faire planter le build ; un vrai service account fera
-// remonter les vraies données au prochain déploiement.
+// Dégrade vers "aucune donnée" plutôt que de faire planter le build
+// statique (contrainte plan Spark) si Firestore est injoignable (règles
+// pas encore déployées, etc.) — le prochain déploiement remonte les
+// vraies données dès qu'elles existent.
 export async function getRankingPageData(
   type: string,
   market: Market,
@@ -91,21 +106,21 @@ export async function getRankingPageData(
   category: string | null = null,
   counter?: ReadCounter,
 ): Promise<RankingPageData> {
-  let doc: RankingDoc | null;
+  let rankingDoc: RankingDoc | null;
   try {
-    doc = await getRankingDoc(type, market, period, category, counter);
+    rankingDoc = await getRankingDoc(type, market, period, category, counter);
   } catch {
     return { items: [], generatedAt: null };
   }
-  if (!doc) return { items: [], generatedAt: null };
+  if (!rankingDoc) return { items: [], generatedAt: null };
 
-  const shopIds = doc.items
+  const shopIds = rankingDoc.items
     .map((item) => (item as unknown as { shopId?: string | null }).shopId)
     .filter((id): id is string => Boolean(id));
   const shopNames = await resolveShopNames(shopIds, counter).catch(() => new Map<string, string>());
 
   return {
-    items: doc.items.map((item) => toProductRankItem(item, shopNames)),
-    generatedAt: doc.generatedAt,
+    items: rankingDoc.items.map((item) => toProductRankItem(item, shopNames)),
+    generatedAt: rankingDoc.generatedAt,
   };
 }

@@ -102,6 +102,7 @@ function AccountContent() {
 
   return (
     <div className="flex min-h-dvh flex-col">
+    <BottomNav />
     <main className="mx-auto flex w-full max-w-[390px] flex-1 flex-col gap-8 px-5 py-8 sm:max-w-md">
       <div>
         <h1 className="font-[family-name:var(--font-display)] text-2xl font-extrabold">
@@ -262,7 +263,6 @@ function AccountContent() {
         </p>
       )}
     </main>
-    <BottomNav />
     </div>
   );
 }

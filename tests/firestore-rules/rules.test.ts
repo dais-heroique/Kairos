@@ -277,17 +277,7 @@ describe("users/{uid}", () => {
 });
 
 describe("public read-only collections", () => {
-  const collections = [
-    "products",
-    "creators",
-    "shops",
-    "sounds",
-    "rankings",
-    "feeds",
-    "waves",
-    "config",
-    "briefCache",
-  ];
+  const collections = ["creators", "sounds", "feeds", "waves", "config", "briefCache"];
 
   for (const name of collections) {
     it(`${name}: signed-in read allowed, write always blocked`, async () => {
@@ -303,6 +293,39 @@ describe("public read-only collections", () => {
 
       const anon = testEnv.unauthenticatedContext().firestore();
       await assertFails(anon.collection(name).doc("doc-1").get());
+    });
+  }
+});
+
+describe("public catalog collections (products, shops, rankings)", () => {
+  // Lecture publique, y compris anonyme : ces pages de classement sont
+  // rendues côté client sans utilisateur connecté (voir
+  // apps/web/src/server/firebase-client.ts, contrainte plan Spark). Aucune
+  // donnée personnelle dans ces collections. Écriture réservée à l'admin
+  // (seed de démo depuis /admin en attendant le vrai pipeline de collecte).
+  const collections = ["products", "shops", "rankings"];
+
+  for (const name of collections) {
+    it(`${name}: read allowed even anonymous, write requires admin`, async () => {
+      await testEnv.withSecurityRulesDisabled((ctx) =>
+        ctx.firestore().collection(name).doc("doc-1").set({ seed: true }),
+      );
+
+      const anon = testEnv.unauthenticatedContext().firestore();
+      await assertSucceeds(anon.collection(name).doc("doc-1").get());
+      await assertFails(anon.collection(name).doc("doc-1").set({ seed: false }));
+
+      const signedIn = testEnv.authenticatedContext("alice").firestore();
+      await assertSucceeds(signedIn.collection(name).doc("doc-1").get());
+      await assertFails(
+        signedIn.collection(name).doc("doc-1").set({ seed: false }),
+      );
+
+      await testEnv.withSecurityRulesDisabled((ctx) =>
+        ctx.firestore().collection("users").doc("admin-uid").set(validUser("admin-uid", { role: "admin" })),
+      );
+      const admin = testEnv.authenticatedContext("admin-uid").firestore();
+      await assertSucceeds(admin.collection(name).doc("doc-1").set({ seed: true }));
     });
   }
 });

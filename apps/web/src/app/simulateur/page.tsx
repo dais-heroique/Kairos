@@ -1,13 +1,12 @@
 import { RequireAuth } from "@/components/RequireAuth";
-import { getRankingPageData } from "@/server/firestore/rankings";
 import { SimulateurContent } from "./SimulateurContent";
 
-export default async function SimulateurPage() {
-  const { items } = await getRankingPageData("products", "FR", "7d");
-
+// Voir classements/produits/page.tsx : SimulateurContent charge les
+// produits côté client (pas au build) — plan Spark = pages statiques.
+export default function SimulateurPage() {
   return (
     <RequireAuth>
-      <SimulateurContent products={items} />
+      <SimulateurContent />
     </RequireAuth>
   );
 }

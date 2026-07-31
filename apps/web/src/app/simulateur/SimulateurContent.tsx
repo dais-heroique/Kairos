@@ -1,24 +1,33 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { computeEarnings, DEFAULT_EARNINGS_CONFIG } from "@kairos/core";
 import { BottomNav } from "@/components/BottomNav";
 import { EstimatedValue } from "@/components/EstimatedValue";
 import { useAuth } from "@/lib/firebase/auth-context";
+import { getRankingPageData } from "@/server/firestore/rankings";
 import type { ProductRankItem } from "@/types/product-rank-item";
 
 // Benchmark provisoire — voir RankingList.tsx (même limitation, pas de
 // calibration par catégorie réelle pour l'instant).
 const DEFAULT_MEDIAN_CONVERSION_RATE = 1.5;
 
-export function SimulateurContent({ products }: { products: ProductRankItem[] }) {
+export function SimulateurContent() {
   const { userDoc } = useAuth();
-  const [productId, setProductId] = useState(products[0]?.id ?? "");
+  const [products, setProducts] = useState<ProductRankItem[] | null>(null);
+  const [productId, setProductId] = useState("");
   const [views, setViews] = useState(userDoc?.profile.avgViews || 20000);
   const [conversionPct, setConversionPct] = useState(DEFAULT_MEDIAN_CONVERSION_RATE);
 
+  useEffect(() => {
+    getRankingPageData("products", "FR", "7d").then((data) => {
+      setProducts(data.items);
+      setProductId((current) => current || (data.items[0]?.id ?? ""));
+    });
+  }, []);
+
   const product = useMemo(
-    () => products.find((p) => p.id === productId) ?? products[0],
+    () => products?.find((p) => p.id === productId) ?? products?.[0],
     [productId, products],
   );
 
@@ -37,20 +46,35 @@ export function SimulateurContent({ products }: { products: ProductRankItem[] })
     });
   }, [views, conversionPct, product, userDoc]);
 
+  if (products === null) {
+    return (
+      <div className="flex min-h-dvh flex-col">
+        <BottomNav />
+        <div className="flex flex-1 flex-col items-center justify-center gap-2 px-5 text-center">
+          <p className="text-sm text-[color:var(--color-ink-muted)]">Chargement…</p>
+        </div>
+      </div>
+    );
+  }
+
   if (!product) {
     return (
-      <div className="flex min-h-dvh flex-col items-center justify-center gap-2 px-5 text-center">
-        <p className="text-sm text-[color:var(--color-ink-muted)]">
-          Pas encore de produits à simuler — reviens une fois le classement
-          alimenté par la collecte réelle.
-        </p>
+      <div className="flex min-h-dvh flex-col">
         <BottomNav />
+        <div className="flex flex-1 flex-col items-center justify-center gap-2 px-5 text-center">
+          <p className="text-sm text-[color:var(--color-ink-muted)]">
+            Pas encore de produits à simuler — reviens une fois le classement
+            alimenté par la collecte réelle.
+          </p>
+        </div>
       </div>
     );
   }
 
   return (
     <div className="flex min-h-dvh flex-col">
+      <BottomNav />
+
       <header className="px-5 pt-6 pb-2">
         <h1 className="font-[family-name:var(--font-display)] text-2xl font-extrabold">
           Simulateur de gains
@@ -141,8 +165,6 @@ export function SimulateurContent({ products }: { products: ProductRankItem[] })
           (packages/core, pas une formule de démonstration).
         </p>
       </div>
-
-      <BottomNav />
     </div>
   );
 }

@@ -49,6 +49,8 @@ function WatchlistContent() {
 
   return (
     <div className="flex min-h-dvh flex-col">
+      <BottomNav />
+
       <header className="px-5 pt-6 pb-2">
         <h1 className="font-[family-name:var(--font-display)] text-2xl font-extrabold">
           Watchlist
@@ -96,8 +98,6 @@ function WatchlistContent() {
           </div>
         ))}
       </div>
-
-      <BottomNav />
     </div>
   );
 }

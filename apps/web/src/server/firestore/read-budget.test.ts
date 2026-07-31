@@ -19,7 +19,11 @@ beforeAll(() => {
       "read-budget.test.ts requires the Firestore emulator — run via `pnpm test:web-integration`, not plain `pnpm test`",
     );
   }
-  app = getApps().length === 0 ? initializeApp({ projectId: "kairos-web-test" }) : getApps()[0]!;
+  // Même projectId que la config publique par défaut de
+  // apps/web/src/server/firebase-client.ts (utilisé par getRankingPageData
+  // en lecture côté SDK client) — l'émulateur Firestore isole les données
+  // par projectId, donc les deux SDK doivent viser le même ici.
+  app = getApps().length === 0 ? initializeApp({ projectId: "kairos-on" }) : getApps()[0]!;
   db = getFirestore(app);
 });
 

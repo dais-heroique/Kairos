@@ -127,9 +127,15 @@ service cloud.firestore {
       }
     }
 
+    // Lecture publique (pas de isSignedIn()) : ces pages de classement sont
+    // rendues en statique au build (contrainte plan Spark, voir
+    // docs/STATE.md) via le SDK client, donc sans utilisateur connecté.
+    // Catalogue non personnel, aucune donnée sensible. Écriture réservée à
+    // l'admin en attendant le vrai pipeline de collecte (apps/collector +
+    // apps/jobs, qui écriront eux via un vrai projet GCP/Admin SDK).
     match /products/{productId} {
-      allow read: if isSignedIn();
-      allow write: if false;
+      allow read: if true;
+      allow write: if isAdmin();
 
       match /videos/{videoId} {
         allow read: if isSignedIn();
@@ -143,8 +149,8 @@ service cloud.firestore {
     }
 
     match /shops/{shopId} {
-      allow read: if isSignedIn();
-      allow write: if false;
+      allow read: if true;
+      allow write: if isAdmin();
     }
 
     match /sounds/{soundId} {
@@ -153,8 +159,8 @@ service cloud.firestore {
     }
 
     match /rankings/{rankingId} {
-      allow read: if isSignedIn();
-      allow write: if false;
+      allow read: if true;
+      allow write: if isAdmin();
     }
 
     match /feeds/{feedId} {

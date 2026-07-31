@@ -28,6 +28,8 @@ export default function ClassementsLayout({
   return (
     <RequireAuth>
       <div className="flex min-h-dvh flex-col">
+        <BottomNav />
+
         <header className="px-5 pt-6 pb-2">
           <h1 className="font-[family-name:var(--font-display)] text-2xl font-extrabold">
             Classements
@@ -65,8 +67,6 @@ export default function ClassementsLayout({
         </div>
 
         <div className="flex-1 px-5 py-4">{children}</div>
-
-        <BottomNav />
       </div>
     </RequireAuth>
   );

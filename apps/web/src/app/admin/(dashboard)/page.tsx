@@ -11,6 +11,7 @@ import {
   listInviteCodes,
   setInviteCodeActive,
 } from "@/lib/firestore/invite-codes";
+import { seedDemoRankingData } from "@/lib/firestore/seed-demo-data";
 
 export default function AdminDashboardPage() {
   const t = useTranslations("Admin");
@@ -18,6 +19,8 @@ export default function AdminDashboardPage() {
   const [users, setUsers] = useState<User[] | null>(null);
   const [codes, setCodes] = useState<InviteCode[] | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [seeding, setSeeding] = useState(false);
+  const [seedDone, setSeedDone] = useState(false);
 
   const [codeInput, setCodeInput] = useState("");
   const [trialDays, setTrialDays] = useState("14");
@@ -68,6 +71,20 @@ export default function AdminDashboardPage() {
     }
   }
 
+  async function handleSeedDemoData() {
+    setSeeding(true);
+    setSeedDone(false);
+    setError(null);
+    try {
+      await seedDemoRankingData();
+      setSeedDone(true);
+    } catch {
+      setError(t("errorGeneric"));
+    } finally {
+      setSeeding(false);
+    }
+  }
+
   return (
     <main className="mx-auto flex min-h-dvh max-w-[390px] flex-col gap-8 px-5 py-8 sm:max-w-2xl">
       <div>
@@ -88,6 +105,28 @@ export default function AdminDashboardPage() {
           {error}
         </p>
       )}
+
+      <section className="kai-card flex flex-col gap-2">
+        <h2 className="font-[family-name:var(--font-display)] font-bold">
+          {t("seedTitle")}
+        </h2>
+        <p className="text-sm text-[color:var(--color-ink-muted)]">
+          {t("seedBody")}
+        </p>
+        <button
+          type="button"
+          onClick={handleSeedDemoData}
+          disabled={seeding}
+          className="kai-btn-outline mt-2"
+        >
+          {seeding ? t("seedingButton") : t("seedButton")}
+        </button>
+        {seedDone && (
+          <p className="text-sm font-medium" style={{ color: "var(--color-success)" }}>
+            {t("seedSuccess")}
+          </p>
+        )}
+      </section>
 
       <section className="flex flex-col gap-3">
         <h2 className="font-[family-name:var(--font-display)] font-bold">

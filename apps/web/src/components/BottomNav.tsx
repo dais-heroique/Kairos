@@ -15,7 +15,7 @@ export function BottomNav() {
 
   return (
     <nav
-      className="sticky bottom-0 z-10 flex border-t bg-[color:var(--color-surface-raised)]"
+      className="sticky top-0 z-10 flex border-b bg-[color:var(--color-surface-raised)]"
       style={{ borderColor: "var(--color-border)" }}
     >
       {ITEMS.map((item) => {
