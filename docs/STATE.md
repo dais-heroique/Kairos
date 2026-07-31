@@ -4,10 +4,12 @@ Source de vérité du projet. Lu en premier à chaque session, mis à jour en de
 
 ## Snapshot
 
-- Date : 2026-07-29 (mise à jour : 2026-07-31)
-- Branche : `claude/check-old-conversations-o3nwu4`
-- **Lots 0 à 8 faits et poussés, et `apps/web/src/lib/` reçu de l'utilisateur (commit `10e379d` sur `main`, fusionné ici).**
-- **`pnpm typecheck` et `pnpm lint` sont 100 % verts sur les 12 packages/apps — plus aucun bloqueur de compilation.**
+- Date : 2026-07-29 (mise à jour : 2026-07-31, fin de journée)
+- Branche : `main` (la branche `claude/check-old-conversations-o3nwu4` a été fusionnée dans `main`, commit `cb407a2`)
+- **Lots 0 à 8 faits, fusionnés dans `main`, et `apps/web/src/lib/` reçu de l'utilisateur (commit `10e379d`).**
+- **`pnpm typecheck` et `pnpm lint` sont 100 % verts sur les 12 packages/apps.**
+- **🚀 EN LIGNE : <https://kairos-on.web.app>** — build 100 % statique, plan Spark (gratuit) préservé, aucune Cloud Function déployée.
+- **Le pipeline tourne réellement**, mais sur des relevés saisis à la main (voir décision #8) : aucune collecte automatisée n'est branchée.
 
 ## Décisions actées
 
@@ -18,6 +20,17 @@ Source de vérité du projet. Lu en premier à chaque session, mis à jour en de
 5. **Séparation `packages/core` / `packages/shared`** — déjà correcte structurellement à l'audit LOT 0, mais **correction importante après lecture du code réel (Lot 1)** : les 3 moteurs (`computeVerdict`, `computeEarnings`, `computeOpportunityScore`) étaient des stubs qui levaient `throw new Error("not implemented")`, pas juste "à consolider". Ils sont maintenant réellement implémentés (voir Lot 1 ci-dessous).
 6. **`insufficient_data`** — pas de 5e valeur ajoutée à `verdictLabelSchema` (reste `entrer_maintenant/avec_un_angle/risque/eviter`). À la place : verdict `"risque"` + `productEstimates.method: "insufficient_data"` (déjà dans le schéma `estimate.ts`) + une ligne de `reasoning[]` explicite. Non cassant pour le schéma existant.
 7. **`packages/core/config/weights.ts`** (et non `packages/core/config/weights.ts` à la racine du package comme suggéré initialement) — placé sous `src/config/` pour rester dans le `rootDir`/`include` du `tsconfig.json` du package (`"include": ["src"]`), sinon `tsc` échoue ("File is not under rootDir").
+8. **Source de données : saisie manuelle, faute de mieux à 0 €** (2026-07-31). L'utilisateur a posé une contrainte ferme : *« je veux que ça ne me coûte rien, 0 euro »*. Les quatre pistes ont été explorées et fermées, dans cet ordre :
+   - **API Affiliate officielle TikTok Shop** → la doc du Partner Center l'indique explicitement : *« Affiliate APIs are currently not available in the UK and EU markets »*. Les critères d'éligibilité créateur ne listent que US/UK/SEA. **Fermée pour la France**, malgré le fait que TikTok Shop soit bien live en FR (10 marchés européens depuis juin 2026).
+   - **Scraping direct TikTok** (choix initial de l'utilisateur) → `shop.tiktok.com` renvoie un CAPTCHA anti-bot dès la première requête, avant même toute page produit. Contourner un CAPTCHA est exclu, et le scraping est contraire aux CGU TikTok. Les sélecteurs de `tiktok-web.ts`/`tiktok-api.ts` restent des hypothèses jamais validées.
+   - **Kalodata** (suggéré par l'utilisateur : « prends les données de Kalodata ») → **refusé**. C'est un SaaS payant concurrent dont les données agrégées *sont* le produit ; les extraire pour alimenter un concurrent direct est un pillage de données, plus clairement problématique que de scraper TikTok.
+   - **TikTok Creative Center** → gratuit, officiel, public, **France supportée** (vérifié : hashtags FR avec catégories, posts, vues). Mais ce sont des tendances de **contenu**, pas des produits TikTok Shop avec commissions. Utile plus tard pour des signaux de niche/timing, insuffisant pour les classements produits.
+
+   **Retenu** : l'utilisateur relève lui-même les chiffres dans son propre espace affilié TikTok Shop — son accès, ses données, 0 €, parfaitement légal. Un relevé par produit par jour, qui est exactement la forme d'entrée de `computeVerdict`. Viable à l'échelle visée (l'utilisateur a précisé que le produit est « juste pour des amis »).
+9. **Le pipeline tourne côté client, pas sur Cloud Run** (2026-07-31) — conséquence directe du plan Spark. `apps/web/src/lib/pipeline/run-pipeline.ts` rejoue la chaîne d'`apps/jobs` dans le navigateur : lecture des snapshots Firestore → `computeVerdict` + `computeOpportunityScore` (mêmes fonctions pures de `packages/core`) → écriture de `rankings/*`. Déclenché à la main depuis `/admin/produits`. `apps/jobs` reste la version serveur de référence pour le jour où une vraie collecte existera.
+10. **Lecture publique du catalogue** (2026-07-31) — `products`, `shops`, `rankings` (+ `products/{id}/snapshots`) passent de `isSignedIn()` à `allow read: if true`, écriture réservée à `isAdmin()`. Raison : les pages de classement sont rendues sans utilisateur connecté, et le catalogue ne contient aucune donnée personnelle. Les collections utilisateur restent strictement cloisonnées.
+11. **Pages détail rendues statiques plutôt que supprimées** (2026-07-31) — `/produit/[id]`, `/boutique/[id]`, `/createur/[id]` exigeaient le plan Blaze (SSR dynamique). Résolu par `generateStaticParams()` renvoyant `[]` + `dynamicParams = false` : le code reste intact, aucun lien du site n'y mène encore, et deux lignes suffisent à les réactiver le jour où Blaze est souscrit. **La décision « rester sur Spark » est donc tenue.**
+12. **Thème blanc forcé** (2026-07-31) — suppression de la bascule `@media (prefers-color-scheme: dark)` de `globals.css`. Elle repassait tout le site en noir sur les appareils en mode sombre système, contre la consigne explicite et répétée de l'utilisateur (« le couleur principal donc partout doit être blanc pas noir »). Décision produit assumée, pas un oubli.
 
 ## État courant par domaine
 
@@ -30,7 +43,12 @@ Source de vérité du projet. Lu en premier à chaque session, mis à jour en de
 | `/admin/couts` | Absent (Lot 5) |
 | Classements, simulateur (`apps/web`) | ✅ branchés sur les vraies données (Lot 4) — `classements/produits`, `classements/opportunites` lisent `rankings/*` via `server/firestore/rankings.ts` (2 opérations Firestore/page, testé), simulateur utilise `computeEarnings` (Lot 1) sur de vrais produits |
 | Watchlist (`apps/web`) | ✅ pipeline affiché (statut watching→…→dropped, schéma déjà présent), affichage minimal (ID produit, pas encore de fiche enrichie) |
-| Pages détail `/produit/[id]`, `/boutique/[id]`, `/createur/[id]` | ✅ nouvelles, SSR indexables — ⚠️ nécessitent le plan Blaze Firebase (Cloud Functions/Cloud Run pour le SSR dynamique), contrairement au reste du site qui reste sur Spark (gratuit) ; décision de coût à confirmer avant déploiement |
+| Pages détail `/produit/[id]`, `/boutique/[id]`, `/createur/[id]` | ⏸️ **neutralisées pour rester sur Spark** — `generateStaticParams()` renvoie `[]` + `dynamicParams = false`, donc 0 page générée et aucune Cloud Function. Code intact, réactivable en 2 lignes si Blaze est souscrit (décision #11) |
+| Saisie manuelle des produits (`/admin/produits`) | ✅ **nouveau** — formulaire produit + relevé du jour → `products/{id}/snapshots/{date}`, badge `Nj` par produit (orange <3 jours, vert ≥3) |
+| Pipeline côté client (`lib/pipeline/run-pipeline.ts`) | ✅ **nouveau** — rejoue la chaîne d'`apps/jobs` dans le navigateur sur les vrais moteurs `packages/core`, 4 tests verts sur la chaîne de calcul (décision #9) |
+| Déploiement | ✅ **en ligne sur <https://kairos-on.web.app>** — 32 routes, 100 % statiques (`○`/`●`, aucune `ƒ`), Firestore rules déployées |
+| Thème | ✅ blanc forcé partout, y compris en mode sombre système (décision #12) ; nav principale déplacée en haut (`sticky top-0`) |
+| Verrouillage plan gratuit | ✅ pattern « ligne visible, gain flouté » au-delà du top 10 (observé chez Kalodata) au lieu de masquer les produits |
 | Règle ESLint anti-nombre-nu | ✅ `kairos/no-raw-estimate-number`, testée (7 tests) |
 | Test de budget de lecture Firestore | ✅ `read-budget.test.ts`, prouve ≤5 opérations/page contre l'émulateur réel |
 | BigQuery | Schéma complet (11 tables DDL avec `video_comments`), 0 ligne de données réelles (aucune infra GCP branchée depuis cette session) |
@@ -49,14 +67,27 @@ Source de vérité du projet. Lu en premier à chaque session, mis à jour en de
 
 **Chemin critique débloqué** : `apps/jobs` (Lot 3) sait produire les 9 documents de classement + feeds + `products/{id}.latestVerdict/latestEstimates/ranks` à partir de données BigQuery (ou fixtures en test), `apps/web` (Lot 4) les lit déjà. Il ne reste plus qu'un maillon vide dans la chaîne : `apps/collector` n'a pas encore de vraies données à collecter (Lot 2 = plomberie prête, scraping non validé contre le site réel, aucun projet GCP branché). Tout le reste — moteurs, pipeline, UI, coûts, créa, affiliation, compliance — est réel, testé, et compile.
 
+**Contournement en place depuis le 2026-07-31** : ce maillon vide est comblé manuellement (décisions #8 et #9). La chaîne complète fonctionne donc de bout en bout — saisie → snapshots Firestore → moteurs `packages/core` → `rankings/*` → UI — mais la source des snapshots est un humain, pas un collector. Le jour où une vraie source existe, seule cette source change : les moteurs, les schémas et l'UI sont déjà les bons.
+
+⚠️ **Conséquence à ne pas oublier** : un verdict n'a de sens qu'à partir de **3 relevés** (`minSnapshotsAbsolute = 3`). En dessous, `computeVerdict` renvoie volontairement un verdict `"risque"` dont le `reasoning[]` dit « Historique trop court » avec une confiance <0,1. Ces produits sont **affichés quand même** avec ce message, jamais masqués et jamais accompagnés d'un chiffre inventé.
+
+### Piste ouverte : API TikTok Shop officielle (2026-07-31, en cours)
+
+L'utilisateur affirme pouvoir obtenir un accès API TikTok Shop pour la France et va générer des identifiants. À traiter à la reprise :
+- Variables déjà ajoutées à `.env.example` : `TIKTOK_APP_KEY`, `TIKTOK_APP_SECRET`, `TIKTOK_ACCESS_TOKEN`, `TIKTOK_REFRESH_TOKEN`, `TIKTOK_SHOP_CIPHER`, `TIKTOK_SHOP_ID`, `TIKTOK_API_BASE_URL`.
+- **Question non tranchée** : quelle API exactement ? La **Seller API** (produits/commandes de sa propre boutique) est disponible en Europe ; l'**Affiliate API** (marketplace créateurs, taux de commission — celle dont KAIROS a réellement besoin) est documentée comme fermée à l'UE. À vérifier dans les scopes de son app avant d'écrire la moindre ligne.
+- **Contrainte d'architecture** : les appels TikTok Shop sont signés en HMAC-SHA256 avec l'`app_secret`, qui ne doit jamais partir dans un bundle navigateur. Le pipeline client (décision #9) ne convient donc pas. Solution à 0 € : faire tourner **`apps/jobs` en local sur le PC de l'utilisateur** (déjà du Node, 18 tests verts), qui écrit dans Firestore ; le site statique lit Firestore. Aucun Cloud Run, plan Spark préservé.
+- **Ne jamais demander ni manipuler l'`app_secret` en clair** : l'utilisateur le place lui-même dans son `.env.local`, le code lit `process.env`.
+
 ## Checklist de configuration utilisateur (grossit à chaque lot)
 
 À faire par l'utilisateur avant que les lots correspondants tournent en conditions réelles :
 - ~~Pousser `apps/web/src/lib/`~~ **Fait** (2026-07-31, commit `10e379d`).
-- Choisir un vrai fournisseur de données tierces et renseigner `THIRDPARTY_PROVIDER_BASE_URL`/`THIRDPARTY_PROVIDER_API_KEY` (Lot 2) — ou valider/corriger les endpoints hypothétiques de `tiktok-api.ts`/`tiktok-web.ts` contre le site réel.
-- Provisionner un vrai projet GCP (`GCP_PROJECT_ID`, `BIGQUERY_DATASET`, credentials) — rien n'a encore écrit de vraies données BigQuery.
-- `PROXY_LIST_URL`/`PROXY_USERNAME`/`PROXY_PASSWORD` pour le collector.
-- **Décision à prendre** : les nouvelles pages détail `/produit/[id]`, `/boutique/[id]`, `/createur/[id]` (Lot 4) sont du SSR dynamique — Firebase Hosting exige le plan **Blaze** (payant) pour ça, contrairement au reste du site qui reste volontairement sur Spark (gratuit). À confirmer avant déploiement, ou renoncer à ces pages / les rendre statiques avec un jeu de produits limité.
+- ~~**Décision Blaze vs Spark** pour les pages détail~~ **Tranché** (2026-07-31) : reste sur Spark, pages neutralisées mais conservées (décision #11).
+- **En cours** : générer les identifiants API TikTok Shop et **les placer soi-même dans `.env.local`** (jamais les coller dans une conversation). Puis indiquer quels scopes l'app a réellement — voir « Piste ouverte » ci-dessus.
+- Choisir un vrai fournisseur de données tierces et renseigner `THIRDPARTY_PROVIDER_BASE_URL`/`THIRDPARTY_PROVIDER_API_KEY` (Lot 2) — **seulement si l'API officielle ne couvre pas le besoin**. Les endpoints de `tiktok-api.ts`/`tiktok-web.ts` restent des hypothèses non validées, et le scraping direct est bloqué par CAPTCHA (décision #8) : ne pas les déployer en l'état.
+- Provisionner un vrai projet GCP (`GCP_PROJECT_ID`, `BIGQUERY_DATASET`, credentials) — rien n'a encore écrit de vraies données BigQuery. ⚠️ Sans ça, `/admin/couts` et l'Admin SDK côté serveur dégradent volontairement vers un état vide plutôt que de faire échouer le build statique.
+- `PROXY_LIST_URL`/`PROXY_USERNAME`/`PROXY_PASSWORD` pour le collector — **sans objet tant que le scraping n'est pas la voie retenue** (décision #8).
 - `COLLECTOR_SERVICE_TOKEN` pour sécuriser l'endpoint `/tasks/collect` en production (sans lui, l'auth est désactivée — ne pas déployer sans le fixer).
 - Configurer les alertes de budget GCP à 50/80/100% — non exécutable depuis cette session (nécessite un compte de facturation réel). Commande type à adapter :
   `gcloud billing budgets create --billing-account=<ID> --display-name="Kairos IA" --budget-amount=<montant>EUR --threshold-rule=percent=0.5 --threshold-rule=percent=0.8 --threshold-rule=percent=1.0`
@@ -79,12 +110,43 @@ Une seule branche pour tout ce round (voir décision #3), un commit par lot. Dé
 - [x] **Lot 7** — Affiliation 30 % → [issue #7](https://github.com/dais-heroique/Kairos/issues/7) — fait, 37 tests verts (`packages/affiliate`), câblage Stripe Connect réel non écrit (voir checklist ci-dessus)
 - [x] **Lot 8** — Sample Radar + Compliance Guard → [issue #8](https://github.com/dais-heroique/Kairos/issues/8) — fait, 12 tests verts (4 Sample Radar + 8 Compliance Guard), 34/34 tests de règles au global
 
-**Point de reprise** : tous les lots sont faits, `apps/web` compile et lint proprement. La suite n'est plus du développement de fonctionnalités mais du branchement sur du réel — dans l'ordre : (1) projet GCP + fournisseur de données pour que le collector écrive de vraies lignes, (2) relancer `apps/jobs` sur ces vraies données, (3) clés Gemini/Claude pour le Lot 6, (4) clé Stripe pour le Lot 7, (5) assets de design pour le kit de partage. Voir la checklist ci-dessus pour le détail.
+**Tous les lots (0 à 8) sont terminés, fusionnés dans `main` et déployés.**
 
-**Tous les lots (0 à 8) sont terminés et poussés sur cette branche.**
+## Point de reprise pour la prochaine session
 
-**Point de reprise pour la prochaine session** : pousser `apps/web/src/lib/` (voir checklist ci-dessus) est le seul vrai bloqueur restant — une fois fait, relancer `pnpm typecheck` doit passer partout, et le round suivant peut porter sur les points de la checklist (Stripe Connect, fournisseur de données tierces, projet GCP réel, clés Gemini/Claude, assets de design) plutôt que sur de nouvelles fonctionnalités.
+Le développement de fonctionnalités est terminé ; le site est en ligne et utilisable. Il ne reste que du branchement sur du réel, par ordre de priorité :
+
+1. **API TikTok Shop** (bloquant pour tout le reste) — attendre que l'utilisateur ait ses identifiants, **puis d'abord vérifier quels scopes son app expose réellement** avant d'écrire du code. Si l'Affiliate API est bien fermée à l'UE comme le dit la doc, la Seller API ne donnera que sa propre boutique, pas le marketplace : ce serait à rediscuter avec lui plutôt qu'à contourner. Architecture cible : `apps/jobs` en local (voir « Piste ouverte »).
+2. **Clés Gemini/Claude** (Lot 6) — la génération de brief n'est pas câblée.
+3. **Clé Stripe test** (Lot 7) — `server/stripe/connect.ts` reste à écrire.
+4. **Assets de design** pour le kit de partage (Lot 7).
+5. **Projet GCP réel** — seulement si BigQuery devient nécessaire ; le produit fonctionne sans, Firestore suffit à l'échelle actuelle.
+
+**À ne pas refaire** : les quatre impasses de source de données sont documentées en décision #8 (API Affiliate fermée UE, CAPTCHA TikTok, Kalodata refusé, Creative Center hors-sujet produits). Ne pas les réexplorer sans élément nouveau.
+
+## Commandes utiles
+
+```bash
+pnpm typecheck && pnpm lint          # 12 packages, doit être 100 % vert
+pnpm test                            # les suites émulateur échouent ici, c'est normal
+pnpm test:rules                      # 34/34 contre l'émulateur Firestore
+pnpm test:jobs-integration           # 18/18
+pnpm test:web-integration            # 20/20
+```
+
+**Déploiement** (⚠️ l'ordre compte — `.env.local` a priorité sur `.env.production` chez Next et injecterait la config émulateur dans le bundle de prod) :
+
+```bash
+cd /Volumes/Data3/KAIROS
+mv apps/web/.env.local apps/web/.env.local.bak
+firebase deploy --only firestore:rules,hosting
+mv apps/web/.env.local.bak apps/web/.env.local
+```
+
+Vérifier dans la sortie de build que **toutes** les routes sont `○` ou `●` : une seule route `ƒ` (dynamique) déclencherait « Building a Cloud Function » et exigerait le plan Blaze.
+
+**Volume ExFAT** : macOS sème des fichiers `._*` qui cassent vitest, ESLint et parfois `.git/objects/pack/`. En cas d'erreur bizarre : `find . -name "._*" -not -path "*/node_modules/*" -delete`, et `export COPYFILE_DISABLE=1` avant les builds.
 
 ## Coût mensuel projeté
 
-Toujours aucun changement — aucun appel IA, aucun déploiement, aucune ressource GCP payante provisionnée depuis cette session (tout tourne en local/émulateur/mocks).
+**0 €**, et c'est une contrainte explicite de l'utilisateur, pas un état de fait transitoire. Firebase Spark (gratuit) : hébergement statique + Firestore. Aucune Cloud Function, aucun Cloud Run, aucun appel IA, aucune ressource GCP payante. Toute évolution qui casserait ça (SSR dynamique, collector hébergé, BigQuery) doit être validée avec lui au préalable.
