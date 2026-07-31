@@ -4,14 +4,15 @@ Source de vérité du projet. Lu en premier à chaque session, mis à jour en de
 
 ## Snapshot
 
-- Date : 2026-07-29
+- Date : 2026-07-29 (mise à jour : 2026-07-31)
 - Branche : `claude/check-old-conversations-o3nwu4`
-- **Lots 0 à 8 faits et poussés** — tous les lots du round demandé sont terminés.
+- **Lots 0 à 8 faits et poussés, et `apps/web/src/lib/` reçu de l'utilisateur (commit `10e379d` sur `main`, fusionné ici).**
+- **`pnpm typecheck` et `pnpm lint` sont 100 % verts sur les 12 packages/apps — plus aucun bloqueur de compilation.**
 
 ## Décisions actées
 
 1. **`.gitignore` corrigé** — la règle nue `lib/` (ligne 4) ignorait par erreur `apps/web/src/lib/` (code source) en plus des dossiers de build de `packages/*`. Remplacée par `/packages/*/lib/`. Voir `docs/AUDIT.md` §1.
-2. **Pas de stub pour `apps/web/src/lib/`** — ce dossier (8 modules : auth, auth-context, app-check, firestore/{user,admin,invite-codes,watchlist}, mock/products, niches) n'a jamais été commité. L'utilisateur le poussera lui-même depuis son PC — **décision reconfirmée après LOT 0 : ne rien fabriquer à sa place**, y compris pendant les lots 1-8. `apps/web` reste donc rouge au typecheck jusqu'à ce que ce dossier arrive.
+2. **Pas de stub pour `apps/web/src/lib/`** — décision tenue du LOT 0 au LOT 8 : rien fabriqué à sa place. **Résolu le 2026-07-31** : l'utilisateur a poussé les 11 fichiers réels depuis son PC (commit `10e379d` sur `main`), fusionnés dans cette branche (`dd00371`). Il manquait `getWatchlistEntries`/`updateWatchlistStatus` dans `firestore/watchlist.ts` (nécessaires au pipeline watchlist du Lot 4/8) — ajoutés (`b19fa6b`). `apps/web` compile maintenant intégralement.
 3. **Une seule branche pour tous les lots** — l'utilisateur a explicitement annulé sa propre règle "un lot = une branche = une PR" pour ce round : tout (Lots 1 à 8) part sur `claude/check-old-conversations-o3nwu4`, un commit par lot, pas de PR séparée, pas de pause d'approbation entre les lots.
 4. **Aucun identifiant externe fourni** ("je te donne rien pour l'instant, prépare tout") — TikTok/proxies, GCP réel, Stripe, Gemini/Claude. Tout le code écrit est réel et testé (émulateur Firestore pour ce qui touche Firestore, mocks pour BigQuery/HTTP/Stripe/IA), avec un balisage explicite de ce qui est vérifié ici vs. ce qui attend de vraies clés/infra. Voir le "Checklist de configuration utilisateur" plus bas — elle grossit à chaque lot.
 5. **Séparation `packages/core` / `packages/shared`** — déjà correcte structurellement à l'audit LOT 0, mais **correction importante après lecture du code réel (Lot 1)** : les 3 moteurs (`computeVerdict`, `computeEarnings`, `computeOpportunityScore`) étaient des stubs qui levaient `throw new Error("not implemented")`, pas juste "à consolider". Ils sont maintenant réellement implémentés (voir Lot 1 ci-dessous).
@@ -25,7 +26,7 @@ Source de vérité du projet. Lu en premier à chaque session, mis à jour en de
 | `packages/core` (verdict/earnings/opportunity) | ✅ **réel**, 17 tests, 10 scénarios nommés couverts (Lot 1) |
 | `apps/collector` | ✅ plomberie réelle (BigQuery writers, circuit breaker Firestore, rotation proxy, blocage ressources, hot/cold) + `thirdparty` prêt pour un vrai fournisseur ; ⚠️ `tiktok-web`/`tiktok-api` best-effort, non validés contre le site réel (Lot 2) |
 | `apps/jobs` | ✅ **pipeline complet et vérifié contre l'émulateur Firestore réel** (18 tests, idempotence + dry-run prouvés) (Lot 3) |
-| Auth, onboarding, compte, admin (`apps/web`) | Code réel mais non compilable (bloqué par la décision #2 ci-dessus) |
+| Auth, onboarding, compte, admin (`apps/web`) | ✅ code réel, **compile et lint proprement** depuis la fusion de `lib/` |
 | `/admin/couts` | Absent (Lot 5) |
 | Classements, simulateur (`apps/web`) | ✅ branchés sur les vraies données (Lot 4) — `classements/produits`, `classements/opportunites` lisent `rankings/*` via `server/firestore/rankings.ts` (2 opérations Firestore/page, testé), simulateur utilise `computeEarnings` (Lot 1) sur de vrais produits |
 | Watchlist (`apps/web`) | ✅ pipeline affiché (statut watching→…→dropped, schéma déjà présent), affichage minimal (ID produit, pas encore de fiche enrichie) |
@@ -34,7 +35,7 @@ Source de vérité du projet. Lu en premier à chaque session, mis à jour en de
 | Test de budget de lecture Firestore | ✅ `read-budget.test.ts`, prouve ≤5 opérations/page contre l'émulateur réel |
 | BigQuery | Schéma complet (11 tables DDL avec `video_comments`), 0 ligne de données réelles (aucune infra GCP branchée depuis cette session) |
 | `firestore.rules` + tests | Solides, tests réels et **verts** (30/30) |
-| App Check | Partiel côté serveur (1 callable), inactif côté client (bloqué par la décision #2) |
+| App Check | Partiel côté serveur (1 callable) ; `initClientAppCheck` existe maintenant côté client (reçu avec `lib/`) mais son activation réelle dépend de `NEXT_PUBLIC_FIREBASE_APPCHECK_SITE_KEY` (pas configurée ici) |
 | `<EstimatedValue>` | Composant déjà bien construit, réutilisable (Lot 4 s'en servira) |
 | Garde-fous de coût IA (`packages/ai-gateway`) | ✅ nouveau package — `callAI` unique point d'entrée (quota → plafond global → appel → log), quotas par plan (Free 3/mois, Creator 60, Pro 200), 12 tests verts. Écriture double : BigQuery `ai_spend` (audit) + Firestore (lecture rapide quota/plafond) |
 | `/admin/couts` | ✅ nouveau, hérite du garde admin existant, 1 requête BigQuery/page |
@@ -46,12 +47,12 @@ Source de vérité du projet. Lu en premier à chaque session, mis à jour en de
 | Sample Radar | ✅ `SampleRadarPrompt.tsx`, boucle 1-tap sur `status === "sample_requested"` dans la watchlist, 4 tests verts |
 | Compliance Guard | ✅ `evaluateCompliance`/`hasBlockingIssues` (`packages/core`, pur, 8 tests verts), schéma `packages/shared/src/compliance.ts`, règle Firestore `config/complianceRules` admin-only (34/34 tests de règles verts avec cet ajout), page admin `/admin/compliance` (édition JSON, pas encore de formulaire dédié) |
 
-**Chemin critique débloqué** : `apps/jobs` (Lot 3) sait maintenant produire les 9 documents de classement + feeds + `products/{id}.latestVerdict/latestEstimates/ranks` à partir de données BigQuery (ou fixtures en test). Reste à brancher `apps/collector` sur de vraies données (Lot 2 fait la plomberie, pas encore le scraping validé) et `apps/web` sur ces documents (Lot 4, bloqué par le `lib/` manquant pour la vérification complète).
+**Chemin critique débloqué** : `apps/jobs` (Lot 3) sait produire les 9 documents de classement + feeds + `products/{id}.latestVerdict/latestEstimates/ranks` à partir de données BigQuery (ou fixtures en test), `apps/web` (Lot 4) les lit déjà. Il ne reste plus qu'un maillon vide dans la chaîne : `apps/collector` n'a pas encore de vraies données à collecter (Lot 2 = plomberie prête, scraping non validé contre le site réel, aucun projet GCP branché). Tout le reste — moteurs, pipeline, UI, coûts, créa, affiliation, compliance — est réel, testé, et compile.
 
 ## Checklist de configuration utilisateur (grossit à chaque lot)
 
 À faire par l'utilisateur avant que les lots correspondants tournent en conditions réelles :
-- Pousser `apps/web/src/lib/` (8 modules) — bloque `apps/web` et donc la vérification complète des Lots 4/5/8. Le vrai `lib/firestore/watchlist.ts` doit maintenant aussi exporter `updateWatchlistStatus(uid, productId, status: WatchlistStatus)` et `getWatchlistEntries(uid): Promise<WatchlistEntry[]>` (Lot 4, page watchlist).
+- ~~Pousser `apps/web/src/lib/`~~ **Fait** (2026-07-31, commit `10e379d`).
 - Choisir un vrai fournisseur de données tierces et renseigner `THIRDPARTY_PROVIDER_BASE_URL`/`THIRDPARTY_PROVIDER_API_KEY` (Lot 2) — ou valider/corriger les endpoints hypothétiques de `tiktok-api.ts`/`tiktok-web.ts` contre le site réel.
 - Provisionner un vrai projet GCP (`GCP_PROJECT_ID`, `BIGQUERY_DATASET`, credentials) — rien n'a encore écrit de vraies données BigQuery.
 - `PROXY_LIST_URL`/`PROXY_USERNAME`/`PROXY_PASSWORD` pour le collector.
@@ -72,11 +73,13 @@ Une seule branche pour tout ce round (voir décision #3), un commit par lot. Dé
 - [x] **Lot 1** — Consolider/implémenter les moteurs dans `packages/core` → [issue #1](https://github.com/dais-heroique/Kairos/issues/1) — fait, 17 tests verts
 - [x] **Lot 2** — Collector : plomberie réelle + sources best-effort → [issue #2](https://github.com/dais-heroique/Kairos/issues/2) — fait, 39 tests verts
 - [x] **Lot 3** — `apps/jobs` : pipeline quotidien → [issue #3](https://github.com/dais-heroique/Kairos/issues/3) — fait, 18 tests verts dont 6 contre l'émulateur réel
-- [x] **Lot 4** — Brancher l'UI existante sur le réel → [issue #4](https://github.com/dais-heroique/Kairos/issues/4) — fait, 10 tests verts (règle ESLint + budget de lecture), reste bloqué au typecheck complet par le `lib/` manquant
+- [x] **Lot 4** — Brancher l'UI existante sur le réel → [issue #4](https://github.com/dais-heroique/Kairos/issues/4) — fait, 10 tests verts (règle ESLint + budget de lecture) ; **typecheck complet confirmé le 2026-07-31** après réception de `lib/`
 - [x] **Lot 5** — Garde-fous de coût (`ai_spend`, quotas IA, `/admin/couts`) → [issue #5](https://github.com/dais-heroique/Kairos/issues/5) — fait, 12 tests verts (`packages/ai-gateway`)
 - [x] **Lot 6** — Créa DNA + Brief + Téléprompteur → [issue #6](https://github.com/dais-heroique/Kairos/issues/6) — fait, 21 tests verts (15 `apps/creative-dna` + 3 `packages/shared` brief + 6 Téléprompteur), génération du brief Claude lui-même pas câblée (dépend de la validation Gemini en conditions réelles)
 - [x] **Lot 7** — Affiliation 30 % → [issue #7](https://github.com/dais-heroique/Kairos/issues/7) — fait, 37 tests verts (`packages/affiliate`), câblage Stripe Connect réel non écrit (voir checklist ci-dessus)
 - [x] **Lot 8** — Sample Radar + Compliance Guard → [issue #8](https://github.com/dais-heroique/Kairos/issues/8) — fait, 12 tests verts (4 Sample Radar + 8 Compliance Guard), 34/34 tests de règles au global
+
+**Point de reprise** : tous les lots sont faits, `apps/web` compile et lint proprement. La suite n'est plus du développement de fonctionnalités mais du branchement sur du réel — dans l'ordre : (1) projet GCP + fournisseur de données pour que le collector écrive de vraies lignes, (2) relancer `apps/jobs` sur ces vraies données, (3) clés Gemini/Claude pour le Lot 6, (4) clé Stripe pour le Lot 7, (5) assets de design pour le kit de partage. Voir la checklist ci-dessus pour le détail.
 
 **Tous les lots (0 à 8) sont terminés et poussés sur cette branche.**
 
