@@ -1,0 +1,25 @@
+{
+  "name": "@kairos/ai-gateway",
+  "version": "0.0.0",
+  "private": true,
+  "main": "./lib/index.js",
+  "types": "./lib/index.d.ts",
+  "exports": {
+    ".": "./lib/index.js"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@google-cloud/bigquery": "^7.9.0",
+    "@kairos/shared": "workspace:*",
+    "firebase-admin": "^13.0.0",
+    "zod": "^3.24.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.0",
+    "vitest": "^3.0.0"
+  }
+}

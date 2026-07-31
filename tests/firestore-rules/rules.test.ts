@@ -286,6 +286,7 @@ describe("public read-only collections", () => {
     "feeds",
     "waves",
     "config",
+    "briefCache",
   ];
 
   for (const name of collections) {
@@ -304,6 +305,51 @@ describe("public read-only collections", () => {
       await assertFails(anon.collection(name).doc("doc-1").get());
     });
   }
+});
+
+describe("config/complianceRules", () => {
+  it("blocks a non-admin from writing, allows read", async () => {
+    await testEnv.withSecurityRulesDisabled((ctx) =>
+      Promise.all([
+        ctx.firestore().collection("users").doc("alice").set(validUser("alice")),
+        ctx.firestore().collection("config").doc("complianceRules").set({ rules: [] }),
+      ]),
+    );
+
+    const db = testEnv.authenticatedContext("alice").firestore();
+    await assertSucceeds(db.collection("config").doc("complianceRules").get());
+    await assertFails(
+      db.collection("config").doc("complianceRules").set({ rules: [{ id: "x" }] }),
+    );
+  });
+
+  it("allows an admin to write", async () => {
+    await testEnv.withSecurityRulesDisabled((ctx) =>
+      ctx
+        .firestore()
+        .collection("users")
+        .doc("admin1")
+        .set(validUser("admin1", { role: "admin" })),
+    );
+
+    const admin = testEnv.authenticatedContext("admin1").firestore();
+    await assertSucceeds(
+      admin.collection("config").doc("complianceRules").set({ rules: [] }),
+    );
+  });
+
+  it("does not weaken the generic config/{docId} write:false for other docs", async () => {
+    await testEnv.withSecurityRulesDisabled((ctx) =>
+      ctx
+        .firestore()
+        .collection("users")
+        .doc("admin1")
+        .set(validUser("admin1", { role: "admin" })),
+    );
+
+    const admin = testEnv.authenticatedContext("admin1").firestore();
+    await assertFails(admin.collection("config").doc("costGuards").set({ dailyCapCents: 1 }));
+  });
 });
 
 describe("affiliateReferrals", () => {

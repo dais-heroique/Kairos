@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import type { ProductRankItem } from "@/lib/mock/products";
+import type { EstimatedRange } from "@kairos/shared";
+import type { ProductRankItem } from "@/types/product-rank-item";
 import { EstimatedValue } from "./EstimatedValue";
 import { VerdictBadge } from "./VerdictBadge";
 
@@ -21,10 +22,15 @@ export function ProductRankCard({
   item,
   saved,
   onToggleSave,
+  estimatedEarnings,
 }: {
   item: ProductRankItem;
   saved: boolean;
   onToggleSave: (item: ProductRankItem) => void;
+  // null = pas de profil utilisateur connu pour calculer un gain
+  // personnalisé (ex. non connecté) — voir RankingList, computeEarnings
+  // (packages/core).
+  estimatedEarnings?: EstimatedRange | null;
 }) {
   const [pending, setPending] = useState(false);
 
@@ -48,7 +54,7 @@ export function ProductRankCard({
         style={{ backgroundColor: "var(--color-surface-raised)", border: "1px solid var(--color-border)" }}
         aria-hidden
       >
-        {item.emoji}
+        {item.emoji ?? "📦"}
       </div>
 
       <div className="min-w-0 flex-1">
@@ -84,7 +90,13 @@ export function ProductRankCard({
 
         <p className="mt-2 text-sm">
           <span className="text-[color:var(--color-ink-muted)]">Gains estimés </span>
-          <EstimatedValue range={item.estimatedEarnings} format={(v) => `${v}€`} />
+          {estimatedEarnings ? (
+            <EstimatedValue range={estimatedEarnings} format={(v) => `${v}€`} />
+          ) : (
+            <span className="text-[color:var(--color-ink-muted)] italic">
+              connecte-toi pour voir tes gains
+            </span>
+          )}
         </p>
       </div>
     </div>

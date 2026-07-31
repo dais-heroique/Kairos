@@ -1,7 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import type { ProductRankItem } from "@/lib/mock/products";
+import { useEffect, useMemo, useState } from "react";
+import { computeEarnings, DEFAULT_EARNINGS_CONFIG } from "@kairos/core";
+import type { EstimatedRange } from "@kairos/shared";
+import type { ProductRankItem } from "@/types/product-rank-item";
 import { useAuth } from "@/lib/firebase/auth-context";
 import {
   addToWatchlist,
@@ -11,9 +13,13 @@ import {
 import { ProductRankCard } from "./ProductRankCard";
 
 // Radar (gratuit) voit le top 10, le reste est verrouillé — §6.5. Creator
-// et Pro voient tout. Les données restent mock tant que Phase 2-4 (moteur
-// de verdict + collecte + classements réels) ne sont pas construites.
+// et Pro voient tout.
 const FREE_PLAN_LIMIT = 10;
+
+// Benchmark provisoire en l'absence de calibration par catégorie réelle
+// (bigquery/08_calibration_factors.sql, vide tant que le Lot 1 de
+// calibration n'est pas fait) — voir docs/STATE.md.
+const DEFAULT_MEDIAN_CONVERSION_RATE = 0.015;
 
 export function RankingList({ items }: { items: ProductRankItem[] }) {
   const { firebaseUser, userDoc } = useAuth();
@@ -43,6 +49,29 @@ export function RankingList({ items }: { items: ProductRankItem[] }) {
   const visible = isFreePlan ? items.slice(0, FREE_PLAN_LIMIT) : items;
   const lockedCount = items.length - visible.length;
 
+  // Gains personnalisés — jamais du GMV global (règle invariante #5) :
+  // computeEarnings (packages/core, Lot 1) à partir du profil réel de
+  // l'utilisateur (vues moyennes, fourchette d'abonnés).
+  const earningsByItem = useMemo(() => {
+    const map = new Map<string, EstimatedRange>();
+    if (!userDoc) return map;
+    for (const item of visible) {
+      map.set(
+        item.id,
+        computeEarnings({
+          expectedViews: userDoc.profile.avgViews,
+          followerRange: userDoc.profile.followerRange,
+          niche: userDoc.profile.niches[0] ?? "",
+          medianConversionRate: DEFAULT_MEDIAN_CONVERSION_RATE,
+          priceCents: item.priceCents,
+          commissionRatePct: item.commissionRatePct,
+          estimatedReturnRatePct: DEFAULT_EARNINGS_CONFIG.defaultReturnRatePct,
+        }),
+      );
+    }
+    return map;
+  }, [visible, userDoc]);
+
   return (
     <div className="flex flex-col gap-2">
       {visible.map((item) => (
@@ -51,6 +80,7 @@ export function RankingList({ items }: { items: ProductRankItem[] }) {
           item={item}
           saved={saved.has(item.id)}
           onToggleSave={handleToggleSave}
+          estimatedEarnings={earningsByItem.get(item.id) ?? null}
         />
       ))}
 
