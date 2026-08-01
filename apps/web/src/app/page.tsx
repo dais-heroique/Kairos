@@ -2,6 +2,19 @@ import { useTranslations } from "next-intl";
 import Link from "next/link";
 import { Reveal } from "@/components/Reveal";
 import { VerdictBadge } from "@/components/VerdictBadge";
+import {
+  IconCheck,
+  IconCoin,
+  IconGauge,
+  IconMic,
+  IconPackage,
+  IconPipeline,
+  IconRanking,
+  IconScript,
+  IconStar,
+  Logo,
+} from "@/components/icons";
+import type { VerdictLabel } from "@kairos/shared";
 
 export default function HomePage() {
   const t = useTranslations("Home");
@@ -11,10 +24,12 @@ export default function HomePage() {
       <SiteNav ctaLabel={t("ctaLogin")} />
       <Hero t={t} />
       <ProblemStrip t={t} />
+      <VerdictsExplained t={t} />
       <HowItWorks t={t} />
       <FeatureGrid t={t} />
       <TrustBand t={t} />
       <Plans t={t} />
+      <Faq t={t} />
       <FinalCta t={t} />
       <SiteFooter t={t} />
     </main>
@@ -27,9 +42,12 @@ function SiteNav({ ctaLabel }: { ctaLabel: string }) {
   return (
     <nav className="sticky top-0 z-20 border-b border-[color:var(--color-border)] bg-[color:var(--color-bg)]">
       <div className="mx-auto flex max-w-5xl items-center justify-between px-5 py-3">
-        <span className="font-[family-name:var(--font-display)] text-lg font-extrabold tracking-tight">
-          KAIROS
-        </span>
+        <Link href="/" className="flex items-center gap-2">
+          <Logo className="h-6 w-6" style={{ color: "var(--color-coral)" }} />
+          <span className="font-[family-name:var(--font-display)] text-lg font-extrabold tracking-tight">
+            KAIROS
+          </span>
+        </Link>
         <Link
           href="/connexion"
           className="rounded-lg px-3 py-1.5 text-sm font-semibold"
@@ -114,9 +132,7 @@ function HeroCardStack({ t }: { t: T }) {
             />
             {t("heroCardLabel")}
           </span>
-          <span className="text-lg" aria-hidden>
-            🧴
-          </span>
+          <IconPackage className="h-5 w-5" style={{ color: "var(--color-ink-muted)" }} />
         </div>
 
         <div>
@@ -183,7 +199,50 @@ function ProblemStrip({ t }: { t: T }) {
   );
 }
 
-const STEP_ICONS = ["📊", "💶", "⭐", "🎬"] as const;
+const VERDICTS: { key: VerdictLabel; descKey: string }[] = [
+  { key: "entrer_maintenant", descKey: "verdictEnterDesc" },
+  { key: "avec_un_angle", descKey: "verdictAngleDesc" },
+  { key: "risque", descKey: "verdictRiskDesc" },
+  { key: "eviter", descKey: "verdictAvoidDesc" },
+];
+
+function VerdictsExplained({ t }: { t: T }) {
+  return (
+    <section className="px-5 py-20">
+      <div className="mx-auto max-w-5xl">
+        <Reveal className="mx-auto max-w-xl text-center">
+          <p
+            className="text-xs font-bold tracking-wide uppercase"
+            style={{ color: "var(--color-coral)" }}
+          >
+            {t("verdictsKicker")}
+          </p>
+          <h2 className="mt-3 font-[family-name:var(--font-display)] text-3xl font-extrabold tracking-tight sm:text-4xl">
+            {t("verdictsTitle")}
+          </h2>
+        </Reveal>
+
+        <div className="mt-12 grid gap-4 sm:grid-cols-2">
+          {VERDICTS.map((v, i) => (
+            <Reveal key={v.key} delay={i * 70}>
+              <div
+                className="flex h-full flex-col gap-3 rounded-2xl p-6"
+                style={{ border: "1px solid var(--color-border)" }}
+              >
+                <VerdictBadge verdict={v.key} />
+                <p className="text-sm leading-relaxed text-[color:var(--color-ink-muted)]">
+                  {t(v.descKey)}
+                </p>
+              </div>
+            </Reveal>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+const STEP_ICONS = [IconRanking, IconCoin, IconPipeline, IconScript] as const;
 
 function HowItWorks({ t }: { t: T }) {
   const steps = [
@@ -194,7 +253,7 @@ function HowItWorks({ t }: { t: T }) {
   ];
 
   return (
-    <section className="px-5 py-20">
+    <section className="px-5 py-20" style={{ backgroundColor: "var(--color-surface)" }}>
       <div className="mx-auto max-w-5xl">
         <Reveal className="mx-auto max-w-xl text-center">
           <p
@@ -219,43 +278,46 @@ function HowItWorks({ t }: { t: T }) {
             style={{ backgroundColor: "var(--color-border)" }}
             aria-hidden
           />
-          {steps.map((step, i) => (
-            <Reveal key={step.title} delay={i * 90} className="flex-1">
-              <div className="flex flex-col gap-3 md:items-center md:text-center">
-                <div className="relative flex items-center gap-3 md:flex-col md:gap-2">
-                  <span
-                    className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full text-xl font-bold"
-                    style={{
-                      backgroundColor: "var(--color-bg)",
-                      border: "1.5px solid var(--color-border)",
-                    }}
-                    aria-hidden
-                  >
-                    {STEP_ICONS[i]}
-                  </span>
-                  <span
-                    className="font-[family-name:var(--font-mono)] text-xs font-bold"
-                    style={{ color: "var(--color-ink-muted)" }}
-                  >
-                    {String(i + 1).padStart(2, "0")}
-                  </span>
+          {steps.map((step, i) => {
+            const Icon = STEP_ICONS[i]!;
+            return (
+              <Reveal key={step.title} delay={i * 90} className="flex-1">
+                <div className="flex flex-col gap-3 md:items-center md:text-center">
+                  <div className="relative flex items-center gap-3 md:flex-col md:gap-2">
+                    <span
+                      className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full"
+                      style={{
+                        backgroundColor: "var(--color-bg)",
+                        border: "1.5px solid var(--color-border)",
+                        color: "var(--color-coral)",
+                      }}
+                    >
+                      <Icon className="h-5 w-5" />
+                    </span>
+                    <span
+                      className="font-[family-name:var(--font-mono)] text-xs font-bold"
+                      style={{ color: "var(--color-ink-muted)" }}
+                    >
+                      {String(i + 1).padStart(2, "0")}
+                    </span>
+                  </div>
+                  <h3 className="font-[family-name:var(--font-display)] text-lg font-bold">
+                    {step.title}
+                  </h3>
+                  <p className="text-sm leading-relaxed text-[color:var(--color-ink-muted)]">
+                    {step.body}
+                  </p>
                 </div>
-                <h3 className="font-[family-name:var(--font-display)] text-lg font-bold">
-                  {step.title}
-                </h3>
-                <p className="text-sm leading-relaxed text-[color:var(--color-ink-muted)]">
-                  {step.body}
-                </p>
-              </div>
-            </Reveal>
-          ))}
+              </Reveal>
+            );
+          })}
         </div>
       </div>
     </section>
   );
 }
 
-const FEATURE_ICONS = ["📈", "🧮", "⭐", "🎙️"] as const;
+const FEATURE_ICONS = [IconRanking, IconGauge, IconStar, IconMic] as const;
 
 function FeatureGrid({ t }: { t: T }) {
   const features = [
@@ -266,7 +328,7 @@ function FeatureGrid({ t }: { t: T }) {
   ];
 
   return (
-    <section className="px-5 py-20" style={{ backgroundColor: "var(--color-surface)" }}>
+    <section className="px-5 py-20">
       <div className="mx-auto max-w-5xl">
         <Reveal className="mx-auto max-w-xl text-center">
           <p
@@ -281,24 +343,30 @@ function FeatureGrid({ t }: { t: T }) {
         </Reveal>
 
         <div className="mt-12 grid gap-4 sm:grid-cols-2">
-          {features.map((f, i) => (
-            <Reveal key={f.title} delay={i * 70}>
-              <div
-                className="flex h-full flex-col gap-3 rounded-2xl p-6"
-                style={{ backgroundColor: "var(--color-bg)", border: "1px solid var(--color-border)" }}
-              >
-                <span className="text-2xl" aria-hidden>
-                  {FEATURE_ICONS[i]}
-                </span>
-                <h3 className="font-[family-name:var(--font-display)] text-lg font-bold">
-                  {f.title}
-                </h3>
-                <p className="text-sm leading-relaxed text-[color:var(--color-ink-muted)]">
-                  {f.body}
-                </p>
-              </div>
-            </Reveal>
-          ))}
+          {features.map((f, i) => {
+            const Icon = FEATURE_ICONS[i]!;
+            return (
+              <Reveal key={f.title} delay={i * 70}>
+                <div
+                  className="flex h-full flex-col gap-3 rounded-2xl p-6"
+                  style={{ backgroundColor: "var(--color-surface)", border: "1px solid var(--color-border)" }}
+                >
+                  <span
+                    className="flex h-10 w-10 items-center justify-center rounded-xl"
+                    style={{ backgroundColor: "var(--color-coral-soft)", color: "var(--color-coral)" }}
+                  >
+                    <Icon className="h-5 w-5" />
+                  </span>
+                  <h3 className="font-[family-name:var(--font-display)] text-lg font-bold">
+                    {f.title}
+                  </h3>
+                  <p className="text-sm leading-relaxed text-[color:var(--color-ink-muted)]">
+                    {f.body}
+                  </p>
+                </div>
+              </Reveal>
+            );
+          })}
         </div>
       </div>
     </section>
@@ -334,11 +402,10 @@ function TrustBand({ t }: { t: T }) {
               style={{ backgroundColor: "var(--color-success-soft)" }}
             >
               <span
-                className="flex h-8 w-8 items-center justify-center rounded-full text-sm font-bold"
+                className="flex h-8 w-8 items-center justify-center rounded-full"
                 style={{ backgroundColor: "var(--color-success)", color: "#fff" }}
-                aria-hidden
               >
-                ✓
+                <IconCheck className="h-4 w-4" />
               </span>
               <p className="text-sm font-semibold" style={{ color: "var(--color-success)" }}>
                 {point}
@@ -417,14 +484,65 @@ function Plans({ t }: { t: T }) {
                 <ul className="flex flex-col gap-2">
                   {plan.features.map((feature) => (
                     <li key={feature} className="flex items-start gap-2 text-sm">
-                      <span style={{ color: "var(--color-success)" }} aria-hidden>
-                        ✓
-                      </span>
+                      <IconCheck
+                        className="mt-0.5 h-4 w-4 shrink-0"
+                        style={{ color: "var(--color-success)" }}
+                      />
                       <span>{feature}</span>
                     </li>
                   ))}
                 </ul>
               </div>
+            </Reveal>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function Faq({ t }: { t: T }) {
+  const items = [
+    { q: t("faq1Q"), a: t("faq1A") },
+    { q: t("faq2Q"), a: t("faq2A") },
+    { q: t("faq3Q"), a: t("faq3A") },
+    { q: t("faq4Q"), a: t("faq4A") },
+    { q: t("faq5Q"), a: t("faq5A") },
+  ];
+
+  return (
+    <section className="px-5 py-20">
+      <div className="mx-auto max-w-3xl">
+        <Reveal className="mx-auto max-w-xl text-center">
+          <p
+            className="text-xs font-bold tracking-wide uppercase"
+            style={{ color: "var(--color-coral)" }}
+          >
+            {t("faqKicker")}
+          </p>
+          <h2 className="mt-3 font-[family-name:var(--font-display)] text-3xl font-extrabold tracking-tight sm:text-4xl">
+            {t("faqTitle")}
+          </h2>
+        </Reveal>
+
+        <div className="mt-12 flex flex-col gap-3">
+          {items.map((item, i) => (
+            <Reveal key={item.q} delay={i * 50}>
+              <details className="group kai-card">
+                <summary className="flex cursor-pointer list-none items-center justify-between gap-3 font-semibold">
+                  {item.q}
+                  <span
+                    className="shrink-0 text-lg transition-transform group-open:rotate-45"
+                    style={{ color: "var(--color-coral)" }}
+                    aria-hidden
+                  >
+                    +
+                  </span>
+                </summary>
+                <p className="mt-3 text-sm leading-relaxed text-[color:var(--color-ink-muted)]">
+                  {item.a}
+                </p>
+              </details>
             </Reveal>
           ))}
         </div>
@@ -440,6 +558,7 @@ function FinalCta({ t }: { t: T }) {
       style={{ backgroundColor: "var(--color-ink)" }}
     >
       <Reveal className="mx-auto flex max-w-lg flex-col items-center gap-5">
+        <Logo className="h-8 w-8" style={{ color: "var(--color-coral)" }} />
         <h2 className="font-[family-name:var(--font-display)] text-3xl font-extrabold tracking-tight text-white sm:text-4xl">
           {t("finalCtaTitle")}
         </h2>
@@ -468,9 +587,12 @@ function SiteFooter({ t }: { t: T }) {
     <footer className="px-5 py-12">
       <div className="mx-auto flex max-w-5xl flex-col gap-8 sm:flex-row sm:justify-between">
         <div className="max-w-xs">
-          <span className="font-[family-name:var(--font-display)] text-lg font-extrabold">
-            KAIROS
-          </span>
+          <div className="flex items-center gap-2">
+            <Logo className="h-5 w-5" style={{ color: "var(--color-coral)" }} />
+            <span className="font-[family-name:var(--font-display)] text-lg font-extrabold">
+              KAIROS
+            </span>
+          </div>
           <p className="mt-2 text-sm text-[color:var(--color-ink-muted)]">{t("footerTagline")}</p>
         </div>
 
