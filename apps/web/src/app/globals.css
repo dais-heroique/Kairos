@@ -75,6 +75,46 @@ body {
   }
 }
 
+.kai-reveal {
+  opacity: 0;
+  transform: translateY(18px);
+  transition:
+    opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1),
+    transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.kai-reveal-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+@media (prefers-reduced-motion: reduce) {
+  .kai-reveal {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+}
+
+/* Texture de fond discrète pour la landing — grille de points, jamais du
+   bruit/gradient violet générique. Très faible opacité, purement
+   atmosphérique. */
+.kai-dot-grid {
+  background-image: radial-gradient(circle, var(--color-border) 1px, transparent 1px);
+  background-size: 22px 22px;
+}
+
+@keyframes kai-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.35;
+  }
+}
+.kai-pulse-dot {
+  animation: kai-pulse 1.8s ease-in-out infinite;
+}
+
 @layer components {
   .kai-btn-primary {
     border-radius: 0.6rem;
