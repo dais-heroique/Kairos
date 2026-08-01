@@ -1,6 +1,7 @@
 "use client";
 
 import { useTranslations } from "next-intl";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { type FormEvent, useEffect, useState } from "react";
 import {
@@ -57,7 +58,17 @@ export default function ConnexionPage() {
   }
 
   return (
-    <main className="mx-auto flex min-h-dvh max-w-[390px] flex-col justify-center gap-6 px-5 py-8 sm:max-w-md">
+    <main className="flex min-h-dvh flex-col">
+      <div className="px-5 pt-6">
+        <Link
+          href="/"
+          className="font-[family-name:var(--font-display)] text-lg font-extrabold tracking-tight"
+        >
+          KAIROS
+        </Link>
+      </div>
+
+      <div className="mx-auto flex w-full max-w-[390px] flex-1 flex-col justify-center gap-6 px-5 py-8 sm:max-w-md">
       <div>
         <h1 className="font-[family-name:var(--font-display)] text-3xl font-extrabold">
           {t("title")}
@@ -125,6 +136,7 @@ export default function ConnexionPage() {
             {providerError}
           </p>
         )}
+      </div>
       </div>
     </main>
   );
