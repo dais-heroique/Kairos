@@ -7,25 +7,12 @@ import type { CSSProperties } from "react";
 
 type IconProps = { className?: string; style?: CSSProperties };
 
-// Marque KAIROS — 4 anneaux reliés en escalier montant (un signal qui
-// grimpe). Utilisée dans la nav, le favicon et partout où la marque doit
-// apparaître seule.
+// Marque KAIROS — fichier fourni par l'utilisateur (public/logo.svg,
+// identique à app/icon.svg pour le favicon). Couleurs figées dans le
+// fichier lui-même, pas du currentColor — ne pas la redessiner à la main.
 export function Logo({ className, style }: IconProps) {
-  return (
-    <svg viewBox="0 0 100 100" className={className} style={style} fill="none" aria-hidden>
-      <path
-        d="M20 80 L38 60 L62 55 L82 20"
-        stroke="currentColor"
-        strokeWidth="9"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-      <circle cx="20" cy="80" r="11" stroke="currentColor" strokeWidth="9" />
-      <circle cx="38" cy="60" r="11" stroke="currentColor" strokeWidth="9" />
-      <circle cx="62" cy="55" r="11" stroke="currentColor" strokeWidth="9" />
-      <circle cx="82" cy="20" r="11" stroke="currentColor" strokeWidth="9" />
-    </svg>
-  );
+  // eslint-disable-next-line @next/next/no-img-element -- logo statique, jamais optimisé/redimensionné dynamiquement
+  return <img src="/logo.svg" alt="" className={className} style={style} />;
 }
 
 export function IconRanking({ className, style }: IconProps) {
