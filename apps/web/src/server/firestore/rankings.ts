@@ -89,6 +89,12 @@ function toProductRankItem(
 export interface RankingPageData {
   items: ProductRankItem[];
   generatedAt: string | null;
+  /**
+   * Classement issu du jeu de démonstration (`seedDemoRankingData`) et non
+   * de vrais relevés. L'UI doit le dire à l'écran : ces produits sont
+   * fictifs et leurs verdicts écrits en dur.
+   */
+  isDemo: boolean;
 }
 
 // 2 opérations Firestore au total quelle que soit la taille du
@@ -110,9 +116,9 @@ export async function getRankingPageData(
   try {
     rankingDoc = await getRankingDoc(type, market, period, category, counter);
   } catch {
-    return { items: [], generatedAt: null };
+    return { items: [], generatedAt: null, isDemo: false };
   }
-  if (!rankingDoc) return { items: [], generatedAt: null };
+  if (!rankingDoc) return { items: [], generatedAt: null, isDemo: false };
 
   const shopIds = rankingDoc.items
     .map((item) => (item as unknown as { shopId?: string | null }).shopId)
@@ -122,5 +128,9 @@ export async function getRankingPageData(
   return {
     items: rankingDoc.items.map((item) => toProductRankItem(item, shopNames)),
     generatedAt: rankingDoc.generatedAt,
+    // Absent des documents écrits avant l'ajout du drapeau : on ne
+    // présume pas qu'ils sont réels, mais les seuls documents non
+    // marqués aujourd'hui sont ceux d'apps/jobs, qui le sont.
+    isDemo: (rankingDoc as unknown as { isDemo?: boolean }).isDemo === true,
   };
 }

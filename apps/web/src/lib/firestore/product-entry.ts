@@ -3,6 +3,7 @@
 import {
   collection,
   doc,
+  getCountFromServer,
   getDoc,
   getDocs,
   orderBy,
@@ -48,8 +49,22 @@ export interface SnapshotEntry {
   estSalesHigh: number;
 }
 
-function todayIso(): string {
-  return new Date().toISOString().slice(0, 10);
+// Date du jour à Paris, pas en UTC. `toISOString()` aurait classé toute
+// saisie faite entre minuit et 2h du matin (heure française) sous la date
+// de la veille — et comme `capturedDate` sert d'identifiant de document,
+// ce relevé aurait écrasé celui de la veille au lieu d'en créer un
+// nouveau. Un trou dans l'historique fait chuter la confiance du verdict
+// (maxAllowedGapDays), donc la timezone n'est pas un détail cosmétique.
+// `en-CA` est la locale qui formate nativement en AAAA-MM-JJ.
+const PARIS_DATE = new Intl.DateTimeFormat("en-CA", {
+  timeZone: "Europe/Paris",
+  year: "numeric",
+  month: "2-digit",
+  day: "2-digit",
+});
+
+export function todayIso(): string {
+  return PARIS_DATE.format(new Date());
 }
 
 // Écrit le produit et le snapshot du jour en une fois. Réécrire le même
@@ -79,30 +94,33 @@ export async function saveProductWithSnapshot(
       },
       sellerTrust: {
         score: product.shopTrustScore,
-        shipDays: 5,
-        commissionHonorRate: 0.95,
-        sampleApprovalRate: 0.5,
-        avgSampleResponseHours: 48,
-        disputeRate: 0.03,
-        sampleCount: 0,
+        ...UNMEASURED_SELLER_TRUST,
       },
       lastSeenAt: new Date().toISOString(),
     },
     { merge: true },
   );
 
-  await setDoc(doc(firestore, "shops", product.shopId), {
-    id: product.shopId,
-    name: product.shopName,
-    market: "FR",
-    trustScore: product.shopTrustScore,
-    shipDays: 5,
-    sampleApprovalRate: 0.5,
-    commissionHonorRate: 0.95,
-    disputeRate: 0.03,
-    productCount: 0,
-    verified: product.shopTrustScore >= 70,
-  });
+  // merge : sans lui, chaque nouveau produit d'une boutique déjà connue
+  // réécrasait tout le document boutique (dont productCount) à zéro.
+  await setDoc(
+    doc(firestore, "shops", product.shopId),
+    {
+      id: product.shopId,
+      name: product.shopName,
+      market: "FR",
+      trustScore: product.shopTrustScore,
+      shipDays: UNMEASURED_SELLER_TRUST.shipDays,
+      sampleApprovalRate: UNMEASURED_SELLER_TRUST.sampleApprovalRate,
+      commissionHonorRate: UNMEASURED_SELLER_TRUST.commissionHonorRate,
+      disputeRate: UNMEASURED_SELLER_TRUST.disputeRate,
+      // `verified` = "note saisie ≥ 70", pas une vérification faite par
+      // KAIROS. Le champ n'est affiché nulle part aujourd'hui ; ne pas le
+      // transformer en badge « boutique vérifiée » sans une vraie source.
+      verified: product.shopTrustScore >= 70,
+    },
+    { merge: true },
+  );
 
   const snap: ProductSnapshot = {
     productId: product.id,
@@ -126,24 +144,57 @@ export async function saveProductWithSnapshot(
   );
 }
 
+// ⚠️ Valeurs de remplissage, PAS des mesures. L'espace affilié ne donne
+// pas ces champs, et le formulaire ne les demande pas — mais
+// `computeOpportunityScore` en a besoin. Elles étaient jusqu'ici copiées
+// à l'identique dans deux fichiers (ici et run-pipeline.ts), avec le
+// risque qu'elles divergent en silence ; une seule définition, nommée
+// pour ce qu'elle est.
+//
+// Conséquence à assumer : le score d'opportunité affiché dépend en partie
+// de constantes qui ne décrivent aucune boutique réelle. Tant qu'elles
+// sont identiques pour tous les produits elles ne changent pas le
+// *classement* (même décalage pour tout le monde), mais elles rendent le
+// score absolu peu signifiant. À trancher — voir docs/STATE.md.
+export const UNMEASURED_SELLER_TRUST = {
+  shipDays: 5,
+  commissionHonorRate: 0.95,
+  sampleApprovalRate: 0.5,
+  avgSampleResponseHours: 48,
+  disputeRate: 0.03,
+  sampleCount: 0,
+} as const;
+
 export interface StoredProduct extends ProductEntry {
   snapshotCount: number;
 }
 
+// Le quota gratuit Firestore (50 000 lectures/jour) est la seule chose qui
+// tienne réellement la contrainte « 0 € ». La version précédente lisait
+// *tous* les relevés de *tous* les produits juste pour les compter, puis
+// le pipeline les relisait intégralement derrière : 50 produits × 60 jours
+// coûtaient ~6 000 lectures par passage. Deux corrections :
+//   - getCountFromServer() compte côté serveur (1 lecture par produit au
+//     lieu d'une par relevé) ;
+//   - les noms de boutique sont mis en cache par shopId sur l'appel.
 export async function listStoredProducts(): Promise<StoredProduct[]> {
   const snap = await getDocs(query(collection(firestore, "products"), fsLimit(200)));
   const results: StoredProduct[] = [];
+  const shopNames = new Map<string, string>();
 
   for (const d of snap.docs) {
     const data = d.data();
-    const snapshots = await getDocs(
-      query(collection(firestore, "products", d.id, "snapshots"), fsLimit(100)),
+    const snapshotCount = await getCountFromServer(
+      collection(firestore, "products", d.id, "snapshots"),
     );
     const shopId = (data.shopId as string) ?? "";
     let shopName = "Boutique";
     if (shopId) {
-      const shopDoc = await getDoc(doc(firestore, "shops", shopId));
-      shopName = (shopDoc.data()?.name as string) ?? "Boutique";
+      if (!shopNames.has(shopId)) {
+        const shopDoc = await getDoc(doc(firestore, "shops", shopId));
+        shopNames.set(shopId, (shopDoc.data()?.name as string) ?? "Boutique");
+      }
+      shopName = shopNames.get(shopId)!;
     }
     const emoji = (data.emoji as string | null) ?? null;
     results.push({
@@ -156,7 +207,7 @@ export async function listStoredProducts(): Promise<StoredProduct[]> {
       category: (data.categoryPath as string[])?.[0] ?? "",
       shopTrustScore: (data.sellerTrust?.score as number) ?? 50,
       ...(emoji ? { emoji } : {}),
-      snapshotCount: snapshots.size,
+      snapshotCount: snapshotCount.data().count,
     });
   }
   return results;

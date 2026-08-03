@@ -11,6 +11,7 @@ import { firestore } from "@/lib/firebase/client";
 import {
   getProductSnapshots,
   listStoredProducts,
+  UNMEASURED_SELLER_TRUST,
   type StoredProduct,
 } from "@/lib/firestore/product-entry";
 
@@ -56,14 +57,12 @@ function commissionOf(product: StoredProduct): Commission {
 }
 
 function sellerTrustOf(product: StoredProduct): SellerTrust {
+  // Seul `score` vient de la saisie ; le reste est du remplissage assumé
+  // et partagé avec product-entry.ts (voir le commentaire sur
+  // UNMEASURED_SELLER_TRUST).
   return {
     score: product.shopTrustScore,
-    shipDays: 5,
-    commissionHonorRate: 0.95,
-    sampleApprovalRate: 0.5,
-    avgSampleResponseHours: 48,
-    disputeRate: 0.03,
-    sampleCount: 0,
+    ...UNMEASURED_SELLER_TRUST,
   };
 }
 
@@ -124,6 +123,8 @@ export async function runPipeline(): Promise<PipelineResult> {
           salesLow: latest.estSalesLow,
           salesHigh: latest.estSalesHigh,
           confidence: latest.confidence,
+          // Valeur ajoutée à estimateMethodSchema : elle n'y était pas, donc
+          // tout `productSchema.parse()` sur un produit écrit ici échouait.
           method: "manual_entry",
         },
       },
@@ -139,6 +140,9 @@ export async function runPipeline(): Promise<PipelineResult> {
   await Promise.all([
     setDoc(doc(firestore, "rankings", "products_FR_7d_all"), {
       generatedAt,
+      // Vrais relevés, vrais moteurs — écrase explicitement un éventuel
+      // classement de démo écrit avant sur le même document.
+      isDemo: false,
       type: "products",
       market: "FR",
       period: "7d",
@@ -147,6 +151,7 @@ export async function runPipeline(): Promise<PipelineResult> {
     }),
     setDoc(doc(firestore, "rankings", "opportunities_FR_7d_all"), {
       generatedAt,
+      isDemo: false,
       type: "opportunities",
       market: "FR",
       period: "7d",

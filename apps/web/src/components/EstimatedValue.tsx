@@ -6,6 +6,9 @@ const METHOD_LABELS: Record<EstimatedRange["method"], string> = {
   seller_declared: "déclaré par le vendeur",
   ground_truth_calibrated: "calibré sur données réelles",
   insufficient_data: "données insuffisantes",
+  // Dit à l'utilisateur d'où vient vraiment le chiffre : un relevé
+  // recopié à la main depuis l'espace affilié, pas un calcul de KAIROS.
+  manual_entry: "relevé manuel",
 };
 
 function formatConfidence(confidence: number): string {

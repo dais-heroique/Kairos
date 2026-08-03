@@ -12,6 +12,10 @@ export const estimateMethodSchema = z.enum([
   "seller_declared",
   "ground_truth_calibrated",
   "insufficient_data",
+  // Relevé transcrit à la main depuis l'espace affilié TikTok Shop
+  // (décision #8) : ce n'est ni une régression ni un benchmark, et le dire
+  // franchement vaut mieux que de le déguiser en "seller_declared".
+  "manual_entry",
 ]);
 export type EstimateMethod = z.infer<typeof estimateMethodSchema>;
 

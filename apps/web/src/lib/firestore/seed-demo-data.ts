@@ -122,6 +122,14 @@ export async function seedDemoRankingData(): Promise<void> {
   await Promise.all([
     setDoc(doc(firestore, "rankings", "products_FR_7d_all"), {
       generatedAt: now,
+      // Ces produits n'existent pas et leurs verdicts n'ont été calculés
+      // par personne : ils sont écrits en dur ci-dessus, sans passer par
+      // computeVerdict ni par le moindre relevé. Sans ce drapeau, ils
+      // s'affichaient sur le site public exactement comme de vraies
+      // analyses — ce que toute la règle « jamais un chiffre inventé »
+      // existe précisément pour empêcher. L'UI refuse maintenant de les
+      // présenter sans le dire.
+      isDemo: true,
       type: "products",
       market: "FR",
       period: "7d",
@@ -130,6 +138,7 @@ export async function seedDemoRankingData(): Promise<void> {
     }),
     setDoc(doc(firestore, "rankings", "opportunities_FR_7d_all"), {
       generatedAt: now,
+      isDemo: true,
       type: "opportunities",
       market: "FR",
       period: "7d",
