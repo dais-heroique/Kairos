@@ -51,12 +51,14 @@ export function RankingMeta({
           className="font-[family-name:var(--font-display)] font-bold"
           style={{ color: "var(--color-coral)" }}
         >
-          Données de démonstration
+          Marché simulé
         </p>
         <p className="text-[color:var(--color-ink-muted)]">
-          Ces produits sont fictifs et leurs verdicts n&apos;ont été calculés
-          à partir d&apos;aucun relevé. Ils servent à montrer l&apos;interface,
-          pas à décider quoi que ce soit.
+          Ces produits n&apos;existent pas. Leurs verdicts sont en revanche
+          calculés pour de vrai, par les mêmes moteurs que sur des données
+          réelles — la démonstration montre donc comment KAIROS raisonne,
+          mais aucun de ces produits n&apos;est à aller chercher sur TikTok
+          Shop.
         </p>
       </div>
     );

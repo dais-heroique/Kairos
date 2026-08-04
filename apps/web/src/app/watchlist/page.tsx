@@ -7,6 +7,9 @@ import { RequireAuth } from "@/components/RequireAuth";
 import { SampleRadarPrompt } from "@/components/SampleRadarPrompt";
 import { useAuth } from "@/lib/firebase/auth-context";
 import { getWatchlistEntries, updateWatchlistStatus } from "@/lib/firestore/watchlist";
+import { getRankingPageData } from "@/server/firestore/rankings";
+import type { ProductRankItem } from "@/types/product-rank-item";
+import { VerdictBadge } from "@/components/VerdictBadge";
 
 // Le vrai pipeline (§ règle produit — "pas une liste de favoris") :
 // watching → sample_requested → sample_received → filmed → posted →
@@ -33,10 +36,20 @@ const STATUS_LABELS: Record<WatchlistStatus, string> = {
 function WatchlistContent() {
   const { firebaseUser } = useAuth();
   const [entries, setEntries] = useState<WatchlistEntry[] | null>(null);
+  // La watchlist ne stocke qu'un identifiant : la page affichait donc
+  // « huile-ricin-cils-sourcils » là où l'utilisateur revient tous les
+  // jours. Le document de classement porte déjà titre, emoji et verdict —
+  // une lecture de plus (on reste très en deçà du budget de 5) suffit à
+  // rendre la liste lisible. Un produit sorti du classement retombe sur
+  // son identifiant plutôt que de disparaître.
+  const [labels, setLabels] = useState<Map<string, ProductRankItem>>(new Map());
 
   useEffect(() => {
     if (!firebaseUser) return;
     getWatchlistEntries(firebaseUser.uid).then(setEntries);
+    getRankingPageData("products", "FR", "7d")
+      .then((data) => setLabels(new Map(data.items.map((i) => [i.id, i]))))
+      .catch(() => setLabels(new Map()));
   }, [firebaseUser]);
 
   async function handleStatusChange(productId: string, status: WatchlistStatus) {
@@ -67,10 +80,22 @@ function WatchlistContent() {
             classements (étoile ☆).
           </p>
         )}
-        {entries?.map((entry) => (
+        {entries?.map((entry) => {
+          const item = labels.get(entry.productId);
+          return (
           <div key={entry.productId} className="flex flex-col gap-2">
-            <div className="kai-card flex items-center justify-between gap-3">
-              <span className="truncate text-sm font-semibold">{entry.productId}</span>
+            <div className="kai-card flex flex-col gap-2">
+              <div className="flex items-start justify-between gap-3">
+                <span className="min-w-0 text-sm font-semibold">
+                  {item ? `${item.emoji ?? "📦"} ${item.title}` : entry.productId}
+                </span>
+                {item && <VerdictBadge verdict={item.verdict} />}
+              </div>
+              {item && (
+                <p className="text-xs text-[color:var(--color-ink-muted)]">
+                  {item.shopName} · {item.commissionRatePct}% de commission
+                </p>
+              )}
               <select
                 value={entry.status}
                 onChange={(e) =>
@@ -96,7 +121,8 @@ function WatchlistContent() {
               />
             )}
           </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );

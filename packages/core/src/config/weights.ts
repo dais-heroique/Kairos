@@ -30,6 +30,19 @@ export const earningsConfigSchema = z.object({
   // l'estimation médiane, resserrée quand le volume de vues est élevé.
   minSpread: z.number().min(0).max(1).default(0.15),
   maxSpread: z.number().min(0).max(1).default(0.5),
+  // Part des vues qui se transforme en commande, faute de calibration par
+  // catégorie (bigquery/08_calibration_factors.sql, encore vide).
+  //
+  // 0,2 % — et c'est un ordre de grandeur, pas une mesure. La valeur
+  // précédente, 1,5 %, était codée en dur dans RankingList.tsx et
+  // multipliait les gains annoncés par près de dix : 8 000 vues y
+  // devenaient 120 commandes, soit ~530 € pour un sérum à 16,90 €. En
+  // pratique une vidéo d'affiliation TikTok Shop tourne plutôt autour de
+  // 1 à 3 commandes pour 1 000 vues. Surestimer le gain est la faute la
+  // plus grave que puisse commettre un outil vendu sur son honnêteté :
+  // le créateur tourne la vidéo, ne touche pas le dixième de la somme, et
+  // ne revient jamais.
+  defaultConversionRate: z.number().min(0).max(1).default(0.002),
 });
 export type EarningsConfig = z.infer<typeof earningsConfigSchema>;
 
@@ -37,6 +50,7 @@ export const DEFAULT_EARNINGS_CONFIG: EarningsConfig = {
   defaultReturnRatePct: 8,
   minSpread: 0.15,
   maxSpread: 0.5,
+  defaultConversionRate: 0.002,
 };
 
 export const opportunityWeightsSchema = z.object({

@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { computeEarnings, DEFAULT_EARNINGS_CONFIG } from "@kairos/core";
 import type { EstimatedRange } from "@kairos/shared";
@@ -15,11 +16,6 @@ import { ProductRankCard } from "./ProductRankCard";
 // Radar (gratuit) voit le top 10, le reste est verrouillé — §6.5. Creator
 // et Pro voient tout.
 const FREE_PLAN_LIMIT = 10;
-
-// Benchmark provisoire en l'absence de calibration par catégorie réelle
-// (bigquery/08_calibration_factors.sql, vide tant que le Lot 1 de
-// calibration n'est pas fait) — voir docs/STATE.md.
-const DEFAULT_MEDIAN_CONVERSION_RATE = 0.015;
 
 export function RankingList({ items }: { items: ProductRankItem[] }) {
   const { firebaseUser, userDoc } = useAuth();
@@ -65,7 +61,7 @@ export function RankingList({ items }: { items: ProductRankItem[] }) {
           expectedViews: userDoc.profile.avgViews,
           followerRange: userDoc.profile.followerRange,
           niche: userDoc.profile.niches[0] ?? "",
-          medianConversionRate: DEFAULT_MEDIAN_CONVERSION_RATE,
+          medianConversionRate: DEFAULT_EARNINGS_CONFIG.defaultConversionRate,
           priceCents: item.priceCents,
           commissionRatePct: item.commissionRatePct,
           estimatedReturnRatePct: DEFAULT_EARNINGS_CONFIG.defaultReturnRatePct,
@@ -75,8 +71,28 @@ export function RankingList({ items }: { items: ProductRankItem[] }) {
     return map;
   }, [items, userDoc, isFreePlan]);
 
+  // Rien ne force l'onboarding à être terminé (RequireAuth ne vérifie que
+  // l'authentification) : on peut donc arriver ici avec `avgViews` à 0,
+  // auquel cas aucun gain n'est calculable. Le dire, plutôt que d'aligner
+  // des tirets sans explication.
+  const profileIncomplete = !!userDoc && userDoc.profile.avgViews === 0;
+
   return (
     <div className="flex flex-col gap-2">
+      {profileIncomplete && (
+        <div className="kai-card flex flex-col gap-1 text-sm">
+          <p className="font-[family-name:var(--font-display)] font-bold">
+            Tes gains ne sont pas encore calculables
+          </p>
+          <p className="text-[color:var(--color-ink-muted)]">
+            Il manque tes vues moyennes par vidéo — c&apos;est ce qui convertit
+            une commission en euros.{" "}
+            <Link href="/onboarding/profil" className="underline">
+              Compléter mon profil
+            </Link>
+          </p>
+        </div>
+      )}
       {items.map((item, index) => (
         <ProductRankCard
           key={item.id}

@@ -12,6 +12,7 @@ import {
   setInviteCodeActive,
 } from "@/lib/firestore/invite-codes";
 import { seedDemoRankingData } from "@/lib/firestore/seed-demo-data";
+import { runPipeline } from "@/lib/pipeline/run-pipeline";
 
 export default function AdminDashboardPage() {
   const t = useTranslations("Admin");
@@ -21,6 +22,7 @@ export default function AdminDashboardPage() {
   const [error, setError] = useState<string | null>(null);
   const [seeding, setSeeding] = useState(false);
   const [seedDone, setSeedDone] = useState(false);
+  const [seedSummary, setSeedSummary] = useState<string | null>(null);
 
   const [codeInput, setCodeInput] = useState("");
   const [trialDays, setTrialDays] = useState("14");
@@ -71,12 +73,22 @@ export default function AdminDashboardPage() {
     }
   }
 
+  // Deux temps, et l'ordre compte : le seed n'écrit que des relevés bruts
+  // (aucun verdict), c'est le pipeline qui les analyse ensuite avec les
+  // moteurs de production. Sans ce second appel, les classements
+  // resteraient vides — ce qui est le comportement correct : rien ne
+  // s'affiche tant que rien n'a été calculé.
   async function handleSeedDemoData() {
     setSeeding(true);
     setSeedDone(false);
     setError(null);
     try {
-      await seedDemoRankingData();
+      const seeded = await seedDemoRankingData();
+      const result = await runPipeline();
+      setSeedSummary(
+        `${seeded.products} produits, ${seeded.snapshots} relevés simulés — ` +
+          `${result.productsRanked} classés, ${result.productsNeedingMoreHistory} en attente d'historique.`,
+      );
       setSeedDone(true);
     } catch {
       setError(t("errorGeneric"));
@@ -136,7 +148,7 @@ export default function AdminDashboardPage() {
         </button>
         {seedDone && (
           <p className="text-sm font-medium" style={{ color: "var(--color-success)" }}>
-            {t("seedSuccess")}
+            {seedSummary ?? t("seedSuccess")}
           </p>
         )}
       </section>

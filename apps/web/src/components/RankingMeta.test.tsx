@@ -10,10 +10,12 @@ function isoDaysAgo(days: number): string {
 }
 
 describe("RankingMeta", () => {
-  it("annonce explicitement un classement de démonstration", () => {
+  it("annonce explicitement un marché simulé", () => {
     render(<RankingMeta generatedAt={isoDaysAgo(0)} isDemo />);
-    expect(screen.getByText("Données de démonstration")).toBeTruthy();
-    expect(screen.getByText(/produits sont fictifs/i)).toBeTruthy();
+    expect(screen.getByText("Marché simulé")).toBeTruthy();
+    expect(screen.getByText(/n'existent pas/i)).toBeTruthy();
+    // La nuance qui compte : les produits sont fictifs, pas les verdicts.
+    expect(screen.getByText(/calculés pour de vrai/i)).toBeTruthy();
   });
 
   // La régression que ce drapeau existe pour empêcher : dix produits

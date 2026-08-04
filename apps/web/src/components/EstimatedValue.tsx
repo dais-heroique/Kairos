@@ -38,6 +38,24 @@ export function EstimatedValue({
 }) {
   const fmt = format ?? ((v: number) => v.toLocaleString("fr-FR"));
 
+  // Une estimation impossible ne s'affiche pas comme une estimation nulle.
+  // « 0 €–0 € » se lit « ce produit ne rapporte rien » ; ce qu'il faut lire
+  // est « on ne sait pas encore ». Le tiret évite ce contresens, qui est
+  // exactement ce que la règle « jamais un nombre nu » cherche à empêcher.
+  if (range.method === "insufficient_data") {
+    return (
+      <span className={className} title={METHOD_LABELS[range.method]}>
+        <span className="font-[family-name:var(--font-mono)]">—</span>
+        <span
+          className="ml-1.5 text-xs font-semibold"
+          style={{ color: "var(--color-ink-muted)" }}
+        >
+          (données insuffisantes)
+        </span>
+      </span>
+    );
+  }
+
   return (
     <span className={className} title={METHOD_LABELS[range.method]}>
       <span className="font-[family-name:var(--font-mono)]">

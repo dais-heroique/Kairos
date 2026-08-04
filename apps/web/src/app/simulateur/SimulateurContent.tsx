@@ -8,16 +8,18 @@ import { useAuth } from "@/lib/firebase/auth-context";
 import { getRankingPageData } from "@/server/firestore/rankings";
 import type { ProductRankItem } from "@/types/product-rank-item";
 
-// Benchmark provisoire — voir RankingList.tsx (même limitation, pas de
-// calibration par catégorie réelle pour l'instant).
-const DEFAULT_MEDIAN_CONVERSION_RATE = 1.5;
+// Position de départ du curseur, exprimée en pourcentage (le curseur, lui,
+// reste librement réglable). Alignée sur DEFAULT_EARNINGS_CONFIG pour que
+// le simulateur et les classements ne racontent pas deux histoires
+// différentes du même produit — c'était le cas avec 1,5 % en dur ici.
+const DEFAULT_CONVERSION_PCT = DEFAULT_EARNINGS_CONFIG.defaultConversionRate * 100;
 
 export function SimulateurContent() {
   const { userDoc } = useAuth();
   const [products, setProducts] = useState<ProductRankItem[] | null>(null);
   const [productId, setProductId] = useState("");
   const [views, setViews] = useState(userDoc?.profile.avgViews || 20000);
-  const [conversionPct, setConversionPct] = useState(DEFAULT_MEDIAN_CONVERSION_RATE);
+  const [conversionPct, setConversionPct] = useState(DEFAULT_CONVERSION_PCT);
 
   useEffect(() => {
     getRankingPageData("products", "FR", "7d").then((data) => {
@@ -145,14 +147,19 @@ export function SimulateurContent() {
           <span className="flex justify-between">
             <span>Taux de conversion</span>
             <span className="font-[family-name:var(--font-mono)]">
-              {conversionPct.toFixed(1)}%
+              {conversionPct.toFixed(2)}%
             </span>
           </span>
+          {/* L'échelle allait de 0,5 % à 5 %, c'est-à-dire entièrement
+              au-dessus de ce qu'on observe en affiliation TikTok Shop
+              (~0,1 à 0,3 %) : la valeur réaliste était littéralement
+              hors de portée du curseur, et le simulateur ne pouvait donc
+              produire qu'un chiffre trop optimiste. */}
           <input
             type="range"
-            min={0.5}
-            max={5}
-            step={0.1}
+            min={0.05}
+            max={2}
+            step={0.05}
             value={conversionPct}
             onChange={(e) => setConversionPct(Number(e.target.value))}
             className="w-full accent-[var(--color-coral)]"

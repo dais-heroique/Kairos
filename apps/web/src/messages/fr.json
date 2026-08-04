@@ -217,10 +217,10 @@
     "bootstrapSuccess": "Fait — tu es maintenant administrateur.",
     "bootstrapDenied": "Cet email n'est pas autorisé à s'auto-promouvoir administrateur.",
     "goToDashboard": "Aller au tableau de bord",
-    "seedTitle": "Données de démo",
-    "seedBody": "Peuple les classements produits/opportunités avec un jeu de démo (le temps que la vraie collecte soit branchée).",
-    "seedButton": "Peupler avec des données de démo",
-    "seedingButton": "Peuplement…",
-    "seedSuccess": "Fait — les classements affichent maintenant les produits de démo."
+    "seedTitle": "Marché de démonstration",
+    "seedBody": "Écrit 22 produits fictifs avec leur historique quotidien de relevés, puis fait tourner les vrais moteurs dessus. Les chiffres du marché sont simulés, les verdicts sont calculés pour de vrai — les classements le signalent.",
+    "seedButton": "Générer le marché de démonstration",
+    "seedingButton": "Génération et analyse…",
+    "seedSuccess": "Fait — les classements affichent le marché simulé, analysé par les moteurs de production."
   }
 }

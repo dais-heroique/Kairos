@@ -137,12 +137,17 @@ export async function runPipeline(): Promise<PipelineResult> {
     (a, b) => b.opportunityScore - a.opportunityScore,
   );
 
+  // Un seul produit simulé suffit à marquer le classement : l'utilisateur
+  // doit savoir que ce qu'il lit n'est pas entièrement adossé à des
+  // relevés réels. Ce sont bien les vrais moteurs qui ont calculé ces
+  // verdicts — mais sur un marché en partie inventé, et la nuance
+  // appartient au lecteur, pas à nous.
+  const isDemo = scored.some((s) => s.product.isDemo);
+
   await Promise.all([
     setDoc(doc(firestore, "rankings", "products_FR_7d_all"), {
       generatedAt,
-      // Vrais relevés, vrais moteurs — écrase explicitement un éventuel
-      // classement de démo écrit avant sur le même document.
-      isDemo: false,
+      isDemo,
       type: "products",
       market: "FR",
       period: "7d",
@@ -151,7 +156,7 @@ export async function runPipeline(): Promise<PipelineResult> {
     }),
     setDoc(doc(firestore, "rankings", "opportunities_FR_7d_all"), {
       generatedAt,
-      isDemo: false,
+      isDemo,
       type: "opportunities",
       market: "FR",
       period: "7d",

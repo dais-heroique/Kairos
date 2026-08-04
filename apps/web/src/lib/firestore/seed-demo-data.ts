@@ -1,149 +1,120 @@
 "use client";
 
-import { doc, setDoc } from "firebase/firestore";
+import { doc, writeBatch } from "firebase/firestore";
 import { firestore } from "@/lib/firebase/client";
+import {
+  DEMO_PRODUCTS,
+  DEMO_SHOPS,
+  simulateSnapshots,
+} from "@/lib/demo/market-simulation";
+import { UNMEASURED_SELLER_TRUST } from "./product-entry";
 
-// Jeu de démonstration pour peupler les classements en attendant le vrai
-// pipeline de collecte (apps/collector + apps/jobs, qui nécessitent un
-// projet GCP réel — voir docs/STATE.md). Déclenché à la main par un admin
-// depuis /admin (isAdmin() autorise l'écriture sur products/shops/rankings
-// — voir firestore.rules), jamais automatique.
+// Peuple un marché de démonstration : 22 produits TikTok Shop FR
+// plausibles, chacun avec son historique quotidien de relevés.
+//
+// Ce que cette fonction n'écrit PAS, volontairement : aucun verdict,
+// aucune phase, aucun score. La version précédente les écrivait en dur à
+// côté de produits sans le moindre relevé — les classements affichaient
+// donc des recommandations que personne n'avait calculées, indiscernables
+// d'une vraie analyse. Ici on ne pose que ce qu'un collecteur observerait ;
+// c'est `runPipeline()` qui en déduit ensuite les verdicts, avec le code
+// de production. Les chiffres du marché sont simulés, l'analyse est réelle.
+//
+// Firestore plafonne un batch à 500 opérations, d'où le découpage.
 
-interface DemoShop {
-  id: string;
-  name: string;
-  trustScore: number;
-  shipDays: number;
-  sampleApprovalRate: number;
-  commissionHonorRate: number;
-  disputeRate: number;
-  productCount: number;
-  verified: boolean;
+const MAX_OPS_PER_BATCH = 450;
+
+export interface SeedResult {
+  shops: number;
+  products: number;
+  snapshots: number;
 }
 
-const DEMO_SHOPS: DemoShop[] = [
-  {
-    id: "demo-shop-glow",
-    name: "GlowLab Paris",
-    trustScore: 88,
-    shipDays: 3,
-    sampleApprovalRate: 0.72,
-    commissionHonorRate: 0.97,
-    disputeRate: 0.02,
-    productCount: 24,
-    verified: true,
-  },
-  {
-    id: "demo-shop-homey",
-    name: "Homey Gadgets",
-    trustScore: 74,
-    shipDays: 5,
-    sampleApprovalRate: 0.55,
-    commissionHonorRate: 0.91,
-    disputeRate: 0.05,
-    productCount: 41,
-    verified: true,
-  },
-  {
-    id: "demo-shop-clip",
-    name: "ClipTech FR",
-    trustScore: 63,
-    shipDays: 7,
-    sampleApprovalRate: 0.4,
-    commissionHonorRate: 0.85,
-    disputeRate: 0.08,
-    productCount: 15,
-    verified: false,
-  },
-];
+export async function seedDemoRankingData(): Promise<SeedResult> {
+  let batch = writeBatch(firestore);
+  let ops = 0;
 
-interface DemoProduct {
-  id: string;
-  title: string;
-  priceCents: number;
-  shopId: string;
-  commissionRatePct: number;
-  verdict: "entrer_maintenant" | "avec_un_angle" | "risque" | "eviter";
-  salesTrend: "up" | "down" | "flat";
-  opportunityScore: number;
-}
-
-const DEMO_PRODUCTS: DemoProduct[] = [
-  { id: "demo-p1", title: "Sérum vitamine C éclat", priceCents: 1490, shopId: "demo-shop-glow", commissionRatePct: 25, verdict: "entrer_maintenant", salesTrend: "up", opportunityScore: 92 },
-  { id: "demo-p2", title: "Rouleau gua sha jade", priceCents: 990, shopId: "demo-shop-glow", commissionRatePct: 30, verdict: "entrer_maintenant", salesTrend: "up", opportunityScore: 88 },
-  { id: "demo-p3", title: "Lampe LED coucher de soleil", priceCents: 1990, shopId: "demo-shop-homey", commissionRatePct: 20, verdict: "avec_un_angle", salesTrend: "flat", opportunityScore: 71 },
-  { id: "demo-p4", title: "Support téléphone magnétique voiture", priceCents: 1290, shopId: "demo-shop-clip", commissionRatePct: 18, verdict: "avec_un_angle", salesTrend: "up", opportunityScore: 76 },
-  { id: "demo-p5", title: "Mini humidificateur USB", priceCents: 1690, shopId: "demo-shop-homey", commissionRatePct: 22, verdict: "entrer_maintenant", salesTrend: "up", opportunityScore: 85 },
-  { id: "demo-p6", title: "Patchs anti-boutons hydrocolloïdes", priceCents: 690, shopId: "demo-shop-glow", commissionRatePct: 35, verdict: "avec_un_angle", salesTrend: "flat", opportunityScore: 68 },
-  { id: "demo-p7", title: "Organiseur de câbles magnétique", priceCents: 890, shopId: "demo-shop-clip", commissionRatePct: 15, verdict: "risque", salesTrend: "down", opportunityScore: 41 },
-  { id: "demo-p8", title: "Brosse lissante chauffante", priceCents: 2490, shopId: "demo-shop-homey", commissionRatePct: 20, verdict: "avec_un_angle", salesTrend: "up", opportunityScore: 79 },
-  { id: "demo-p9", title: "Coque téléphone silicone dégradé", priceCents: 790, shopId: "demo-shop-clip", commissionRatePct: 15, verdict: "risque", salesTrend: "flat", opportunityScore: 38 },
-  { id: "demo-p10", title: "Diffuseur d'huiles essentielles portable", priceCents: 1590, shopId: "demo-shop-homey", commissionRatePct: 22, verdict: "eviter", salesTrend: "down", opportunityScore: 22 },
-];
-
-function rankingItem(p: DemoProduct, rank: number) {
-  return {
-    id: p.id,
-    rank,
-    title: p.title,
-    priceCents: p.priceCents,
-    shopId: p.shopId,
-    commissionRatePct: p.commissionRatePct,
-    verdict: p.verdict,
-    salesTrend: p.salesTrend,
+  const flushIfNeeded = async () => {
+    if (ops >= MAX_OPS_PER_BATCH) {
+      await batch.commit();
+      batch = writeBatch(firestore);
+      ops = 0;
+    }
   };
-}
 
-export async function seedDemoRankingData(): Promise<void> {
-  const now = new Date().toISOString();
+  for (const shop of DEMO_SHOPS) {
+    batch.set(doc(firestore, "shops", shop.id), {
+      id: shop.id,
+      name: shop.name,
+      market: "FR",
+      trustScore: shop.trustScore,
+      shipDays: shop.shipDays,
+      sampleApprovalRate: shop.sampleApprovalRate,
+      commissionHonorRate: shop.commissionHonorRate,
+      disputeRate: shop.disputeRate,
+      productCount: DEMO_PRODUCTS.filter((p) => p.shopId === shop.id).length,
+      verified: shop.verified,
+      isDemo: true,
+    });
+    ops++;
+    await flushIfNeeded();
+  }
 
-  await Promise.all(
-    DEMO_SHOPS.map((shop) =>
-      setDoc(doc(firestore, "shops", shop.id), {
-        id: shop.id,
-        name: shop.name,
-        market: "FR",
-        trustScore: shop.trustScore,
+  let snapshotCount = 0;
+
+  for (const product of DEMO_PRODUCTS) {
+    const shop = DEMO_SHOPS.find((s) => s.id === product.shopId)!;
+
+    batch.set(doc(firestore, "products", product.id), {
+      id: product.id,
+      title: product.title,
+      market: "FR",
+      priceCents: product.priceCents,
+      currency: "EUR",
+      categoryPath: [product.category],
+      shopId: product.shopId,
+      isActive: true,
+      emoji: product.emoji,
+      commission: {
+        ratePct: product.commissionRatePct,
+        isOpenCollab: true,
+        isTargetedOnly: false,
+      },
+      // La boutique simulée a de vrais indicateurs de confiance, contrairement
+      // à la saisie manuelle où seul `score` est renseigné.
+      sellerTrust: {
+        ...UNMEASURED_SELLER_TRUST,
+        score: shop.trustScore,
         shipDays: shop.shipDays,
         sampleApprovalRate: shop.sampleApprovalRate,
         commissionHonorRate: shop.commissionHonorRate,
         disputeRate: shop.disputeRate,
-        productCount: shop.productCount,
-        verified: shop.verified,
-      }),
-    ),
-  );
-
-  const byVolume = [...DEMO_PRODUCTS];
-  const byOpportunity = [...DEMO_PRODUCTS].sort(
-    (a, b) => b.opportunityScore - a.opportunityScore,
-  );
-
-  await Promise.all([
-    setDoc(doc(firestore, "rankings", "products_FR_7d_all"), {
-      generatedAt: now,
-      // Ces produits n'existent pas et leurs verdicts n'ont été calculés
-      // par personne : ils sont écrits en dur ci-dessus, sans passer par
-      // computeVerdict ni par le moindre relevé. Sans ce drapeau, ils
-      // s'affichaient sur le site public exactement comme de vraies
-      // analyses — ce que toute la règle « jamais un chiffre inventé »
-      // existe précisément pour empêcher. L'UI refuse maintenant de les
-      // présenter sans le dire.
+      },
+      lastSeenAt: new Date().toISOString(),
+      // Marque le produit lui-même, pas seulement le classement : un
+      // produit de démo qui traînerait dans une watchlist reste
+      // identifiable comme tel.
       isDemo: true,
-      type: "products",
-      market: "FR",
-      period: "7d",
-      category: null,
-      items: byVolume.map((p, i) => rankingItem(p, i + 1)),
-    }),
-    setDoc(doc(firestore, "rankings", "opportunities_FR_7d_all"), {
-      generatedAt: now,
-      isDemo: true,
-      type: "opportunities",
-      market: "FR",
-      period: "7d",
-      category: null,
-      items: byOpportunity.map((p, i) => rankingItem(p, i + 1)),
-    }),
-  ]);
+    });
+    ops++;
+    await flushIfNeeded();
+
+    for (const snap of simulateSnapshots(product)) {
+      batch.set(
+        doc(firestore, "products", product.id, "snapshots", snap.capturedDate),
+        snap,
+      );
+      ops++;
+      snapshotCount++;
+      await flushIfNeeded();
+    }
+  }
+
+  if (ops > 0) await batch.commit();
+
+  return {
+    shops: DEMO_SHOPS.length,
+    products: DEMO_PRODUCTS.length,
+    snapshots: snapshotCount,
+  };
 }

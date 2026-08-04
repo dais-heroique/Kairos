@@ -167,6 +167,8 @@ export const UNMEASURED_SELLER_TRUST = {
 
 export interface StoredProduct extends ProductEntry {
   snapshotCount: number;
+  /** Produit issu du marché simulé (`seedDemoRankingData`), pas d'un relevé réel. */
+  isDemo: boolean;
 }
 
 // Le quota gratuit Firestore (50 000 lectures/jour) est la seule chose qui
@@ -208,6 +210,7 @@ export async function listStoredProducts(): Promise<StoredProduct[]> {
       shopTrustScore: (data.sellerTrust?.score as number) ?? 50,
       ...(emoji ? { emoji } : {}),
       snapshotCount: snapshotCount.data().count,
+      isDemo: data.isDemo === true,
     });
   }
   return results;

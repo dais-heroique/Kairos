@@ -52,3 +52,37 @@ describe("computeEarnings", () => {
     expect(Number.isFinite(result.confidence)).toBe(true);
   });
 });
+
+// Découvert en utilisant l'app : un onboarding abandonné laisse `avgViews`
+// à 0, et tout le classement affichait alors « 0 €–0 € (à confirmer) » —
+// un résultat qui a l'air calculé alors qu'il ne l'est pas.
+describe("profil incomplet", () => {
+  it("ne renvoie pas une fourchette nulle crédible quand les vues sont à 0", () => {
+    const result = computeEarnings({
+      expectedViews: 0,
+      followerRange: "5k_20k",
+      niche: "beaute",
+      medianConversionRate: 0.015,
+      priceCents: 1690,
+      commissionRatePct: 28,
+      estimatedReturnRatePct: 8,
+    });
+    expect(result.method).toBe("insufficient_data");
+    expect(result.confidence).toBe(0);
+  });
+
+  it("estime normalement dès que les vues sont renseignées", () => {
+    const result = computeEarnings({
+      expectedViews: 8000,
+      followerRange: "5k_20k",
+      niche: "beaute",
+      medianConversionRate: 0.015,
+      priceCents: 1690,
+      commissionRatePct: 28,
+      estimatedReturnRatePct: 8,
+    });
+    expect(result.method).not.toBe("insufficient_data");
+    expect(result.low).toBeGreaterThan(0);
+    expect(result.high).toBeGreaterThan(result.low);
+  });
+});

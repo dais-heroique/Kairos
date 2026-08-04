@@ -7,7 +7,9 @@ function makeVerdict(overrides: Partial<ProductVerdict> = {}): ProductVerdict {
     phase: "emergence",
     daysInPhase: 5,
     saturationScore: 10,
-    windowDaysRemaining: { low: 60, high: 100, confidence: 0.6 },
+    // Confiance élevée : la phase n'est prise pour argent comptant que
+    // dans la mesure où l'historique la soutient (voir UNKNOWN_PHASE_SCORE).
+    windowDaysRemaining: { low: 60, high: 100, confidence: 0.95 },
     marginLowPct: 30,
     marginHighPct: 50,
     verdict: "entrer_maintenant",
@@ -82,5 +84,38 @@ describe("computeOpportunityScore", () => {
     );
 
     expect(targeted).toBeLessThan(open);
+  });
+});
+
+// Régression : le verdict d'un produit sans historique est prudent
+// ("risque") mais sa *phase* par défaut est "emergence", la mieux notée.
+// Le classement « Opportunités » plaçait donc un produit saisi la veille
+// au-dessus de produits réellement analysés — constaté en conditions
+// réelles, 7e sur 22.
+describe("phase non étayée par les données", () => {
+  const insufficient = makeVerdict({
+    phase: "emergence",
+    saturationScore: 50,
+    windowDaysRemaining: { low: 0, high: 30, confidence: 0.05 },
+    verdict: "risque",
+  });
+
+  it("ne récompense pas une phase déduite d'un historique vide", () => {
+    const unknown = computeOpportunityScore(insufficient, makeCommission(), makeSellerTrust());
+    const known = computeOpportunityScore(makeVerdict(), makeCommission(), makeSellerTrust());
+    expect(unknown).toBeLessThan(known);
+  });
+
+  it("le classe même sous un produit en simple fin de croissance", () => {
+    const lateGrowth = makeVerdict({
+      phase: "late_growth",
+      saturationScore: 50,
+      windowDaysRemaining: { low: 15, high: 40, confidence: 0.9 },
+    });
+    expect(
+      computeOpportunityScore(insufficient, makeCommission(), makeSellerTrust()),
+    ).toBeLessThan(
+      computeOpportunityScore(lateGrowth, makeCommission(), makeSellerTrust()),
+    );
   });
 });

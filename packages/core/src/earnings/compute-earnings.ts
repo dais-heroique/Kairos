@@ -28,6 +28,18 @@ export function computeEarnings(
 ): EstimatedRange {
   const parsed = earningsInputSchema.parse(input);
 
+  // Sans vues attendues, il n'y a rien à estimer — et surtout pas 0 €.
+  // Un profil incomplet (onboarding abandonné, `avgViews` resté à 0)
+  // produisait auparavant une fourchette « 0 €–0 € » étiquetée « à
+  // confirmer », c'est-à-dire un résultat qui avait toutes les apparences
+  // d'un calcul abouti. C'est le pire des cas : l'utilisateur croit que le
+  // produit ne rapporte rien, alors que c'est son profil qui manque.
+  // `insufficient_data` existe exactement pour ça, et <EstimatedValue>
+  // affiche alors un tiret au lieu d'un montant.
+  if (parsed.expectedViews === 0 || parsed.medianConversionRate === 0) {
+    return { low: 0, high: 0, confidence: 0, method: "insufficient_data" };
+  }
+
   const unitsSold = parsed.expectedViews * parsed.medianConversionRate;
   const priceEur = parsed.priceCents / 100;
   const commissionRate = parsed.commissionRatePct / 100;

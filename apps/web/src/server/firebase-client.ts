@@ -29,10 +29,24 @@ export function getPublicFirestore(): Firestore {
       );
     cachedDb = getFirestore(app);
 
+    // Deux façons de désigner l'émulateur, parce que ce module tourne des
+    // deux côtés :
+    //  - FIRESTORE_EMULATOR_HOST, la convention des outils Firebase, lue
+    //    côté Node (tests, build statique) ;
+    //  - NEXT_PUBLIC_USE_FIREBASE_EMULATORS côté navigateur, car Next
+    //    n'inline dans le bundle *que* les variables NEXT_PUBLIC_*.
+    //
+    // Sans la seconde, `process.env.FIRESTORE_EMULATOR_HOST` valait
+    // `undefined` dans le navigateur : les pages de classement lisaient la
+    // **production** pendant que /admin écrivait dans l'émulateur. En dev
+    // on peuplait donc une base et on en affichait une autre, sans le
+    // moindre message d'erreur.
     const emulatorHost = process.env.FIRESTORE_EMULATOR_HOST;
     if (emulatorHost) {
       const [host, portStr] = emulatorHost.split(":");
       connectFirestoreEmulator(cachedDb, host!, Number(portStr));
+    } else if (process.env.NEXT_PUBLIC_USE_FIREBASE_EMULATORS === "true") {
+      connectFirestoreEmulator(cachedDb, "127.0.0.1", 8080);
     }
   }
   return cachedDb;

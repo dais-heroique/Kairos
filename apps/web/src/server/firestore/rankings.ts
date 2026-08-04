@@ -73,6 +73,7 @@ function toProductRankItem(
     commissionRatePct?: number;
     verdict?: ProductRankItem["verdict"];
     salesTrend?: ProductRankItem["salesTrend"];
+    emoji?: string | null;
   };
   return {
     id: item.id,
@@ -83,6 +84,9 @@ function toProductRankItem(
     commissionRatePct: item.commissionRatePct ?? 0,
     verdict: item.verdict ?? "risque",
     salesTrend: item.salesTrend ?? "flat",
+    // Le pipeline écrit bien `emoji` dans les items, mais cette conversion
+    // l'oubliait : toutes les lignes retombaient sur l'icône générique 📦.
+    ...(item.emoji ? { emoji: item.emoji } : {}),
   };
 }
 
