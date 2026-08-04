@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { RequireAuth } from "@/components/RequireAuth";
 import { SimulateurContent } from "./SimulateurContent";
 
@@ -6,7 +7,10 @@ import { SimulateurContent } from "./SimulateurContent";
 export default function SimulateurPage() {
   return (
     <RequireAuth>
-      <SimulateurContent />
+      {/* useSearchParams impose une frontière Suspense en rendu statique. */}
+      <Suspense fallback={null}>
+        <SimulateurContent />
+      </Suspense>
     </RequireAuth>
   );
 }

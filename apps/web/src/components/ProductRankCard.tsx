@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+
 import { useState } from "react";
 import type { EstimatedRange } from "@kairos/shared";
 import type { ProductRankItem } from "@/types/product-rank-item";
@@ -65,10 +67,14 @@ export function ProductRankCard({
 
       <div className="min-w-0 flex-1">
         <div className="flex items-start justify-between gap-2">
-          <div className="min-w-0">
+          {/* Une ligne de classement mène enfin quelque part : la fiche
+              produit (route fixe + query string, donc statique — voir
+              app/produit/page.tsx). Le titre seul est cliquable pour ne pas
+              capter le tap destiné à l'étoile. */}
+          <Link href={`/produit?id=${encodeURIComponent(item.id)}`} className="min-w-0">
             <p className="truncate text-sm font-semibold">{item.title}</p>
             <p className="text-xs text-[color:var(--color-ink-muted)]">{item.shopName}</p>
-          </div>
+          </Link>
           <button
             type="button"
             onClick={handleToggle}

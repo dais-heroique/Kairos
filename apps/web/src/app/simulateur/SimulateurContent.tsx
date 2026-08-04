@@ -1,5 +1,6 @@
 "use client";
 
+import { useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { computeEarnings, DEFAULT_EARNINGS_CONFIG } from "@kairos/core";
 import { BottomNav } from "@/components/BottomNav";
@@ -16,6 +17,9 @@ const DEFAULT_CONVERSION_PCT = DEFAULT_EARNINGS_CONFIG.defaultConversionRate * 1
 
 export function SimulateurContent() {
   const { userDoc } = useAuth();
+  // « Simuler » depuis une fiche produit ou le tableau de bord doit ouvrir
+  // le simulateur *sur ce produit*, pas sur le premier de la liste.
+  const preselectedId = useSearchParams().get("id");
   const [products, setProducts] = useState<ProductRankItem[] | null>(null);
   const [productId, setProductId] = useState("");
   const [views, setViews] = useState(userDoc?.profile.avgViews || 20000);
@@ -24,9 +28,11 @@ export function SimulateurContent() {
   useEffect(() => {
     getRankingPageData("products", "FR", "7d").then((data) => {
       setProducts(data.items);
-      setProductId((current) => current || (data.items[0]?.id ?? ""));
+      setProductId(
+        (current) => current || preselectedId || (data.items[0]?.id ?? ""),
+      );
     });
-  }, []);
+  }, [preselectedId]);
 
   const product = useMemo(
     () => products?.find((p) => p.id === productId) ?? products?.[0],

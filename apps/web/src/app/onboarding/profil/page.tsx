@@ -46,7 +46,7 @@ export default function OnboardingProfilPage() {
       avgViews: Number(avgViews) || 0,
       experienceLevel,
     });
-    router.push("/classements");
+    router.push("/tableau-de-bord");
   }
 
   return (

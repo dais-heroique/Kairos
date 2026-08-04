@@ -1,0 +1,479 @@
+"use client";
+
+import Link from "next/link";
+import { useEffect, useMemo, useState } from "react";
+import { computeEarnings, DEFAULT_EARNINGS_CONFIG } from "@kairos/core";
+import { entitlementsOf, type EstimatedRange, type WatchlistEntry } from "@kairos/shared";
+import { BottomNav } from "@/components/BottomNav";
+import { EstimatedValue } from "@/components/EstimatedValue";
+import { RankingMeta } from "@/components/RankingMeta";
+import { RequireAuth } from "@/components/RequireAuth";
+import { VerdictBadge } from "@/components/VerdictBadge";
+import { useAuth } from "@/lib/firebase/auth-context";
+import { addToWatchlist, getWatchlistEntries } from "@/lib/firestore/watchlist";
+import { buildDashboard, windowRangeOf, type Dashboard } from "@/lib/dashboard/build-dashboard";
+import { getRankingPageData } from "@/server/firestore/rankings";
+import type { ProductRankItem } from "@/types/product-rank-item";
+
+// Le point d'arrivée après connexion. Il ne rejoue pas les classements :
+// il répond à « qu'est-ce que je tourne cette semaine ? », ce qui est la
+// seule question que se pose un créateur qui ouvre l'app le lundi matin.
+//
+// Coût : 4 lectures Firestore (2 documents de classement + noms de
+// boutiques + watchlist), en deçà du budget de 5 par page.
+
+const STATUS_SHORT: Record<string, string> = {
+  watching: "En veille",
+  sample_requested: "Échantillon",
+  sample_received: "Reçu",
+  filmed: "Tourné",
+  posted: "Publié",
+};
+
+const eur = (v: number) =>
+  v.toLocaleString("fr-FR", { style: "currency", currency: "EUR", maximumFractionDigits: 0 });
+
+function Stat({
+  label,
+  value,
+  hint,
+  tone,
+}: {
+  label: string;
+  value: string;
+  hint?: string;
+  tone?: "coral" | "success" | undefined;
+}) {
+  const color =
+    tone === "coral" ? "var(--color-coral)" : tone === "success" ? "var(--color-success)" : undefined;
+  return (
+    <div className="kai-card flex flex-col gap-0.5 py-3">
+      <span className="text-xs text-[color:var(--color-ink-muted)]">{label}</span>
+      <span
+        className="font-[family-name:var(--font-display)] text-xl font-extrabold"
+        style={color ? { color } : undefined}
+      >
+        {value}
+      </span>
+      {hint && <span className="text-[11px] text-[color:var(--color-ink-muted)]">{hint}</span>}
+    </div>
+  );
+}
+
+// Passe par windowRangeOf() : une fenêtre est une estimation, jamais deux
+// nombres nus (règle produit n°1, vérifiée par kairos/no-raw-estimate-number).
+function closingNote(item: ProductRankItem): string | undefined {
+  const range = windowRangeOf(item);
+  if (!range) return undefined;
+  return `≈ ${range.low}–${range.high} jours restants (confiance ${Math.round(range.confidence * 100)}%)`;
+}
+
+function ProductLine({
+  item,
+  note,
+}: {
+  item: ProductRankItem;
+  note?: string | undefined;
+}) {
+  return (
+    <Link
+      href={`/produit?id=${encodeURIComponent(item.id)}`}
+      className="flex items-center gap-3 border-b py-2 last:border-b-0"
+      style={{ borderColor: "var(--color-border)" }}
+    >
+      <span className="text-xl">{item.emoji ?? "📦"}</span>
+      <span className="min-w-0 flex-1">
+        <span className="block truncate text-sm font-semibold">{item.title}</span>
+        <span className="block text-xs text-[color:var(--color-ink-muted)]">
+          {note ?? `${item.shopName} · ${item.commissionRatePct}%`}
+        </span>
+      </span>
+      <VerdictBadge verdict={item.verdict} />
+    </Link>
+  );
+}
+
+function DashboardContent() {
+  const { firebaseUser, userDoc } = useAuth();
+  const [opportunities, setOpportunities] = useState<ProductRankItem[] | null>(null);
+  const [products, setProducts] = useState<ProductRankItem[]>([]);
+  const [watchlist, setWatchlist] = useState<WatchlistEntry[]>([]);
+  const [generatedAt, setGeneratedAt] = useState<string | null>(null);
+  const [isDemo, setIsDemo] = useState(false);
+  const [added, setAdded] = useState<Set<string>>(new Set());
+
+  useEffect(() => {
+    getRankingPageData("opportunities", "FR", "7d").then((d) => {
+      setOpportunities(d.items);
+      setGeneratedAt(d.generatedAt);
+      setIsDemo(d.isDemo);
+    });
+    getRankingPageData("products", "FR", "7d").then((d) => setProducts(d.items));
+  }, []);
+
+  useEffect(() => {
+    if (!firebaseUser) return;
+    getWatchlistEntries(firebaseUser.uid).then(setWatchlist);
+  }, [firebaseUser]);
+
+  const entitlements = entitlementsOf(userDoc);
+  const profileIncomplete = !!userDoc && userDoc.profile.avgViews === 0;
+
+  const dashboard: Dashboard | null = useMemo(() => {
+    if (!opportunities) return null;
+    const estimateFor = (item: ProductRankItem): EstimatedRange | null => {
+      if (!userDoc) return null;
+      return computeEarnings({
+        expectedViews: userDoc.profile.avgViews,
+        followerRange: userDoc.profile.followerRange,
+        niche: userDoc.profile.niches[0] ?? "",
+        medianConversionRate: DEFAULT_EARNINGS_CONFIG.defaultConversionRate,
+        priceCents: item.priceCents,
+        commissionRatePct: item.commissionRatePct,
+        estimatedReturnRatePct: DEFAULT_EARNINGS_CONFIG.defaultReturnRatePct,
+      });
+    };
+    return buildDashboard({
+      opportunities,
+      products,
+      watchlist,
+      niches: userDoc?.profile.niches ?? [],
+      estimateFor,
+    });
+  }, [opportunities, products, watchlist, userDoc]);
+
+  async function handleAdd(productId: string) {
+    if (!firebaseUser) return;
+    await addToWatchlist(firebaseUser.uid, productId);
+    setAdded((prev) => new Set(prev).add(productId));
+    setWatchlist((prev) => [
+      ...prev,
+      { productId, addedAt: new Date().toISOString(), alertsEnabled: true, status: "watching" } as WatchlistEntry,
+    ]);
+  }
+
+  const firstName = userDoc?.displayName?.split(" ")[0] ?? null;
+
+  return (
+    <div className="flex min-h-dvh flex-col">
+      <BottomNav />
+
+      <header className="flex items-start justify-between gap-3 px-5 pt-6 pb-2">
+        <div>
+          <h1 className="font-[family-name:var(--font-display)] text-2xl font-extrabold">
+            {firstName ? `Salut ${firstName}` : "Ta semaine"}
+          </h1>
+          <p className="mt-1 text-sm text-[color:var(--color-ink-muted)]">
+            Ce qu&apos;il y a à tourner, et ce qu&apos;il vaut mieux laisser passer.
+          </p>
+        </div>
+        <span
+          className="shrink-0 rounded-full px-2.5 py-1 text-[11px] font-bold"
+          style={{
+            backgroundColor: entitlements.fullRankings
+              ? "var(--color-success-soft)"
+              : "var(--color-surface)",
+            color: entitlements.fullRankings ? "var(--color-success)" : "var(--color-ink-muted)",
+            border: "1px solid var(--color-border)",
+          }}
+        >
+          {entitlements.label}
+        </span>
+      </header>
+
+      <div className="flex flex-1 flex-col gap-4 px-5 py-3">
+        <RankingMeta generatedAt={generatedAt} isDemo={isDemo} />
+
+        {profileIncomplete && (
+          <div className="kai-card text-sm">
+            <p className="font-[family-name:var(--font-display)] font-bold">
+              Tes gains ne sont pas encore calculables
+            </p>
+            <p className="text-[color:var(--color-ink-muted)]">
+              Il manque tes vues moyennes par vidéo.{" "}
+              <Link href="/onboarding/profil" className="underline">
+                Compléter mon profil
+              </Link>
+            </p>
+          </div>
+        )}
+
+        {dashboard === null && (
+          <p className="text-sm text-[color:var(--color-ink-muted)]">Chargement…</p>
+        )}
+
+        {dashboard && dashboard.totalAnalysed === 0 && (
+          <div className="kai-card text-sm text-[color:var(--color-ink-muted)]">
+            Aucun produit n&apos;a encore assez d&apos;historique pour être jugé. Il
+            faut au moins 3 relevés par produit — reviens dans quelques jours.
+          </div>
+        )}
+
+        {dashboard && dashboard.totalAnalysed > 0 && (
+          <>
+            {/* ---------- Chiffres clés ---------- */}
+            <div className="grid grid-cols-2 gap-2">
+              <Stat
+                label="Fenêtres ouvertes"
+                value={String(dashboard.openWindowCount)}
+                hint={`sur ${dashboard.totalAnalysed} produits analysés`}
+                tone="success"
+              />
+              <Stat
+                label="Se referment bientôt"
+                value={String(dashboard.closingSoon.length)}
+                hint="moins de 3 semaines"
+                tone={dashboard.closingSoon.length > 0 ? "coral" : undefined}
+              />
+              <Stat
+                label="Dans ton pipeline"
+                value={String(watchlist.length)}
+                hint={
+                  dashboard.awaitingSample > 0
+                    ? `${dashboard.awaitingSample} échantillon(s) en attente`
+                    : "produits suivis"
+                }
+              />
+              <Stat
+                label="À éviter"
+                value={String(dashboard.avoid.length)}
+                hint="saturés ou en déclin"
+              />
+            </div>
+
+            {/* ---------- Le pick ---------- */}
+            {dashboard.topPick && (
+              <section
+                className="kai-card flex flex-col gap-3 border-l-4"
+                style={{ borderColor: "var(--color-coral)" }}
+              >
+                <div className="flex items-center justify-between">
+                  <span
+                    className="text-[11px] font-bold uppercase tracking-wide"
+                    style={{ color: "var(--color-coral)" }}
+                  >
+                    À tourner en priorité
+                    {dashboard.topPick.matchesNiche && " · dans ta niche"}
+                  </span>
+                  <VerdictBadge verdict={dashboard.topPick.item.verdict} />
+                </div>
+
+                <div className="flex items-start gap-3">
+                  <span className="text-3xl">{dashboard.topPick.item.emoji ?? "📦"}</span>
+                  <div className="min-w-0">
+                    <p className="font-[family-name:var(--font-display)] text-lg font-bold leading-tight">
+                      {dashboard.topPick.item.title}
+                    </p>
+                    <p className="text-sm text-[color:var(--color-ink-muted)]">
+                      {dashboard.topPick.item.shopName} ·{" "}
+                      {dashboard.topPick.item.commissionRatePct}% de commission ·{" "}
+                      {eur(dashboard.topPick.item.priceCents / 100)}
+                    </p>
+                  </div>
+                </div>
+
+                {dashboard.topPick.earnings && (
+                  <p className="text-sm">
+                    <span className="text-[color:var(--color-ink-muted)]">
+                      Pour une vidéo à tes {userDoc?.profile.avgViews.toLocaleString("fr-FR")}{" "}
+                      vues :{" "}
+                    </span>
+                    <EstimatedValue
+                      range={dashboard.topPick.earnings}
+                      format={(v) => eur(v)}
+                      className="font-semibold"
+                    />
+                  </p>
+                )}
+
+                {/* Le raisonnement était calculé à chaque passage du pipeline
+                    puis jeté. C'est pourtant lui qui distingue un verdict
+                    d'une simple étiquette. */}
+                {dashboard.topPick.item.reasoning && (
+                  <ul className="flex flex-col gap-1">
+                    {dashboard.topPick.item.reasoning.map((line) => (
+                      <li
+                        key={line}
+                        className="text-xs leading-relaxed text-[color:var(--color-ink-muted)]"
+                      >
+                        • {line}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+
+                {windowRangeOf(dashboard.topPick.item) && (
+                  <p className="text-xs text-[color:var(--color-ink-muted)]">
+                    Fenêtre avant saturation :{" "}
+                    <EstimatedValue
+                      range={windowRangeOf(dashboard.topPick.item)!}
+                      format={(v) => `${v} j`}
+                    />
+                  </p>
+                )}
+
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => handleAdd(dashboard.topPick!.item.id)}
+                    disabled={added.has(dashboard.topPick.item.id)}
+                    className="kai-btn-primary flex-1 disabled:opacity-50"
+                  >
+                    {added.has(dashboard.topPick.item.id) ? "Ajouté ✓" : "Suivre ce produit"}
+                  </button>
+                  <Link
+                    href={`/simulateur?id=${encodeURIComponent(dashboard.topPick.item.id)}`}
+                    className="kai-btn-outline flex-1 text-center"
+                  >
+                    Simuler
+                  </Link>
+                </div>
+              </section>
+            )}
+
+            {/* ---------- Le focus de la semaine ---------- */}
+            {dashboard.focus.length > 1 && (
+              <section className="kai-card flex flex-col gap-2">
+                <div className="flex items-baseline justify-between gap-2">
+                  <h2 className="font-[family-name:var(--font-display)] font-bold">
+                    Le reste de ton top {dashboard.focus.length}
+                  </h2>
+                  <Link href="/classements/opportunites" className="text-xs underline">
+                    Tout voir
+                  </Link>
+                </div>
+                <div>
+                  {dashboard.focus.slice(1).map((pick) => (
+                    <ProductLine
+                      key={pick.item.id}
+                      item={pick.item}
+                      note={
+                        pick.matchesNiche
+                          ? `${pick.item.shopName} · ${pick.item.commissionRatePct}% · ta niche`
+                          : undefined
+                      }
+                    />
+                  ))}
+                </div>
+                {dashboard.focusEarnings && (
+                  <p className="pt-1 text-sm">
+                    <span className="text-[color:var(--color-ink-muted)]">
+                      Une vidéo sur chacun rapporterait{" "}
+                    </span>
+                    <EstimatedValue
+                      range={dashboard.focusEarnings}
+                      format={(v) => eur(v)}
+                      className="font-semibold"
+                    />
+                  </p>
+                )}
+              </section>
+            )}
+
+            {/* ---------- Urgence ---------- */}
+            {dashboard.closingSoon.length > 0 && (
+              <section className="kai-card flex flex-col gap-2">
+                <h2 className="font-[family-name:var(--font-display)] font-bold">
+                  Fenêtres qui se referment
+                </h2>
+                <p className="text-xs text-[color:var(--color-ink-muted)]">
+                  Encore jouables, mais plus pour longtemps.
+                </p>
+                <div>
+                  {dashboard.closingSoon.map((i) => (
+                    <ProductLine key={i.id} item={i} note={closingNote(i)} />
+                  ))}
+                </div>
+              </section>
+            )}
+
+            {/* ---------- Pipeline ---------- */}
+            <section className="kai-card flex flex-col gap-2">
+              <div className="flex items-baseline justify-between gap-2">
+                <h2 className="font-[family-name:var(--font-display)] font-bold">
+                  Ton pipeline
+                </h2>
+                <Link href="/watchlist" className="text-xs underline">
+                  Gérer
+                </Link>
+              </div>
+              <div className="flex items-end justify-between gap-1">
+                {dashboard.pipeline.map((stage) => (
+                  <div key={stage.status} className="flex flex-1 flex-col items-center gap-1">
+                    <span
+                      className="flex h-9 w-9 items-center justify-center rounded-full text-sm font-bold"
+                      style={{
+                        backgroundColor:
+                          stage.count > 0 ? "var(--color-coral-soft)" : "var(--color-surface-raised)",
+                        color: stage.count > 0 ? "var(--color-coral)" : "var(--color-ink-muted)",
+                        border: "1px solid var(--color-border)",
+                      }}
+                    >
+                      {stage.count}
+                    </span>
+                    <span className="text-center text-[10px] leading-tight text-[color:var(--color-ink-muted)]">
+                      {STATUS_SHORT[stage.status]}
+                    </span>
+                  </div>
+                ))}
+              </div>
+              {dashboard.awaitingSample > 0 && (
+                <p className="text-xs" style={{ color: "var(--color-coral)" }}>
+                  {dashboard.awaitingSample} échantillon(s) demandé(s) sans réponse — à
+                  relancer depuis la watchlist.
+                </p>
+              )}
+            </section>
+
+            {/* ---------- Ne pas perdre son temps ---------- */}
+            {dashboard.avoid.length > 0 && (
+              <section className="kai-card flex flex-col gap-2">
+                <h2 className="font-[family-name:var(--font-display)] font-bold">
+                  À laisser passer
+                </h2>
+                <p className="text-xs text-[color:var(--color-ink-muted)]">
+                  Autant le savoir avant d&apos;avoir tourné.
+                </p>
+                <div>
+                  {dashboard.avoid.map((i) => (
+                    <ProductLine
+                      key={i.id}
+                      item={i}
+                      note={`saturation ${i.saturationScore}/100`}
+                    />
+                  ))}
+                </div>
+              </section>
+            )}
+
+            {/* ---------- Trop récents ---------- */}
+            {dashboard.needsHistory.length > 0 && (
+              <section className="kai-card flex flex-col gap-2">
+                <h2 className="font-[family-name:var(--font-display)] font-bold">
+                  Pas encore jugeables
+                </h2>
+                <p className="text-xs text-[color:var(--color-ink-muted)]">
+                  Moins de 3 relevés : le verdict n&apos;aurait aucune valeur. Ils sont
+                  listés quand même, pas cachés.
+                </p>
+                <div>
+                  {dashboard.needsHistory.map((i) => (
+                    <ProductLine key={i.id} item={i} note="historique trop court" />
+                  ))}
+                </div>
+              </section>
+            )}
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+export default function TableauDeBordPage() {
+  return (
+    <RequireAuth>
+      <DashboardContent />
+    </RequireAuth>
+  );
+}

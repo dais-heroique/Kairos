@@ -66,6 +66,8 @@ function sellerTrustOf(product: StoredProduct): SellerTrust {
   };
 }
 
+// Doit rester aligné sur buildDisplayItem() dans apps/jobs/src/rank.ts —
+// les deux pipelines écrivent le même document.
 function rankingItem(scored: ScoredProduct, rank: number) {
   return {
     id: scored.product.id,
@@ -77,6 +79,20 @@ function rankingItem(scored: ScoredProduct, rank: number) {
     verdict: scored.verdict.verdict,
     salesTrend: TREND_BY_PHASE[scored.verdict.phase],
     emoji: scored.product.emoji ?? null,
+    category: scored.product.category,
+    // Nécessaire au tableau de bord sans relire un document par produit
+    // (budget de 5 lectures par page). Le raisonnement du verdict était
+    // calculé à chaque passage puis jeté — c'est pourtant lui qui explique
+    // la recommandation.
+    phase: scored.verdict.phase,
+    saturationScore: scored.verdict.saturationScore,
+    windowDaysLow: scored.verdict.windowDaysRemaining.low,
+    windowDaysHigh: scored.verdict.windowDaysRemaining.high,
+    verdictConfidence: scored.verdict.windowDaysRemaining.confidence,
+    reasoning: scored.verdict.reasoning,
+    opportunityScore: scored.opportunityScore,
+    estSalesLow: scored.product.snapshotCount > 0 ? scored.estSales : 0,
+    snapshotCount: scored.product.snapshotCount,
   };
 }
 

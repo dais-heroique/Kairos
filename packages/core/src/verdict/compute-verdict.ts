@@ -64,18 +64,34 @@ function growthRatio(snapshots: ProductSnapshot[]): number {
   return (end - start) / start;
 }
 
-// Nombre de jours pendant lesquels la tendance jour/jour est restée dans
-// le même sens que la tendance macro — sert de proxy à "depuis combien de
-// temps on est dans cette phase", sans état persisté entre deux appels.
+// Moyenne glissante centrée sur 3 points. Sans elle, la comparaison
+// jour/jour ci-dessous casse la série au premier soubresaut : un produit
+// en croissance depuis un mois annonçait « phase growth depuis 2 jours »,
+// parce qu'il suffit d'une seule journée un peu creuse pour rompre la
+// séquence. Le bruit quotidien réel dépasse largement FLAT_EPSILON.
+function smoothedSales(snapshots: ProductSnapshot[]): number[] {
+  return snapshots.map((_, i) => {
+    const from = Math.max(0, i - 1);
+    const to = Math.min(snapshots.length - 1, i + 1);
+    let sum = 0;
+    for (let k = from; k <= to; k++) sum += salesMid(snapshots[k]!);
+    return sum / (to - from + 1);
+  });
+}
+
+// Nombre de jours pendant lesquels la tendance est restée dans le même
+// sens que la tendance macro — sert de proxy à "depuis combien de temps on
+// est dans cette phase", sans état persisté entre deux appels.
 function daysInCurrentTrend(snapshots: ProductSnapshot[], macroSign: 1 | 0 | -1): number {
   if (snapshots.length < 2) return spanDays(snapshots);
+  const smoothed = smoothedSales(snapshots);
   let streakDays = daysBetween(
     snapshots[snapshots.length - 2]!.capturedDate,
     snapshots[snapshots.length - 1]!.capturedDate,
   );
   for (let i = snapshots.length - 1; i >= 2; i--) {
-    const prev = salesMid(snapshots[i - 2]!);
-    const curr = salesMid(snapshots[i - 1]!);
+    const prev = smoothed[i - 2]!;
+    const curr = smoothed[i - 1]!;
     const delta = curr - prev;
     const sign: 1 | 0 | -1 =
       Math.abs(delta) < FLAT_EPSILON * Math.max(prev, 1) ? 0 : delta > 0 ? 1 : -1;

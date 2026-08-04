@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { computeEarnings, DEFAULT_EARNINGS_CONFIG } from "@kairos/core";
-import type { EstimatedRange } from "@kairos/shared";
+import { entitlementsOf, type EstimatedRange } from "@kairos/shared";
 import type { ProductRankItem } from "@/types/product-rank-item";
 import { useAuth } from "@/lib/firebase/auth-context";
 import {
@@ -41,7 +41,11 @@ export function RankingList({ items }: { items: ProductRankItem[] }) {
     }
   }
 
-  const isFreePlan = (userDoc?.plan.slug ?? "radar") === "radar";
+  // Droits centralisés (packages/shared/src/entitlements.ts) plutôt qu'un
+  // test de slug réécrit ici : le compte fondateur et les admins voient
+  // tout sans qu'on touche à leur document `plan`, protégé par les règles.
+  const entitlements = entitlementsOf(userDoc);
+  const isFreePlan = !entitlements.fullRankings;
   const lockedCount = isFreePlan ? Math.max(0, items.length - FREE_PLAN_LIMIT) : 0;
 
   // Gains personnalisés — jamais du GMV global (règle invariante #5) :

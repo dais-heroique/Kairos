@@ -74,7 +74,21 @@ function toProductRankItem(
     verdict?: ProductRankItem["verdict"];
     salesTrend?: ProductRankItem["salesTrend"];
     emoji?: string | null;
+    category?: string | null;
+    phase?: ProductRankItem["phase"];
+    saturationScore?: number;
+    windowDaysLow?: number;
+    windowDaysHigh?: number;
+    verdictConfidence?: number;
+    reasoning?: string[];
+    opportunityScore?: number;
+    snapshotCount?: number;
   };
+  // `exactOptionalPropertyTypes` est actif : un champ optionnel se pose
+  // seulement s'il existe, il ne se met pas à `undefined`.
+  const optional = <T,>(key: string, value: T | null | undefined) =>
+    value === null || value === undefined ? {} : { [key]: value };
+
   return {
     id: item.id,
     rank: item.rank,
@@ -86,7 +100,17 @@ function toProductRankItem(
     salesTrend: item.salesTrend ?? "flat",
     // Le pipeline écrit bien `emoji` dans les items, mais cette conversion
     // l'oubliait : toutes les lignes retombaient sur l'icône générique 📦.
-    ...(item.emoji ? { emoji: item.emoji } : {}),
+    ...optional("emoji", item.emoji),
+    ...optional("shopId", item.shopId),
+    ...optional("category", item.category),
+    ...optional("phase", item.phase),
+    ...optional("saturationScore", item.saturationScore),
+    ...optional("windowDaysLow", item.windowDaysLow),
+    ...optional("windowDaysHigh", item.windowDaysHigh),
+    ...optional("verdictConfidence", item.verdictConfidence),
+    ...optional("reasoning", item.reasoning),
+    ...optional("opportunityScore", item.opportunityScore),
+    ...optional("snapshotCount", item.snapshotCount),
   };
 }
 

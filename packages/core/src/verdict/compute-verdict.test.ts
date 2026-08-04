@@ -167,3 +167,43 @@ describe("computeVerdict", () => {
     expect(verdict.windowDaysRemaining.confidence).toBeLessThan(0.95);
   });
 });
+
+// Constaté à l'écran : un produit en croissance depuis un mois affichait
+// « Phase "growth" depuis 2 jour(s) ». La comparaison jour/jour se brisait
+// au premier creux, or le bruit quotidien réel dépasse largement le seuil
+// de platitude. La série est désormais lissée avant d'être parcourue.
+describe("daysInPhase face au bruit quotidien", () => {
+  function noisyGrowth(days: number): ProductSnapshot[] {
+    return Array.from({ length: days }, (_, i) => {
+      const base = 100 * (1 + i * 0.06);
+      // Un jour sur trois est plus creux que la veille, sans que la
+      // tendance de fond s'inverse.
+      const dip = i % 3 === 2 ? 0.88 : 1.06;
+      return {
+        productId: "p",
+        capturedDate: `2026-07-${String(i + 1).padStart(2, "0")}`,
+        priceCents: 1690,
+        reviewCount: 100 + i * 6,
+        ratingAvg: 4.6,
+        activeCreatorCount: 5 + i,
+        videoCount: 20 + i,
+        competingShopCount: 3,
+        estSalesLow: Math.round(base * dip * 0.8),
+        estSalesHigh: Math.round(base * dip * 1.2),
+        confidence: 0.6,
+      } as ProductSnapshot;
+    });
+  }
+
+  it("ne réduit pas une croissance d'un mois à deux jours", () => {
+    const v = computeVerdict(noisyGrowth(28));
+    expect(v.phase).toBe("growth");
+    expect(v.daysInPhase).toBeGreaterThan(7);
+  });
+
+  it("ne dépasse jamais la durée réellement couverte", () => {
+    const snaps = noisyGrowth(28);
+    const v = computeVerdict(snaps);
+    expect(v.daysInPhase).toBeLessThanOrEqual(28);
+  });
+});

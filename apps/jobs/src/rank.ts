@@ -56,6 +56,17 @@ function buildDisplayItem(
     commissionRatePct: meta?.commission.ratePct ?? 0,
     verdict: c.verdict.verdict,
     salesTrend: TREND_BY_PHASE[c.verdict.phase],
+    // Ce que le tableau de bord doit pouvoir montrer sans relire un
+    // document par produit : la phase, la pression concurrentielle, la
+    // fenêtre restante et surtout le *pourquoi* du verdict. C'est ce
+    // raisonnement qui distingue KAIROS d'une simple liste de chiffres,
+    // et il était jusqu'ici calculé puis jamais affiché.
+    phase: c.verdict.phase,
+    saturationScore: c.verdict.saturationScore,
+    windowDaysLow: c.verdict.windowDaysRemaining.low,
+    windowDaysHigh: c.verdict.windowDaysRemaining.high,
+    verdictConfidence: c.verdict.windowDaysRemaining.confidence,
+    reasoning: c.verdict.reasoning,
   };
 }
 
