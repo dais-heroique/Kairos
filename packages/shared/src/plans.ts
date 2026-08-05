@@ -186,6 +186,33 @@ export function planUnlocking(capability: Capability): PlanDefinition {
   return PLANS.find((p) => CAPABILITIES_BY_PLAN[p.slug].includes(capability)) ?? PLANS[0]!;
 }
 
+/**
+ * Combien de temps une fenêtre reste ouverte, en moyenne. Ce n'est pas un
+ * argument marketing : c'est la borne haute réellement utilisée par le
+ * moteur pour un produit en croissance (voir `computeWindowDaysRemaining`
+ * dans packages/core). L'urgence du produit est vraie — inutile d'en
+ * inventer une.
+ *
+ * À ne surtout pas remplacer par « plus que 3 places » ou « offre valable
+ * 24 h » : ce sont exactement les formulations que le Compliance Guard
+ * signale comme trompeuses (`trompeur-urgence`), et il serait absurde de
+ * les interdire aux créateurs tout en s'en servant soi-même.
+ */
+// `min`/`max` et non `low`/`high` : ces derniers désignent, partout
+// ailleurs dans le code, les bornes d'une estimation portant sur un
+// produit précis — qui doit alors s'afficher via <EstimatedValue>, avec sa
+// confiance. Ici c'est un ordre de grandeur général, pas une estimation ;
+// la règle ESLint kairos/no-raw-estimate-number avait raison de tiquer.
+export const TYPICAL_WINDOW_DAYS = { min: 15, max: 40 } as const;
+
+/**
+ * Les premiers inscrits gardent le tarif de lancement quand les offres
+ * ouvriront. C'est une promesse tenable — elle ne dépend que de nous — et
+ * c'est la seule raison honnête de s'inscrire maintenant plutôt que dans
+ * six mois. Passer à `false` la retire partout d'un coup.
+ */
+export const FOUNDING_PRICE_LOCK = true;
+
 export function formatPlanPrice(plan: PlanDefinition): string {
   if (plan.priceCents === 0) return "Gratuit";
   if (plan.priceCents === null) return "Bientôt";

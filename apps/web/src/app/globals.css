@@ -30,7 +30,13 @@
    un oubli. Pas de bascule automatique sur prefers-color-scheme. */
 
 @theme inline {
-  --breakpoint-sm: 390px;
+  /* `sm:` doit vouloir dire « plus large qu'un téléphone ». Réglé à 390px,
+     il se déclenchait exactement à la largeur d'un iPhone 12/13/14 : les
+     `sm:grid-cols-3` passaient en trois colonnes sur un écran de 390px, et
+     les `sm:text-4xl`/`sm:text-7xl` agrandissaient le texte au moment où il
+     y avait le moins de place. D'où les cartes tassées et les mots coupés.
+     640px est la valeur par défaut de Tailwind, et la bonne ici. */
+  --breakpoint-sm: 640px;
   --breakpoint-md: 768px;
   --breakpoint-lg: 1024px;
 

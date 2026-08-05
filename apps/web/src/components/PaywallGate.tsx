@@ -4,6 +4,7 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import {
   CAPABILITY_INFO,
+  FOUNDING_PRICE_LOCK,
   formatPlanPrice,
   newCapabilitiesOf,
   planUnlocking,
@@ -28,12 +29,20 @@ export function PaywallGate({
   title,
   /** Aperçu inerte de ce qui est verrouillé — jamais la vraie donnée. */
   preview,
+  /**
+   * Urgence réelle, calculée sur le produit qu'on est en train de
+   * regarder : « il te reste 12 à 30 jours ». C'est le seul moment où
+   * l'urgence est à la fois vraie et pertinente — elle vient de la
+   * donnée, pas d'un compte à rebours fabriqué.
+   */
+  urgency,
   children,
 }: {
   capability: Capability;
   entitlements: Entitlements;
   title: string;
   preview?: ReactNode;
+  urgency?: string | undefined;
   children: ReactNode;
 }) {
   if (entitlements.can(capability)) return <>{children}</>;
@@ -78,6 +87,18 @@ export function PaywallGate({
             <p className="font-[family-name:var(--font-display)] font-bold">{title}</p>
           </div>
 
+          {urgency && (
+            <p
+              className="rounded-lg px-3 py-2 text-sm font-semibold"
+              style={{
+                backgroundColor: "var(--color-coral-soft)",
+                color: "var(--color-coral)",
+              }}
+            >
+              {urgency}
+            </p>
+          )}
+
           {/* Ce que le palier apporte, en entier : la décision se prend sur
               la valeur totale, pas sur la seule fonctionnalité qu'on vient
               de heurter. */}
@@ -106,6 +127,11 @@ export function PaywallGate({
           <Link href="/tarifs" className="kai-btn-primary text-center">
             {plan.priceCents === null ? "Voir les offres" : `Passer en ${plan.name}`}
           </Link>
+          {FOUNDING_PRICE_LOCK && plan.priceCents === null && (
+            <p className="text-center text-[11px] text-[color:var(--color-ink-muted)]">
+              Les inscrits d&apos;aujourd&apos;hui gardent le tarif de lancement.
+            </p>
+          )}
         </div>
       </div>
     </div>

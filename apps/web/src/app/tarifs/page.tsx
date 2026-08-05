@@ -4,9 +4,11 @@ import {
   CAPABILITIES,
   CAPABILITY_INFO,
   CAPABILITIES_BY_PLAN,
+  FOUNDING_PRICE_LOCK,
   formatPlanPrice,
   newCapabilitiesOf,
   PLANS,
+  TYPICAL_WINDOW_DAYS,
 } from "@kairos/shared";
 import { SITE_NAME } from "@/lib/seo/site";
 
@@ -40,14 +42,37 @@ export default function TarifsPage() {
           ← {SITE_NAME}
         </Link>
         <h1 className="font-[family-name:var(--font-display)] text-3xl font-extrabold leading-tight">
-          Commence gratuitement. Débloque quand ça devient ton métier.
+          Un produit reste jouable {TYPICAL_WINDOW_DAYS.min} à{" "}
+          {TYPICAL_WINDOW_DAYS.max} jours. Après, c&apos;est trop tard.
         </h1>
         <p className="text-[color:var(--color-ink-muted)]">
-          Le plan gratuit n&apos;est pas une démo bridée : tu vois le classement
-          entier, avec le verdict de chaque produit. Ce que les plans payants
-          ajoutent, c&apos;est le détail de <em>tes</em> gains et de quoi
-          passer à la production.
+          Ce n&apos;est pas une formule : c&apos;est le temps que le calcul
+          donne à un produit en croissance avant que tout le monde s&apos;y
+          mette. Chaque semaine où tu ne regardes pas, des fenêtres se
+          referment sans toi.
         </p>
+
+        {/* L'urgence est réelle et vient du produit. Aucune fausse rareté
+            (« plus que 3 places », « offre 24 h ») : ce sont exactement les
+            formulations que le Compliance Guard signale comme trompeuses,
+            et les interdire aux créateurs tout en s'en servant serait
+            intenable. */}
+        <div
+          className="flex flex-col gap-2 rounded-xl p-4"
+          style={{ backgroundColor: "var(--color-coral-soft)" }}
+        >
+          <p className="font-[family-name:var(--font-display)] font-bold" style={{ color: "var(--color-coral)" }}>
+            Commence maintenant, gratuitement
+          </p>
+          <p className="text-sm">
+            Pas de carte bancaire, pas d&apos;engagement, 30 secondes. Tu vois
+            la liste complète et la recommandation sur chaque produit dès la
+            première minute.
+          </p>
+          <Link href="/connexion" className="kai-btn-primary text-center">
+            Créer mon compte gratuit
+          </Link>
+        </div>
       </header>
 
       {/* grid-cols-1 explicite : sans lui les trois colonnes se tassaient
@@ -120,18 +145,25 @@ export default function TarifsPage() {
 
               {plan.priceCents === 0 ? (
                 <Link href="/connexion" className="kai-btn-primary text-center">
-                  Créer mon compte
+                  Créer mon compte — 30 secondes
                 </Link>
               ) : plan.priceCents === null ? (
-                // Aucun paiement n'est branché : proposer un bouton
-                // « Payer » qui ne mène nulle part serait pire que de dire
-                // la vérité.
-                <span
-                  className="rounded-lg border px-4 py-2 text-center text-sm font-semibold text-[color:var(--color-ink-muted)]"
-                  style={{ borderColor: "var(--color-border)" }}
-                >
-                  Pas encore ouvert
-                </span>
+                // Aucun paiement n'est branché : un bouton « Payer » qui ne
+                // mène nulle part serait pire que de dire la vérité. Mais
+                // laisser un pavé mort ne sert personne — on renvoie vers
+                // la seule action qui existe aujourd'hui, et qui est aussi
+                // celle qu'on veut.
+                <div className="flex flex-col gap-1.5">
+                  <Link href="/connexion" className="kai-btn-outline text-center">
+                    Commencer gratuitement en attendant
+                  </Link>
+                  {FOUNDING_PRICE_LOCK && (
+                    <p className="text-center text-[11px] font-semibold" style={{ color: "var(--color-coral)" }}>
+                      Les inscrits d&apos;aujourd&apos;hui garderont le tarif de
+                      lancement.
+                    </p>
+                  )}
+                </div>
               ) : (
                 <Link href="/compte" className="kai-btn-primary text-center">
                   Passer en {plan.name}
@@ -142,9 +174,12 @@ export default function TarifsPage() {
         })}
       </section>
 
-      {/* Tableau comparatif : la même information, mais lisible ligne à
-          ligne quand on cherche une fonctionnalité précise. */}
-      <section className="flex flex-col gap-3">
+      {/* Tableau comparatif, écran large uniquement. Sur un téléphone il
+          demandait un défilement horizontal, et on ne voyait donc que la
+          colonne des libellés : une liste de fonctionnalités sans aucune
+          indication de plan, c'est-à-dire pire que rien. Les trois cartes
+          empilées au-dessus portent déjà la même information. */}
+      <section className="hidden flex-col gap-3 md:flex">
         <h2 className="font-[family-name:var(--font-display)] text-xl font-extrabold">
           Le détail, ligne par ligne
         </h2>
@@ -204,6 +239,18 @@ export default function TarifsPage() {
           </table>
         </div>
       </section>
+
+      <div className="flex flex-col items-center gap-2 text-center">
+        <p className="font-[family-name:var(--font-display)] text-xl font-extrabold">
+          Le temps que tu hésites, la fenêtre se referme.
+        </p>
+        <Link href="/connexion" className="kai-btn-primary">
+          Créer mon compte gratuit
+        </Link>
+        <p className="text-xs text-[color:var(--color-ink-muted)]">
+          Sans carte bancaire. Tu peux tout supprimer en un clic.
+        </p>
+      </div>
 
       <section className="kai-card flex flex-col gap-3 text-sm">
         <h2 className="font-[family-name:var(--font-display)] font-bold">

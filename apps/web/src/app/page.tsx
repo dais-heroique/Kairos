@@ -475,7 +475,7 @@ function Plans({ t }: { t: T }) {
           </h2>
         </Reveal>
 
-        <div className="mt-12 grid gap-4 sm:grid-cols-3">
+        <div className="mt-12 grid grid-cols-1 gap-4 md:grid-cols-3">
           {plans.map((plan, i) => (
             <Reveal key={plan.name} delay={i * 80}>
               <div

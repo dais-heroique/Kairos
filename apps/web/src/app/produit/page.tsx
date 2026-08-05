@@ -33,6 +33,14 @@ import type { ProductRankItem } from "@/types/product-rank-item";
 // page 100 % statique, et tout le travail se fait dans le navigateur.
 // Aucun coût, aucune fonction déployée, et le détail existe enfin.
 
+// L'urgence affichée au paywall vient du produit lui-même, jamais d'un
+// compte à rebours inventé : c'est la fenêtre que le moteur a calculée.
+function urgencyFor(item: ProductRankItem): string | undefined {
+  const range = windowRangeOf(item);
+  if (!range) return undefined;
+  return `Sur ce produit, il te reste environ ${range.low} à ${range.high} jours avant que tout le monde s'y mette.`;
+}
+
 function ProduitContent() {
   const params = useSearchParams();
   const productId = params.get("id") ?? "";
@@ -201,6 +209,7 @@ function ProduitContent() {
           capability="productHistory"
           entitlements={entitlements}
           title="Vois comment ce produit a évolué jour par jour"
+          urgency={urgencyFor(item)}
           // Aperçu flouté : le visiteur voit qu'il y a une vraie courbe
           // derrière, pas un écran vide. Les relevés affichés ici sont
           // ceux d'un scénario d'illustration, jamais la donnée protégée.
