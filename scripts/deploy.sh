@@ -47,6 +47,24 @@ echo "▸ Branche    : $(git rev-parse --abbrev-ref HEAD) ($(git rev-parse --sho
 # fichier comme du JavaScript et la syntaxe JSON n'en est pas.
 echo "▸ Projet     : $(node -p "JSON.parse(require('fs').readFileSync('.firebaserc','utf8')).projects.default")"
 
+# macOS sur volume ExFAT sème des fichiers `._*` (AppleDouble : les
+# métadonnées que le système ne peut pas stocker dans le système de
+# fichiers lui-même) qui font échouer le build et ESLint avec des erreurs
+# incompréhensibles.
+#
+# `.git/` est inclus, et c'est le point important : un `._pack-xxx.idx`
+# dans `.git/objects/pack/` fait cracher git « error: non-monotonic index »
+# à chaque commande, des dizaines de fois. Ce ne sont pas des objets git,
+# juste des métadonnées macOS que git essaie de lire comme des index de
+# pack — les supprimer ne perd rien. La première version de ce script
+# excluait `.git/`, c'est-à-dire précisément l'endroit où le problème fait
+# le plus de bruit.
+export COPYFILE_DISABLE=1
+find . -name "._*" -not -path "./node_modules/*" -delete 2>/dev/null || true
+
+# Le contrôle de propreté vient après le nettoyage : sinon les `._*`
+# apparaissent comme des fichiers non suivis et déclenchent l'alerte pour
+# rien, ce qui apprend à répondre « y » sans lire.
 if [[ -n "$(git status --porcelain)" ]]; then
   echo "⚠️  Des modifications ne sont pas commitées. Tu déploierais un état"
   echo "    qui n'existe nulle part dans l'historique."
@@ -54,11 +72,6 @@ if [[ -n "$(git status --porcelain)" ]]; then
   read -r -p "    Continuer quand même ? [y/N] " reply
   [[ "$reply" == "y" || "$reply" == "Y" ]] || exit 1
 fi
-
-# macOS sur volume ExFAT sème des fichiers `._*` qui font échouer le build
-# et ESLint avec des erreurs incompréhensibles.
-export COPYFILE_DISABLE=1
-find . -name "._*" -not -path "./node_modules/*" -not -path "./.git/*" -delete 2>/dev/null || true
 
 # Utiliser le `firebase` global s'il existe : `npx firebase-tools` retélécharge
 # la CLI et l'utilisateur en a déjà une, authentifiée.
