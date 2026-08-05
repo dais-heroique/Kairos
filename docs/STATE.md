@@ -9,6 +9,7 @@ Source de vérité du projet. Lu en premier à chaque session, mis à jour en de
 - **Lots 0 à 8 faits, fusionnés dans `main`, et `apps/web/src/lib/` reçu de l'utilisateur (commit `10e379d`).**
 - **`pnpm typecheck` et `pnpm lint` sont 100 % verts sur les 12 packages/apps.**
 - **🚀 EN LIGNE : <https://kairos-on.web.app>** — build 100 % statique, plan Spark (gratuit) préservé, aucune Cloud Function déployée.
+- ⚠️ **La version en ligne est en retard sur `claude/check-old-conversations-o3nwu4`.** Le dernier déploiement date de la fusion dans `main` ; les 8 commits de la session du 2026-08-05 (`88bf20d` → `e4ca28f`) sont poussés sur GitHub mais **pas déployés**. Le déploiement se fait depuis le PC de l'utilisateur (aucune authentification Firebase dans l'environnement d'agent, et `kairos-on.web.app` y est injoignable). **Ce déploiement-là doit impérativement inclure `firestore:rules`** : le catalogue produits n'est plus lisible sans compte et `paidPlan()` protège désormais les relevés — déployer l'hébergement seul laisserait les anciennes règles ouvertes et le paywall serait décoratif.
 - **Le pipeline tourne réellement**, mais sur des relevés saisis à la main (voir décision #8) : aucune collecte automatisée n'est branchée.
 
 ## Décisions actées
