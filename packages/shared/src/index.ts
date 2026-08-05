@@ -15,3 +15,4 @@ export * from "./comment";
 export * from "./brief";
 export * from "./compliance";
 export * from "./entitlements";
+export * from "./compliance-defaults";

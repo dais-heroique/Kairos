@@ -220,6 +220,13 @@ function ProduitContent() {
           Simuler
         </Link>
       </div>
+
+      <Link
+        href={`/brief?id=${encodeURIComponent(item.id)}`}
+        className="kai-btn-outline mb-4 text-center"
+      >
+        Préparer le tournage →
+      </Link>
     </div>
   );
 }

@@ -1,5 +1,10 @@
 import { useTranslations } from "next-intl";
 import Link from "next/link";
+import {
+  FaqJsonLd,
+  OrganizationJsonLd,
+  SoftwareApplicationJsonLd,
+} from "@/components/JsonLd";
 import { Reveal } from "@/components/Reveal";
 import { VerdictBadge } from "@/components/VerdictBadge";
 import {
@@ -19,8 +24,18 @@ import type { VerdictLabel } from "@kairos/shared";
 export default function HomePage() {
   const t = useTranslations("Home");
 
+  // Les mêmes questions que la section FAQ plus bas — déclarées ici pour
+  // que Google puisse les afficher dépliées dans ses résultats.
+  const faq = [1, 2, 3, 4, 5].map((n) => ({
+    question: t(`faq${n}Q`),
+    answer: t(`faq${n}A`),
+  }));
+
   return (
     <main className="bg-[color:var(--color-bg)]">
+      <OrganizationJsonLd />
+      <SoftwareApplicationJsonLd />
+      <FaqJsonLd entries={faq} />
       <SiteNav ctaLabel={t("ctaLogin")} />
       <Hero t={t} />
       <ProblemStrip t={t} />
