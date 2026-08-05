@@ -167,18 +167,21 @@ function DashboardContent() {
             Ce qu&apos;il y a à tourner, et ce qu&apos;il vaut mieux laisser passer.
           </p>
         </div>
-        <span
+        <Link
+          href="/tarifs"
           className="shrink-0 rounded-full px-2.5 py-1 text-[11px] font-bold"
           style={{
-            backgroundColor: entitlements.fullRankings
+            backgroundColor: entitlements.can("earningsAll")
               ? "var(--color-success-soft)"
               : "var(--color-surface)",
-            color: entitlements.fullRankings ? "var(--color-success)" : "var(--color-ink-muted)",
+            color: entitlements.can("earningsAll")
+              ? "var(--color-success)"
+              : "var(--color-ink-muted)",
             border: "1px solid var(--color-border)",
           }}
         >
           {entitlements.label}
-        </span>
+        </Link>
       </header>
 
       <div className="flex flex-1 flex-col gap-4 px-5 py-3">

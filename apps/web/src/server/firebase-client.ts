@@ -14,6 +14,22 @@ let cachedDb: Firestore | undefined;
 // apps/web/.env.production, non secrètes (voir décision Phase 0).
 export function getPublicFirestore(): Firestore {
   if (!cachedDb) {
+    // Dans le navigateur, réutiliser l'application Firebase par défaut —
+    // celle initialisée par lib/firebase/client.ts, qui porte la session
+    // de l'utilisateur connecté.
+    //
+    // C'est indispensable depuis que le catalogue n'est plus en lecture
+    // publique : une seconde application nommée est une instance
+    // *anonyme*, ses requêtes seraient refusées par les règles alors même
+    // que l'utilisateur est connecté — et le classement se serait affiché
+    // vide, sans erreur visible. L'instance séparée ne sert plus qu'à
+    // Node (tests, build), où il n'y a de toute façon pas de session.
+    const defaultApp = getApps().find((a) => a.name === "[DEFAULT]");
+    if (typeof window !== "undefined" && defaultApp) {
+      cachedDb = getFirestore(defaultApp);
+      return cachedDb;
+    }
+
     const app =
       getApps().find((a) => a.name === APP_NAME) ??
       initializeApp(

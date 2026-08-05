@@ -16,6 +16,7 @@ import {
   type ProductVerdict,
 } from "@kairos/shared";
 import { BottomNav } from "@/components/BottomNav";
+import { PaywallGate } from "@/components/PaywallGate";
 import { RequireAuth } from "@/components/RequireAuth";
 import { Teleprompter } from "@/components/Teleprompter";
 import { useAuth } from "@/lib/firebase/auth-context";
@@ -30,6 +31,24 @@ import type { ProductRankItem } from "@/types/product-rank-item";
 // Un bouton branché sur Gemini serait donc resté grisé. La structure du
 // brief se déduit de ce qu'on sait déjà — phase, saturation, catégorie,
 // cadre légal — et l'IA viendra l'enrichir le jour où une clé existe.
+
+// Aperçu inerte de ce à quoi ressemble un brief : du texte d'illustration,
+// jamais un brief réellement calculé — c'est ce qu'on vend.
+function BriefPreview() {
+  return (
+    <div className="kai-card flex flex-col gap-3">
+      <p className="font-[family-name:var(--font-display)] font-bold">3 accroches à tester</p>
+      <p className="text-sm">« POV : tu découvres ce produit avant tout le monde. »</p>
+      <p className="text-sm">« J&apos;ai commandé en pensant que c&apos;était nul. »</p>
+      <p className="font-[family-name:var(--font-display)] font-bold">Script</p>
+      <p className="font-[family-name:var(--font-mono)] text-xs leading-relaxed">
+        [0–3 s] Accroche · [3–8 s] Collaboration commerciale. · [8–15 s]
+        Concrètement… · [15–22 s] Ce que j&apos;ai constaté… · [fin] Le lien est
+        dans ma boutique.
+      </p>
+    </div>
+  );
+}
 
 function BriefContent() {
   const productId = useSearchParams().get("id") ?? "";
@@ -105,16 +124,17 @@ function BriefContent() {
     );
   }
 
-  if (!entitlements.productDetail) {
+  if (!entitlements.can("brief")) {
     return (
-      <div className="kai-card m-5 flex flex-col gap-2 text-sm">
-        <p className="font-[family-name:var(--font-display)] font-bold">
-          Le brief de tournage est réservé aux plans Creator et Pro
-        </p>
-        <p className="text-[color:var(--color-ink-muted)]">
-          Accroches adaptées à la phase du produit, plan de tournage, script
-          minuté et téléprompteur.
-        </p>
+      <div className="m-5">
+        <PaywallGate
+          capability="brief"
+          entitlements={entitlements}
+          title="Arrive devant la caméra avec le script déjà écrit"
+          preview={<BriefPreview />}
+        >
+          <span />
+        </PaywallGate>
       </div>
     );
   }

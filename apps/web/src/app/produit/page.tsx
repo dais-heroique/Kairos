@@ -8,12 +8,14 @@ import { entitlementsOf, type ProductSnapshot } from "@kairos/shared";
 import { BottomNav } from "@/components/BottomNav";
 import { EstimatedValue } from "@/components/EstimatedValue";
 import { RequireAuth } from "@/components/RequireAuth";
+import { PaywallGate } from "@/components/PaywallGate";
 import { SnapshotChart } from "@/components/SnapshotChart";
 import { VerdictBadge } from "@/components/VerdictBadge";
 import { useAuth } from "@/lib/firebase/auth-context";
 import { getProductSnapshots } from "@/lib/firestore/product-entry";
 import { addToWatchlist, getWatchlistIds } from "@/lib/firestore/watchlist";
 import { windowRangeOf } from "@/lib/dashboard/build-dashboard";
+import { buildScenarioSnapshots, SCENARIO_PRESETS } from "@/lib/demo/scenario";
 import { getRankingPageData } from "@/server/firestore/rankings";
 import type { ProductRankItem } from "@/types/product-rank-item";
 
@@ -47,8 +49,15 @@ function ProduitContent() {
         a.items.find((i) => i.id === productId) ?? b.items.find((i) => i.id === productId) ?? null;
       setItem(found);
     });
-    getProductSnapshots(productId).then(setSnapshots).catch(() => setSnapshots([]));
   }, [productId]);
+
+  // L'historique est protégé côté serveur (firestore.rules) : sans plan
+  // payant la lecture serait refusée. On ne la tente donc pas — inutile de
+  // provoquer une erreur dont on connaît déjà l'issue.
+  useEffect(() => {
+    if (!productId || !entitlementsOf(userDoc).can("productHistory")) return;
+    getProductSnapshots(productId).then(setSnapshots).catch(() => setSnapshots([]));
+  }, [productId, userDoc]);
 
   useEffect(() => {
     if (!firebaseUser || !productId) return;
@@ -181,23 +190,33 @@ function ProduitContent() {
 
       {/* L'historique quotidien est la donnée la plus chère du produit et
           n'était visualisée nulle part. */}
-      <section className="kai-card flex flex-col gap-2">
+      <section className="flex flex-col gap-2">
         <h2 className="font-[family-name:var(--font-display)] font-bold">Historique</h2>
-        {entitlements.productDetail ? (
-          snapshots === null ? (
-            <p className="text-sm text-[color:var(--color-ink-muted)]">Chargement…</p>
-          ) : snapshots.length === 0 ? (
-            <p className="text-sm text-[color:var(--color-ink-muted)]">
-              Aucun relevé disponible pour ce produit.
-            </p>
-          ) : (
-            <SnapshotChart snapshots={snapshots} />
-          )
-        ) : (
-          <p className="text-sm text-[color:var(--color-ink-muted)]">
-            L&apos;historique jour par jour est réservé aux plans Creator et Pro.
-          </p>
-        )}
+        <PaywallGate
+          capability="productHistory"
+          entitlements={entitlements}
+          title="Vois comment ce produit a évolué jour par jour"
+          // Aperçu flouté : le visiteur voit qu'il y a une vraie courbe
+          // derrière, pas un écran vide. Les relevés affichés ici sont
+          // ceux d'un scénario d'illustration, jamais la donnée protégée.
+          preview={
+            <div className="kai-card">
+              <SnapshotChart snapshots={buildScenarioSnapshots(SCENARIO_PRESETS[1]!.params)} />
+            </div>
+          }
+        >
+          <div className="kai-card">
+            {snapshots === null ? (
+              <p className="text-sm text-[color:var(--color-ink-muted)]">Chargement…</p>
+            ) : snapshots.length === 0 ? (
+              <p className="text-sm text-[color:var(--color-ink-muted)]">
+                Aucun relevé disponible pour ce produit.
+              </p>
+            ) : (
+              <SnapshotChart snapshots={snapshots} />
+            )}
+          </div>
+        </PaywallGate>
       </section>
 
       <div className="flex gap-2 pb-4">

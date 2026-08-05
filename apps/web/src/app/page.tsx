@@ -5,6 +5,12 @@ import {
   OrganizationJsonLd,
   SoftwareApplicationJsonLd,
 } from "@/components/JsonLd";
+import {
+  CAPABILITIES_BY_PLAN,
+  CAPABILITY_LABELS,
+  formatPlanPrice,
+  PLANS,
+} from "@kairos/shared";
 import { HeroEarningsTeaser } from "@/components/HeroEarningsTeaser";
 import { Reveal } from "@/components/Reveal";
 import { VerdictBadge } from "@/components/VerdictBadge";
@@ -440,27 +446,19 @@ function TrustBand({ t }: { t: T }) {
   );
 }
 
+// Les offres sont lues dans packages/shared/src/plans.ts — le même
+// catalogue que celui qui gouverne réellement l'accès. Elles étaient
+// jusqu'ici recopiées à la main dans les fichiers de traduction, ce qui
+// garantissait qu'un jour la page promette ce que l'application ne délivre
+// pas.
 function Plans({ t }: { t: T }) {
-  const plans = [
-    {
-      name: t("planRadarName"),
-      price: t("planRadarPrice"),
-      features: [t("planRadarFeature1"), t("planRadarFeature2"), t("planRadarFeature3")],
-      popular: false,
-    },
-    {
-      name: t("planCreatorName"),
-      price: t("planCreatorPrice"),
-      features: [t("planCreatorFeature1"), t("planCreatorFeature2"), t("planCreatorFeature3")],
-      popular: true,
-    },
-    {
-      name: t("planProName"),
-      price: t("planProPrice"),
-      features: [t("planProFeature1"), t("planProFeature2"), t("planProFeature3")],
-      popular: false,
-    },
-  ];
+  const plans = PLANS.map((plan) => ({
+    name: plan.name,
+    price: formatPlanPrice(plan),
+    tagline: plan.tagline,
+    features: CAPABILITIES_BY_PLAN[plan.slug].map((c) => CAPABILITY_LABELS[c]),
+    popular: plan.popular,
+  }));
 
   return (
     <section className="px-5 py-20" style={{ backgroundColor: "var(--color-surface)" }}>
@@ -501,7 +499,10 @@ function Plans({ t }: { t: T }) {
                   <h3 className="font-[family-name:var(--font-display)] text-xl font-extrabold">
                     {plan.name}
                   </h3>
-                  <p className="mt-1 text-sm text-[color:var(--color-ink-muted)]">{plan.price}</p>
+                  <p className="mt-1 font-[family-name:var(--font-display)] text-lg font-extrabold">
+                    {plan.price}
+                  </p>
+                  <p className="text-sm text-[color:var(--color-ink-muted)]">{plan.tagline}</p>
                 </div>
                 <ul className="flex flex-col gap-2">
                   {plan.features.map((feature) => (
@@ -517,6 +518,12 @@ function Plans({ t }: { t: T }) {
               </div>
             </Reveal>
           ))}
+        </div>
+
+        <div className="mt-8 text-center">
+          <Link href="/tarifs" className="text-sm underline">
+            Comparer les offres en détail
+          </Link>
         </div>
       </div>
     </section>

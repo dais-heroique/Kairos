@@ -28,6 +28,7 @@ export const SITE_DESCRIPTION =
 export const PUBLIC_ROUTES = [
   { path: "/", priority: 1, changeFrequency: "weekly" as const },
   { path: "/methode", priority: 0.8, changeFrequency: "monthly" as const },
+  { path: "/tarifs", priority: 0.7, changeFrequency: "monthly" as const },
   { path: "/connexion", priority: 0.5, changeFrequency: "yearly" as const },
   { path: "/cgu", priority: 0.3, changeFrequency: "yearly" as const },
   { path: "/cgu-affiliation", priority: 0.3, changeFrequency: "yearly" as const },

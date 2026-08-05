@@ -35,6 +35,19 @@ function roleUnchanged() {
   return request.resource.data.role == resource.data.role;
 }
 
+// Plan payant en cours de validité. C'est la seule capacité réellement
+// appliquée côté serveur : tout le reste du paywall est du rendu client,
+// donc contournable, et n'a jamais prétendu au contraire (voir
+// PaywallGate.tsx). L'historique des relevés, lui, ne quitte pas la base
+// sans un abonnement actif — c'est l'actif qui a le plus de valeur et le
+// plus long à reconstituer.
+function paidPlan() {
+  return isSignedIn() &&
+    exists(/databases/(default)/documents/users/$(request.auth.uid)) &&
+    get(/databases/(default)/documents/users/$(request.auth.uid)).data.plan.slug in ["creator", "pro"] &&
+    get(/databases/(default)/documents/users/$(request.auth.uid)).data.plan.status in ["active", "trialing"];
+}
+
 // BOOTSTRAP TEMPORAIRE — à supprimer après la première promotion admin.
 function isBootstrapAdminEmail() {
   return request.auth.token.email == "contact.conforva@gmail.com";
@@ -127,14 +140,15 @@ service cloud.firestore {
       }
     }
 
-    // Lecture publique (pas de isSignedIn()) : ces pages de classement sont
-    // rendues en statique au build (contrainte plan Spark, voir
-    // docs/STATE.md) via le SDK client, donc sans utilisateur connecté.
-    // Catalogue non personnel, aucune donnée sensible. Écriture réservée à
-    // l'admin en attendant le vrai pipeline de collecte (apps/collector +
-    // apps/jobs, qui écriront eux via un vrai projet GCP/Admin SDK).
+    // Lecture réservée aux comptes connectés. La règle avait été ouverte à
+    // tous (`if true`) pour un rendu statique au build ; les pages de
+    // classement sont depuis passées en chargement client derrière
+    // <RequireAuth>, ce qui a rendu cette ouverture inutile — mais elle
+    // n'avait jamais été refermée. Elle laissait n'importe qui vider tout
+    // le catalogue avec la configuration Firebase publique, c'est-à-dire
+    // récupérer gratuitement le produit lui-même.
     match /products/{productId} {
-      allow read: if true;
+      allow read: if isSignedIn();
       allow write: if isAdmin();
 
       match /videos/{videoId} {
@@ -143,11 +157,16 @@ service cloud.firestore {
       }
 
       // Un relevé par produit par jour — forme d'entrée de computeVerdict
-      // (packages/core). Saisis à la main par l'admin depuis /admin/produits
-      // tant qu'aucune collecte automatisée n'est branchée. Lecture publique
-      // comme le reste du catalogue : le pipeline tourne côté client.
+      // (packages/core), saisis à la main depuis /admin/produits.
+      //
+      // C'est la capacité « productHistory » du catalogue d'offres, et la
+      // seule à être réellement appliquée ici plutôt qu'à l'écran : un
+      // compte gratuit ne peut pas lire l'historique, même en appelant
+      // Firestore directement. L'admin garde l'accès, sans quoi le
+      // pipeline client (qui recalcule les verdicts) ne pourrait plus
+      // tourner.
       match /snapshots/{capturedDate} {
-        allow read: if true;
+        allow read: if paidPlan() || isAdmin();
         allow write: if isAdmin();
       }
     }
@@ -158,7 +177,7 @@ service cloud.firestore {
     }
 
     match /shops/{shopId} {
-      allow read: if true;
+      allow read: if isSignedIn();
       allow write: if isAdmin();
     }
 
@@ -167,8 +186,11 @@ service cloud.firestore {
       allow write: if false;
     }
 
+    // Le classement complet et les verdicts sont ce que le plan gratuit
+    // offre : lecture ouverte à tout compte connecté, sans distinction de
+    // plan. Ce qui se vend est le détail des gains et l'historique.
     match /rankings/{rankingId} {
-      allow read: if true;
+      allow read: if isSignedIn();
       allow write: if isAdmin();
     }
 

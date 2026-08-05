@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useState } from "react";
 import type { EstimatedRange } from "@kairos/shared";
 import type { ProductRankItem } from "@/types/product-rank-item";
+import { LockedValue } from "./PaywallGate";
 import { EstimatedValue } from "./EstimatedValue";
 import { VerdictBadge } from "./VerdictBadge";
 
@@ -102,23 +103,16 @@ export function ProductRankCard({
 
         <p className="mt-2 text-sm">
           <span className="text-[color:var(--color-ink-muted)]">Gains estimés </span>
+          {/* Ligne visible, chiffre masqué : cacher la ligne entière
+              ferait croire que le produit n'existe pas, alors que le
+              classement est justement ce que le plan gratuit offre. */}
           {locked ? (
-            <span
-              className="select-none rounded font-[family-name:var(--font-mono)] blur-[3px]"
-              aria-hidden
-            >
-              **-**€
-            </span>
+            <LockedValue hint="Tes gains sur tous les produits — plan Creator" />
           ) : estimatedEarnings ? (
             <EstimatedValue range={estimatedEarnings} format={(v) => `${v}€`} />
           ) : (
             <span className="text-[color:var(--color-ink-muted)] italic">
               connecte-toi pour voir tes gains
-            </span>
-          )}
-          {locked && (
-            <span className="ml-2 text-xs font-semibold" style={{ color: "var(--color-coral)" }}>
-              🔒 Creator/Pro
             </span>
           )}
         </p>

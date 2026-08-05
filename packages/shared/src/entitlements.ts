@@ -1,9 +1,10 @@
+import { CAPABILITIES, CAPABILITIES_BY_PLAN, type Capability } from "./plans";
 import type { PlanSlug, User } from "./user";
 
-// Un seul endroit décide de ce à quoi un compte a droit. Avant, la question
-// « ce compte voit-il tout ? » était réécrite à la main dans chaque
-// composant (`plan.slug === "radar"`), ce qui garantit qu'un jour l'un
-// d'eux diverge des autres.
+// Un seul endroit décide de ce à quoi un compte a droit, et il lit le
+// catalogue des offres (`plans.ts`). Les fonctionnalités annoncées sur la
+// page de tarifs et celles réellement appliquées dans l'app ne peuvent
+// donc pas diverger : c'est la même liste.
 
 /**
  * Comptes qui voient tout, indépendamment de leur abonnement : le compte
@@ -21,49 +22,38 @@ export const FOUNDER_EMAILS: readonly string[] = ["contact.conforva@gmail.com"];
 const PLAN_RANK: Record<PlanSlug, number> = { radar: 0, creator: 1, pro: 2 };
 
 export interface Entitlements {
-  /** Tous les classements en entier, sans gain masqué. */
-  fullRankings: boolean;
-  /** Fiches produit détaillées (historique, raisonnement du verdict). */
-  productDetail: boolean;
-  /** Alertes sur les mouvements de la watchlist. */
-  alerts: boolean;
-  /** Générations de brief IA par mois (voir packages/ai-gateway). */
-  monthlyBriefs: number;
+  /** Plan effectivement appliqué, après vérification du statut d'abonnement. */
+  effectivePlan: PlanSlug;
   /** Ce que l'utilisateur doit voir écrit à l'écran. */
   label: string;
+  /** Vrai si l'accès vient du statut fondateur/admin et non d'un abonnement. */
+  isFounderAccess: boolean;
+  /** Test unitaire d'une capacité — le seul point d'entrée des composants. */
+  can: (capability: Capability) => boolean;
+  /** Générations de brief IA par mois (voir packages/ai-gateway). */
+  monthlyBriefs: number;
 }
 
-const BY_PLAN: Record<PlanSlug, Entitlements> = {
-  radar: {
-    fullRankings: false,
-    productDetail: false,
-    alerts: false,
-    monthlyBriefs: 3,
-    label: "Radar (gratuit)",
-  },
-  creator: {
-    fullRankings: true,
-    productDetail: true,
-    alerts: true,
-    monthlyBriefs: 60,
-    label: "Creator",
-  },
-  pro: {
-    fullRankings: true,
-    productDetail: true,
-    alerts: true,
-    monthlyBriefs: 200,
-    label: "Pro",
-  },
+const MONTHLY_BRIEFS: Record<PlanSlug, number> = { radar: 3, creator: 60, pro: 200 };
+
+const PLAN_LABELS: Record<PlanSlug, string> = {
+  radar: "Radar (gratuit)",
+  creator: "Creator",
+  pro: "Pro",
 };
 
-const FOUNDER: Entitlements = {
-  fullRankings: true,
-  productDetail: true,
-  alerts: true,
-  monthlyBriefs: BY_PLAN.pro.monthlyBriefs,
-  label: "Accès fondateur",
-};
+function build(plan: PlanSlug, founder: boolean): Entitlements {
+  const granted = new Set<Capability>(
+    founder ? CAPABILITIES : CAPABILITIES_BY_PLAN[plan],
+  );
+  return {
+    effectivePlan: plan,
+    label: founder ? "Accès fondateur" : PLAN_LABELS[plan],
+    isFounderAccess: founder,
+    can: (capability) => granted.has(capability),
+    monthlyBriefs: founder ? MONTHLY_BRIEFS.pro : MONTHLY_BRIEFS[plan],
+  };
+}
 
 export function isFounder(email: string | null | undefined): boolean {
   if (!email) return false;
@@ -76,13 +66,13 @@ export function isFounder(email: string | null | undefined): boolean {
  * sur un accès ouvert — se tromper dans ce sens est le seul qui coûte.
  */
 export function entitlementsOf(user: User | null | undefined): Entitlements {
-  if (!user) return BY_PLAN.radar;
-  if (user.role === "admin" || isFounder(user.email)) return FOUNDER;
+  if (!user) return build("radar", false);
+  if (user.role === "admin" || isFounder(user.email)) return build(user.plan.slug, true);
 
   // Un abonnement résilié ou impayé redescend au plan gratuit, même si le
   // slug est resté sur "pro".
   const active = user.plan.status === "active" || user.plan.status === "trialing";
-  return active ? BY_PLAN[user.plan.slug] : BY_PLAN.radar;
+  return build(active ? user.plan.slug : "radar", false);
 }
 
 /** Vrai si le compte atteint au moins le niveau demandé. */

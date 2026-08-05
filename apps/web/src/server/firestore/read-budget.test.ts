@@ -1,6 +1,8 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { deleteApp, getApps, initializeApp, type App } from "firebase-admin/app";
 import { getFirestore, type Firestore } from "firebase-admin/firestore";
+import { initializeApp as initClientApp } from "firebase/app";
+import { connectAuthEmulator, getAuth, signInAnonymously } from "firebase/auth";
 import { createReadCounter } from "./read-counter";
 import { getRankingPageData } from "./rankings";
 import { getProductDetail } from "./products";
@@ -25,6 +27,24 @@ beforeAll(() => {
   // par projectId, donc les deux SDK doivent viser le même ici.
   app = getApps().length === 0 ? initializeApp({ projectId: "kairos-on" }) : getApps()[0]!;
   db = getFirestore(app);
+});
+
+// Le catalogue n'est plus en lecture publique (voir firestore.rules) : une
+// lecture anonyme est désormais refusée, ce qui est le comportement voulu.
+// Ce test mesure un *nombre d'opérations*, pas les règles — il se place
+// donc dans la situation réelle, celle d'un utilisateur connecté.
+//
+// L'application cliente est initialisée ici sous le nom qu'utilise
+// getPublicFirestore(), qui la retrouvera au lieu d'en créer une seconde,
+// anonyme, dont les requêtes échoueraient.
+beforeAll(async () => {
+  const clientApp = initClientApp(
+    { apiKey: "fake-api-key", projectId: "kairos-on" },
+    "kairos-server-read",
+  );
+  const auth = getAuth(clientApp);
+  connectAuthEmulator(auth, "http://127.0.0.1:9099", { disableWarnings: true });
+  await signInAnonymously(auth);
 });
 
 afterAll(async () => {

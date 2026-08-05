@@ -297,22 +297,23 @@ describe("public read-only collections", () => {
   }
 });
 
-describe("public catalog collections (products, shops, rankings)", () => {
-  // Lecture publique, y compris anonyme : ces pages de classement sont
-  // rendues côté client sans utilisateur connecté (voir
-  // apps/web/src/server/firebase-client.ts, contrainte plan Spark). Aucune
-  // donnée personnelle dans ces collections. Écriture réservée à l'admin
-  // (seed de démo depuis /admin en attendant le vrai pipeline de collecte).
+describe("catalogue (products, shops, rankings)", () => {
+  // Le classement complet et les verdicts sont ce que le plan gratuit
+  // offre : lecture ouverte à tout compte *connecté*. La règle avait été
+  // ouverte aux anonymes pour un rendu statique au build, devenu inutile
+  // quand les pages sont passées en chargement client derrière
+  // <RequireAuth> — n'importe qui pouvait alors vider tout le catalogue
+  // avec la configuration Firebase publique.
   const collections = ["products", "shops", "rankings"];
 
   for (const name of collections) {
-    it(`${name}: read allowed even anonymous, write requires admin`, async () => {
+    it(`${name}: lecture réservée aux comptes connectés, écriture à l'admin`, async () => {
       await testEnv.withSecurityRulesDisabled((ctx) =>
         ctx.firestore().collection(name).doc("doc-1").set({ seed: true }),
       );
 
       const anon = testEnv.unauthenticatedContext().firestore();
-      await assertSucceeds(anon.collection(name).doc("doc-1").get());
+      await assertFails(anon.collection(name).doc("doc-1").get());
       await assertFails(anon.collection(name).doc("doc-1").set({ seed: false }));
 
       const signedIn = testEnv.authenticatedContext("alice").firestore();
@@ -328,6 +329,115 @@ describe("public catalog collections (products, shops, rankings)", () => {
       await assertSucceeds(admin.collection(name).doc("doc-1").set({ seed: true }));
     });
   }
+});
+
+// L'unique capacité payante réellement appliquée côté serveur : tout le
+// reste du paywall est du rendu client, donc contournable. L'historique
+// des relevés est l'actif le plus long à reconstituer, c'est donc lui
+// qu'on protège pour de vrai.
+describe("historique des relevés — capacité payante", () => {
+  async function seedSnapshot() {
+    await testEnv.withSecurityRulesDisabled((ctx) =>
+      ctx
+        .firestore()
+        .collection("products")
+        .doc("p1")
+        .collection("snapshots")
+        .doc("2026-08-05")
+        .set({ productId: "p1", capturedDate: "2026-08-05" }),
+    );
+  }
+
+  const snap = (db: FirebaseFirestore.Firestore | ReturnType<ReturnType<typeof testEnv.authenticatedContext>["firestore"]>) =>
+    (db as ReturnType<ReturnType<typeof testEnv.authenticatedContext>["firestore"]>)
+      .collection("products")
+      .doc("p1")
+      .collection("snapshots")
+      .doc("2026-08-05");
+
+  it("refuse un anonyme", async () => {
+    await seedSnapshot();
+    await assertFails(snap(testEnv.unauthenticatedContext().firestore()).get());
+  });
+
+  it("refuse un compte gratuit, même connecté", async () => {
+    await seedSnapshot();
+    await testEnv.withSecurityRulesDisabled((ctx) =>
+      ctx.firestore().collection("users").doc("free-uid").set(validUser("free-uid")),
+    );
+    await assertFails(snap(testEnv.authenticatedContext("free-uid").firestore()).get());
+  });
+
+  it("autorise un abonnement Creator actif", async () => {
+    await seedSnapshot();
+    await testEnv.withSecurityRulesDisabled((ctx) =>
+      ctx
+        .firestore()
+        .collection("users")
+        .doc("paid-uid")
+        .set(
+          validUser("paid-uid", {
+            plan: {
+              slug: "creator",
+              status: "active",
+              currentPeriodEnd: null,
+              stripeCustomerId: null,
+            },
+          }),
+        ),
+    );
+    await assertSucceeds(snap(testEnv.authenticatedContext("paid-uid").firestore()).get());
+  });
+
+  // Le slug ne suffit pas : un abonnement impayé ne doit plus donner accès.
+  it("refuse un abonnement Pro impayé", async () => {
+    await seedSnapshot();
+    await testEnv.withSecurityRulesDisabled((ctx) =>
+      ctx
+        .firestore()
+        .collection("users")
+        .doc("due-uid")
+        .set(
+          validUser("due-uid", {
+            plan: {
+              slug: "pro",
+              status: "past_due",
+              currentPeriodEnd: null,
+              stripeCustomerId: null,
+            },
+          }),
+        ),
+    );
+    await assertFails(snap(testEnv.authenticatedContext("due-uid").firestore()).get());
+  });
+
+  // Sans quoi le pipeline client, qui recalcule les verdicts, ne pourrait
+  // plus lire les relevés.
+  it("laisse passer l'admin", async () => {
+    await seedSnapshot();
+    await testEnv.withSecurityRulesDisabled((ctx) =>
+      ctx.firestore().collection("users").doc("admin2").set(validUser("admin2", { role: "admin" })),
+    );
+    await assertSucceeds(snap(testEnv.authenticatedContext("admin2").firestore()).get());
+  });
+
+  it("n'autorise jamais l'écriture, même à un abonné", async () => {
+    await seedSnapshot();
+    await testEnv.withSecurityRulesDisabled((ctx) =>
+      ctx
+        .firestore()
+        .collection("users")
+        .doc("paid2")
+        .set(
+          validUser("paid2", {
+            plan: { slug: "pro", status: "active", currentPeriodEnd: null, stripeCustomerId: null },
+          }),
+        ),
+    );
+    await assertFails(
+      snap(testEnv.authenticatedContext("paid2").firestore()).set({ tampered: true }),
+    );
+  });
 });
 
 describe("config/complianceRules", () => {

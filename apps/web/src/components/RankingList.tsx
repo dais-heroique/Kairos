@@ -45,7 +45,10 @@ export function RankingList({ items }: { items: ProductRankItem[] }) {
   // test de slug réécrit ici : le compte fondateur et les admins voient
   // tout sans qu'on touche à leur document `plan`, protégé par les règles.
   const entitlements = entitlementsOf(userDoc);
-  const isFreePlan = !entitlements.fullRankings;
+  // « earningsAll » est la capacité vendue : le classement lui-même reste
+  // entier pour tout le monde (capacité « rankings »), seuls les gains
+  // au-delà du top 10 sont retenus.
+  const isFreePlan = !entitlements.can("earningsAll");
   const lockedCount = isFreePlan ? Math.max(0, items.length - FREE_PLAN_LIMIT) : 0;
 
   // Gains personnalisés — jamais du GMV global (règle invariante #5) :
@@ -111,13 +114,16 @@ export function RankingList({ items }: { items: ProductRankItem[] }) {
       {lockedCount > 0 && (
         <div className="kai-card flex flex-col items-center gap-2 text-center">
           <p className="font-[family-name:var(--font-display)] font-bold">
-            {lockedCount} gains verrouillés
+            {lockedCount} gains encore masqués
           </p>
           <p className="text-sm text-[color:var(--color-ink-muted)]">
-            Le plan Radar (gratuit) affiche le classement complet, mais masque
-            les gains estimés au-delà du top {FREE_PLAN_LIMIT}. Passe en
-            Creator ou Pro pour tout voir.
+            Le classement complet et les verdicts sont à toi, gratuitement.
+            Ce qui reste à débloquer, c&apos;est le calcul de <em>tes</em> gains
+            au-delà du top {FREE_PLAN_LIMIT}.
           </p>
+          <Link href="/tarifs" className="kai-btn-primary mt-1">
+            Voir ce que ça débloque
+          </Link>
         </div>
       )}
     </div>
