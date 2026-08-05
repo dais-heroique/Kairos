@@ -14,7 +14,9 @@
     "test:rules": "firebase emulators:exec --only firestore \"pnpm --filter @kairos/firestore-rules-tests test\"",
     "test:jobs-integration": "firebase emulators:exec --only firestore \"pnpm --filter @kairos/jobs test\"",
     "test:web-integration": "firebase emulators:exec --only firestore,auth \"pnpm --filter @kairos/web test\"",
-    "emulators": "firebase emulators:start --import=./.emulator-data --export-on-exit"
+    "emulators": "firebase emulators:start --import=./.emulator-data --export-on-exit",
+    "deploy:prod": "./scripts/deploy.sh",
+    "deploy:check": "./scripts/deploy.sh --dry-run"
   },
   "devDependencies": {
     "turbo": "^2.5.0",
