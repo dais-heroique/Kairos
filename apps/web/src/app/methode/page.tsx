@@ -5,6 +5,7 @@ import {
   DEFAULT_SCORING_WEIGHTS,
   DEFAULT_VERDICT_THRESHOLDS,
 } from "@kairos/core";
+import { VerdictPlayground } from "@/components/VerdictPlayground";
 import { SITE_NAME } from "@/lib/seo/site";
 
 // Page publique, et c'était le vrai trou de référencement : tout le reste
@@ -114,42 +115,65 @@ export default function MethodePage() {
         </p>
       </header>
 
-      <Section id="phases" title="1. Les cinq phases de vie d'un produit">
+      {/* Le moteur tourne dans le navigateur : plutôt que de décrire la
+          méthode, on la met entre les mains du visiteur. */}
+      <Section id="essayer" title="Essaie de casser le verdict">
         <p className="text-sm text-[color:var(--color-ink-muted)]">
-          La phase est déduite de l&apos;évolution des ventes estimées entre le
-          début et la fin de la série de relevés, pas d&apos;une seule journée.
+          Ci-dessous, le moteur de production tourne en direct. Tape sur une
+          situation, ou pousse les curseurs jusqu&apos;à faire basculer le
+          verdict — c&apos;est la façon la plus rapide de comprendre ce que
+          KAIROS regarde.
         </p>
-        <div className="flex flex-col gap-3">
+        <VerdictPlayground />
+      </Section>
+
+      <Section id="phases" title="Les cinq phases, en une ligne chacune">
+        <div className="flex flex-col gap-2">
           {PHASES.map((phase) => (
-            <div key={phase.name} className="kai-card flex flex-col gap-1">
-              <div className="flex items-baseline justify-between gap-2">
-                <h3 className="font-semibold">{phase.name}</h3>
+            <details key={phase.name} className="kai-card">
+              <summary className="flex cursor-pointer items-baseline justify-between gap-2">
+                <span className="font-semibold">{phase.name}</span>
                 <span className="text-xs text-[color:var(--color-ink-muted)]">
                   {phase.days}
                 </span>
-              </div>
-              <p className="text-sm">{phase.what}</p>
-              <p className="text-sm text-[color:var(--color-ink-muted)]">{phase.todo}</p>
-            </div>
+              </summary>
+              <p className="mt-2 text-sm">{phase.what}</p>
+              <p className="mt-1 text-sm text-[color:var(--color-ink-muted)]">{phase.todo}</p>
+            </details>
           ))}
         </div>
       </Section>
 
-      <Section id="saturation" title="2. Cinq indicateurs de saturation, pondérés">
+      <Section id="saturation" title="Ce que le moteur regarde, et à quel point">
         <p className="text-sm text-[color:var(--color-ink-muted)]">
           La saturation est notée sur 100. Elle ne mesure pas si le produit se
           vend, mais s&apos;il reste de la place pour toi.
         </p>
-        <ul className="flex flex-col gap-2">
+        {/* Le poids se voit à la longueur de la barre : on comprend d'un
+            coup d'œil que la concurrence pèse trois fois la décélération
+            des avis, sans avoir à comparer cinq pourcentages. */}
+        <ul className="flex flex-col gap-3">
           {SATURATION.map((indicator) => (
-            <li key={indicator.label} className="kai-card flex flex-col gap-1">
+            <li key={indicator.label} className="flex flex-col gap-1">
               <div className="flex items-baseline justify-between gap-2">
-                <span className="font-semibold">{indicator.label}</span>
+                <span className="text-sm font-semibold">{indicator.label}</span>
                 <span className="font-[family-name:var(--font-mono)] text-xs text-[color:var(--color-ink-muted)]">
                   {Math.round(indicator.weight * 100)}%
                 </span>
               </div>
-              <p className="text-sm text-[color:var(--color-ink-muted)]">{indicator.why}</p>
+              <div
+                className="h-1.5 w-full overflow-hidden rounded-full"
+                style={{ backgroundColor: "var(--color-surface)" }}
+              >
+                <div
+                  className="h-full rounded-full"
+                  style={{
+                    width: `${indicator.weight * 100 * 3}%`,
+                    backgroundColor: "var(--color-coral)",
+                  }}
+                />
+              </div>
+              <p className="text-xs text-[color:var(--color-ink-muted)]">{indicator.why}</p>
             </li>
           ))}
         </ul>
@@ -164,7 +188,7 @@ export default function MethodePage() {
         </p>
       </Section>
 
-      <Section id="gains" title="3. Ton gain, pas le chiffre d'affaires de la boutique">
+      <Section id="gains" title="Ton gain, pas le chiffre d'affaires de la boutique">
         <p className="text-sm">
           La plupart des outils affichent le volume de ventes total du produit.
           C&apos;est flatteur et inutile : ce n&apos;est pas ton argent. Le
@@ -185,7 +209,7 @@ export default function MethodePage() {
         </p>
       </Section>
 
-      <Section id="honnetete" title="4. Ce qu'on refuse d'afficher">
+      <Section id="honnetete" title="Ce qu'on refuse d'afficher">
         <ul className="flex flex-col gap-2 text-sm">
           <li className="kai-card">
             <strong>Jamais un nombre nu.</strong> Toute estimation arrive avec
@@ -212,7 +236,7 @@ export default function MethodePage() {
         </ul>
       </Section>
 
-      <Section id="limites" title="5. Les limites, dites franchement">
+      <Section id="limites" title="Les limites, dites franchement">
         <p className="text-sm text-[color:var(--color-ink-muted)]">
           KAIROS est indépendant de TikTok et de ByteDance — ni partenaire, ni
           porte-parole. Le marché couvert est la France uniquement. Les seuils

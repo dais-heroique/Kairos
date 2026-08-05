@@ -5,6 +5,7 @@ import {
   OrganizationJsonLd,
   SoftwareApplicationJsonLd,
 } from "@/components/JsonLd";
+import { HeroEarningsTeaser } from "@/components/HeroEarningsTeaser";
 import { Reveal } from "@/components/Reveal";
 import { VerdictBadge } from "@/components/VerdictBadge";
 import {
@@ -112,8 +113,14 @@ function Hero({ t }: { t: T }) {
           </div>
         </div>
 
-        <div className="animate-[fadein_0.7s_ease-out_0.2s_both] flex flex-1 justify-center md:justify-end">
+        {/* La carte d'exemple montre le verdict ; le curseur juste en
+            dessous fait la démonstration du reste — le visiteur voit son
+            propre chiffre avant même de créer un compte. */}
+        <div className="animate-[fadein_0.7s_ease-out_0.2s_both] flex flex-1 flex-col items-center gap-4 md:items-end">
           <HeroCardStack t={t} />
+          <div className="w-full max-w-[320px]">
+            <HeroEarningsTeaser />
+          </div>
         </div>
       </div>
     </section>
