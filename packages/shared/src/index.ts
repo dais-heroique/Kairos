@@ -17,3 +17,4 @@ export * from "./compliance";
 export * from "./entitlements";
 export * from "./compliance-defaults";
 export * from "./plans";
+export * from "./labels";

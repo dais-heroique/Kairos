@@ -30,15 +30,17 @@ describe("VerdictPlayground", () => {
 
   it("affiche le raisonnement, pas seulement la note", () => {
     render(<VerdictPlayground />);
-    expect(screen.getByText(/Score de saturation/)).toBeTruthy();
-    expect(screen.getByText(/Phase "/)).toBeTruthy();
+    // Formulé en français courant, sans « saturation » ni « phase » —
+    // ces mots ne disent rien à quelqu'un qui débute.
+    expect(screen.getByText(/Concurrence : \d+ sur 100/)).toBeTruthy();
+    expect(screen.getByText(/les ventes ont (augmenté|baissé) de/)).toBeTruthy();
   });
 
   // La fenêtre de tir est une estimation : elle ne peut pas s'afficher
   // sans sa confiance (règle produit n°1).
   it("montre la fenêtre restante avec son niveau de confiance", () => {
     render(<VerdictPlayground />);
-    expect(screen.getByText(/Fenêtre restante/)).toBeTruthy();
+    expect(screen.getByText(/Il te reste environ/)).toBeTruthy();
     expect(screen.getByText(/\((fiable|à confirmer|peu fiable)\)/)).toBeTruthy();
   });
 });

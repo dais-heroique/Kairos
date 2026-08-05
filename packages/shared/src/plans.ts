@@ -30,17 +30,80 @@ export const CAPABILITIES = [
 ] as const;
 export type Capability = (typeof CAPABILITIES)[number];
 
-export const CAPABILITY_LABELS: Record<Capability, string> = {
-  rankings: "Classements complets, verdict sur chaque produit",
-  earningsTop10: "Tes gains estimés sur le top 10",
-  earningsAll: "Tes gains estimés sur tous les produits",
-  watchlist: "Watchlist illimitée, du repérage à la publication",
-  simulator: "Simulateur de gains",
-  productHistory: "Historique jour par jour et raisonnement détaillé",
-  brief: "Brief de tournage : accroches, script, téléprompteur",
-  alerts: "Alertes quand une fenêtre se referme",
-  rankingArchive: "Archive des classements passés",
+/**
+ * Ce qui marche aujourd'hui, et ce qui ne marche pas encore.
+ *
+ * Deux fonctionnalités étaient annoncées alors que rien ne les
+ * implémentait : les alertes (seul un booléen `alertsEnabled` était écrit
+ * dans Firestore, aucune notification n'existe) et l'archive des
+ * classements (le document est écrasé à chaque calcul, il n'y a aucun
+ * historique). Vendre ça, c'est vendre du vide. Elles restent au
+ * catalogue — elles sont prévues — mais marquées `soon`, et l'interface
+ * l'affiche partout où elles apparaissent.
+ */
+export type CapabilityStatus = "live" | "soon";
+
+export interface CapabilityInfo {
+  /** Une phrase, sans jargon, qui dit ce que ça fait concrètement. */
+  label: string;
+  status: CapabilityStatus;
+}
+
+// Rédaction : pas de « GMV », pas de « saturation », pas de « phase ».
+// Ces mots-là veulent dire quelque chose pour qui a déjà travaillé le
+// sujet, et rien du tout pour quelqu'un qui débute — c'est-à-dire
+// exactement le public visé.
+export const CAPABILITY_INFO: Record<Capability, CapabilityInfo> = {
+  rankings: {
+    label:
+      "La liste des produits TikTok Shop qui marchent en ce moment, avec pour chacun : vas-y, trouve un angle, méfie-toi, ou laisse tomber",
+    status: "live",
+  },
+  earningsTop10: {
+    label: "Ce que tu toucherais sur les 10 premiers produits de la liste",
+    status: "live",
+  },
+  earningsAll: {
+    label: "Ce que tu toucherais sur tous les produits, pas seulement les 10 premiers",
+    status: "live",
+  },
+  watchlist: {
+    label:
+      "Ta liste de produits à suivre, de « j'ai demandé l'échantillon » jusqu'à « c'est publié »",
+    status: "live",
+  },
+  simulator: {
+    label: "Un curseur pour essayer : si je fais 50 000 vues sur ce produit, je touche combien ?",
+    status: "live",
+  },
+  productHistory: {
+    label:
+      "La courbe d'un produit jour après jour : ses ventes, et combien de créateurs en parlent déjà",
+    status: "live",
+  },
+  brief: {
+    label:
+      "Le texte à dire face caméra, minuté seconde par seconde, avec le plan des images à filmer",
+    status: "live",
+  },
+  alerts: {
+    label: "Un message quand un produit que tu suis commence à être fait par trop de monde",
+    status: "soon",
+  },
+  rankingArchive: {
+    label: "Revoir les listes des semaines passées, pour suivre un produit dans la durée",
+    status: "soon",
+  },
 };
+
+/** Raccourci de lecture — le libellé seul. */
+export const CAPABILITY_LABELS: Record<Capability, string> = Object.fromEntries(
+  (Object.keys(CAPABILITY_INFO) as Capability[]).map((c) => [c, CAPABILITY_INFO[c].label]),
+) as Record<Capability, string>;
+
+export function isLive(capability: Capability): boolean {
+  return CAPABILITY_INFO[capability].status === "live";
+}
 
 /**
  * Ce que chaque plan débloque. `radar` est volontairement généreux : un
@@ -85,7 +148,7 @@ export const PLANS: PlanDefinition[] = [
     name: "Radar",
     priceCents: 0,
     tagline: "Pour voir si l'outil te parle",
-    highlight: "Tout le classement, verdict compris",
+    highlight: "Toute la liste des produits, avec la recommandation pour chacun",
     popular: false,
   },
   {
@@ -93,7 +156,7 @@ export const PLANS: PlanDefinition[] = [
     name: "Creator",
     priceCents: null,
     tagline: "Pour qui poste chaque semaine",
-    highlight: "Les gains sur tout, l'historique et le brief de tournage",
+    highlight: "Tes gains sur tous les produits, les courbes, et le texte à dire",
     popular: true,
   },
   {
@@ -101,7 +164,7 @@ export const PLANS: PlanDefinition[] = [
     name: "Pro",
     priceCents: null,
     tagline: "Pour en faire un vrai revenu",
-    highlight: "L'archive des classements, pour suivre un produit dans le temps",
+    highlight: "Suivre un produit sur plusieurs semaines",
     popular: false,
   },
 ];

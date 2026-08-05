@@ -4,7 +4,12 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useMemo, useState } from "react";
 import { computeEarnings, DEFAULT_EARNINGS_CONFIG } from "@kairos/core";
-import { entitlementsOf, type ProductSnapshot } from "@kairos/shared";
+import {
+  crowdingWording,
+  entitlementsOf,
+  PHASE_LABELS,
+  type ProductSnapshot,
+} from "@kairos/shared";
 import { BottomNav } from "@/components/BottomNav";
 import { EstimatedValue } from "@/components/EstimatedValue";
 import { RequireAuth } from "@/components/RequireAuth";
@@ -131,12 +136,12 @@ function ProduitContent() {
         <VerdictBadge verdict={item.verdict} />
         {item.phase && (
           <span className="rounded-full border px-2 py-0.5 text-xs" style={{ borderColor: "var(--color-border)" }}>
-            phase {item.phase}
+            {PHASE_LABELS[item.phase].short}
           </span>
         )}
         {typeof item.saturationScore === "number" && (
           <span className="rounded-full border px-2 py-0.5 text-xs" style={{ borderColor: "var(--color-border)" }}>
-            saturation {item.saturationScore}/100
+            {crowdingWording(item.saturationScore)}
           </span>
         )}
       </div>
@@ -146,7 +151,7 @@ function ProduitContent() {
       {item.reasoning && item.reasoning.length > 0 && (
         <section className="kai-card flex flex-col gap-2">
           <h2 className="font-[family-name:var(--font-display)] font-bold">
-            Pourquoi ce verdict
+            Pourquoi cette réponse
           </h2>
           <ul className="flex flex-col gap-1.5">
             {item.reasoning.map((line) => (
@@ -158,7 +163,7 @@ function ProduitContent() {
           {windowRangeOf(item) && (
             <p className="text-sm">
               <span className="text-[color:var(--color-ink-muted)]">
-                Fenêtre avant saturation :{" "}
+                Il te reste environ :{" "}
               </span>
               <EstimatedValue
                 range={windowRangeOf(item)!}

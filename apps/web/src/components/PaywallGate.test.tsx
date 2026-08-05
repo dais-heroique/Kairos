@@ -76,8 +76,8 @@ describe("PaywallGate", () => {
         <p>contenu</p>
       </PaywallGate>,
     );
-    expect(screen.getByText(/Historique jour par jour/)).toBeTruthy();
-    expect(screen.getByText(/Alertes quand une fenêtre/)).toBeTruthy();
+    expect(screen.getByText(/La courbe d'un produit jour après jour/)).toBeTruthy();
+    expect(screen.getByText(/commence à être fait par trop de monde/)).toBeTruthy();
   });
 
   it("affiche l'aperçu flouté quand il est fourni", () => {
@@ -108,6 +108,21 @@ describe("PaywallGate", () => {
       </PaywallGate>,
     );
     expect(screen.getByText(/Bientôt/)).toBeTruthy();
+  });
+
+  // Les alertes et l'archive n'existent pas encore : les annoncer sans le
+  // dire reviendrait à vendre du vide.
+  it("signale ce qui n'est pas encore disponible", () => {
+    render(
+      <PaywallGate
+        capability="brief"
+        entitlements={entitlementsOf(user("radar"))}
+        title="Débloque le brief"
+      >
+        <p>contenu</p>
+      </PaywallGate>,
+    );
+    expect(screen.getByText("pas encore là")).toBeTruthy();
   });
 
   it("un compte Pro n'est jamais bloqué", () => {

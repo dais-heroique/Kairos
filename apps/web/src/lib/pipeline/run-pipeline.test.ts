@@ -64,11 +64,11 @@ describe("chaîne de calcul du pipeline de saisie manuelle", () => {
     ).toBe(false);
   });
 
-  it("explique honnêtement un verdict rendu sur un historique trop court", () => {
+  it("explique honnêtement une réponse rendue sans assez de recul", () => {
     const verdict = computeVerdict([snapshot("2026-07-01")]);
 
     expect(verdict.verdict).toBe("risque");
-    expect(verdict.reasoning.join(" ")).toContain("Historique trop court");
+    expect(verdict.reasoning.join(" ")).toContain("Trop récent");
     // Une confiance quasi nulle, pas une fourchette rassurante inventée.
     expect(verdict.windowDaysRemaining.confidence).toBeLessThan(0.1);
   });

@@ -3,7 +3,7 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 import {
-  CAPABILITY_LABELS,
+  CAPABILITY_INFO,
   formatPlanPrice,
   newCapabilitiesOf,
   planUnlocking,
@@ -86,7 +86,18 @@ export function PaywallGate({
               <li key={c} className="flex gap-2 text-sm text-[color:var(--color-ink-muted)]">
                 <span style={{ color: "var(--color-success)" }}>✓</span>
                 <span className={c === capability ? "font-semibold text-[color:var(--color-ink)]" : ""}>
-                  {CAPABILITY_LABELS[c]}
+                  {CAPABILITY_INFO[c].label}
+                  {CAPABILITY_INFO[c].status === "soon" && (
+                    <span
+                      className="ml-1.5 rounded-full px-1.5 py-0.5 text-[10px] font-bold whitespace-nowrap"
+                      style={{
+                        backgroundColor: "var(--color-warning-soft)",
+                        color: "var(--color-warning)",
+                      }}
+                    >
+                      pas encore là
+                    </span>
+                  )}
                 </span>
               </li>
             ))}

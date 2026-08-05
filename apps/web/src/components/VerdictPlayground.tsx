@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { computeVerdict } from "@kairos/core";
+import { CROWDING_LABEL, crowdingWording, PHASE_LABELS } from "@kairos/shared";
 import { EstimatedValue } from "@/components/EstimatedValue";
 import { VerdictBadge } from "@/components/VerdictBadge";
 import { SnapshotChart } from "@/components/SnapshotChart";
@@ -21,14 +22,6 @@ import {
 // Rien n'est truqué : `computeVerdict` reçoit ici exactement la même forme
 // de données que sur un produit réel. Si le moteur évolue, cette page
 // évolue avec lui — elle ne peut pas mentir sur le produit.
-
-const PHASE_LABELS: Record<string, string> = {
-  emergence: "Émergence",
-  growth: "Croissance",
-  late_growth: "Fin de croissance",
-  maturity: "Maturité",
-  decline: "Déclin",
-};
 
 interface SliderProps {
   label: string;
@@ -128,16 +121,18 @@ export function VerdictPlayground() {
           <div className="scale-125 origin-left">
             <VerdictBadge verdict={verdict.verdict} />
           </div>
-          <span className="text-right text-xs text-[color:var(--color-ink-muted)]">
-            {PHASE_LABELS[verdict.phase] ?? verdict.phase}
+          <span className="max-w-[45%] text-right text-xs text-[color:var(--color-ink-muted)]">
+            {PHASE_LABELS[verdict.phase].short}
             <br />
-            {snapshots.length} relevés
+            {snapshots.length} jours de recul
           </span>
         </div>
 
         <div className="flex flex-col gap-1">
           <div className="flex items-baseline justify-between">
-            <span className="text-xs text-[color:var(--color-ink-muted)]">Saturation</span>
+            <span className="text-xs text-[color:var(--color-ink-muted)]">
+              {CROWDING_LABEL} — {crowdingWording(verdict.saturationScore)}
+            </span>
             <span className="font-[family-name:var(--font-mono)] text-sm font-bold" style={{ color: satColor }}>
               {verdict.saturationScore}/100
             </span>
@@ -157,7 +152,7 @@ export function VerdictPlayground() {
             <EstimatedValue>, comme partout ailleurs. La règle ESLint
             kairos/no-raw-estimate-number refuse d'ailleurs le contraire. */}
         <p className="text-sm">
-          <span className="text-[color:var(--color-ink-muted)]">Fenêtre restante : </span>
+          <span className="text-[color:var(--color-ink-muted)]">Il te reste environ : </span>
           <EstimatedValue
             range={{
               low: verdict.windowDaysRemaining.low,
@@ -188,45 +183,45 @@ export function VerdictPlayground() {
       {/* --------- Les curseurs --------- */}
       <div className="kai-card flex flex-col gap-4">
         <p className="text-xs text-[color:var(--color-ink-muted)]">
-          Bouge un curseur : le verdict est recalculé par le moteur de
-          production, pas par une animation.
+          Bouge un curseur : la réponse est recalculée pour de vrai, ce
+          n&apos;est pas une animation.
         </p>
 
         <Slider
-          label="Jours d'historique"
-          hint="Un produit jeune n'est pas jugé comme un produit installé."
+          label="Depuis combien de jours on le suit"
+          hint="Un produit tout neuf ne se juge pas comme un produit installé."
           value={params.days}
           bounds={SCENARIO_BOUNDS.days}
           format={(v) => `${v} j`}
           onChange={(days) => update({ days })}
         />
         <Slider
-          label="Évolution des ventes"
-          hint="Multiplicateur entre le premier et le dernier relevé."
+          label="Est-ce que ça vend de plus en plus ?"
+          hint="×1 = ça vend pareil qu'au début. ×3 = trois fois plus."
           value={params.salesMultiplier}
           bounds={SCENARIO_BOUNDS.salesMultiplier}
           format={(v) => `×${v.toFixed(1)}`}
           onChange={(salesMultiplier) => update({ salesMultiplier })}
         />
         <Slider
-          label="Boutiques concurrentes"
-          hint="Le facteur le plus lourd : plus de vendeurs, moins de place."
+          label="Combien de boutiques le vendent"
+          hint="Ce qui pèse le plus lourd : plus de vendeurs, moins de place pour toi."
           value={params.competingShops}
           bounds={SCENARIO_BOUNDS.competingShops}
           format={(v) => String(v)}
           onChange={(competingShops) => update({ competingShops })}
         />
         <Slider
-          label="Créateurs actifs"
-          hint="Si cinquante personnes ont fait la vidéo, la tienne arrive après."
+          label="Combien de créateurs en parlent"
+          hint="Si cinquante personnes ont déjà fait la vidéo, la tienne arrive après."
           value={params.creators}
           bounds={SCENARIO_BOUNDS.creators}
           format={(v) => String(v)}
           onChange={(creators) => update({ creators })}
         />
         <Slider
-          label="Baisse de prix"
-          hint="Une guerre des prix signale des vendeurs qui bradent déjà."
+          label="De combien le prix a baissé"
+          hint="Quand les vendeurs cassent les prix, c'est qu'ils se battent déjà."
           value={params.priceDropPct}
           bounds={SCENARIO_BOUNDS.priceDropPct}
           format={(v) => `−${v}%`}

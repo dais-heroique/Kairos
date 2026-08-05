@@ -6,6 +6,7 @@ import {
   DEFAULT_VERDICT_THRESHOLDS,
 } from "@kairos/core";
 import { VerdictPlayground } from "@/components/VerdictPlayground";
+import { PHASE_LABELS, type Phase } from "@kairos/shared";
 import { SITE_NAME } from "@/lib/seo/site";
 
 // Page publique, et c'était le vrai trou de référencement : tout le reste
@@ -19,17 +20,16 @@ import { SITE_NAME } from "@/lib/seo/site";
 // devenir un discours marketing qui ne correspond plus au produit.
 
 export const metadata: Metadata = {
-  title: "Comment on décide qu'un produit TikTok Shop vaut encore le coup",
+  title: "Comment on sait si un produit TikTok Shop vaut encore le coup",
   description:
-    "La méthode KAIROS en clair : les cinq phases de vie d'un produit TikTok Shop, " +
-    "les cinq indicateurs de saturation, le calcul du gain créateur, et pourquoi " +
-    "on n'affiche jamais un chiffre sans sa fourchette.",
+    "Expliqué simplement : les cinq moments de vie d'un produit TikTok Shop, " +
+    "ce qui fait qu'il devient trop concurrentiel, comment on calcule ce que tu " +
+    "toucherais, et pourquoi on ne donne jamais un chiffre tout seul.",
   alternates: { canonical: "/methode" },
   openGraph: {
-    title: "La méthode KAIROS — quand entrer sur un produit TikTok Shop",
+    title: "Comment savoir si c'est encore le moment — KAIROS",
     description:
-      "Cinq phases, cinq indicateurs de saturation, une fenêtre de tir estimée. " +
-      "Expliqué sans jargon.",
+      "Essaie toi-même : bouge les curseurs et vois la réponse changer en direct.",
     url: "/methode",
   },
 };
@@ -37,45 +37,23 @@ export const metadata: Metadata = {
 const t = DEFAULT_VERDICT_THRESHOLDS;
 const w = DEFAULT_SCORING_WEIGHTS;
 
-const PHASES = [
-  {
-    name: "Émergence",
-    days: `moins de ${t.phaseTransitionDays.emergenceMaxDays} jours`,
-    what: "Les ventes montent, presque personne n'en parle encore.",
-    todo: "C'est le meilleur moment. Peu de vidéos concurrentes, l'algorithme n'a pas encore vu le produit cent fois.",
-  },
-  {
-    name: "Croissance",
-    days: `jusqu'à ${t.phaseTransitionDays.growthMaxDays} jours`,
-    what: "Les ventes accélèrent franchement et les premiers créateurs arrivent.",
-    todo: "Encore très jouable, mais il faut publier vite plutôt que parfait.",
-  },
-  {
-    name: "Fin de croissance",
-    days: `jusqu'à ${t.phaseTransitionDays.lateGrowthMaxDays} jours`,
-    what: "Ça monte encore, mais moins vite, et la concurrence est là.",
-    todo: "Il faut un angle : un usage détourné, une objection traitée, un format que personne n'a fait.",
-  },
-  {
-    name: "Maturité",
-    days: "au-delà",
-    what: "Les ventes stagnent, beaucoup de boutiques vendent la même chose.",
-    todo: "Le rapport effort/gain devient mauvais pour un compte qui débute.",
-  },
-  {
-    name: "Déclin",
-    days: "—",
-    what: "Les ventes reculent, les prix baissent, les créateurs partent.",
-    todo: "À laisser passer, sauf angle vraiment original.",
-  },
-];
+// Libellés lus dans packages/shared : les mêmes mots qu'à l'écran dans
+// l'application, pour que la page n'invente pas son propre vocabulaire.
+const PHASE_ORDER: Phase[] = ["emergence", "growth", "late_growth", "maturity", "decline"];
+const PHASE_DAYS: Record<Phase, string> = {
+  emergence: `moins de ${t.phaseTransitionDays.emergenceMaxDays} jours`,
+  growth: `jusqu'à ${t.phaseTransitionDays.growthMaxDays} jours`,
+  late_growth: `jusqu'à ${t.phaseTransitionDays.lateGrowthMaxDays} jours`,
+  maturity: "au-delà",
+  decline: "—",
+};
 
 const SATURATION = [
-  { label: "Boutiques concurrentes", weight: w.competingShops, why: "Plus il y a de vendeurs, plus la commission et l'attention se divisent." },
-  { label: "Densité de créateurs", weight: w.creatorDensity, why: "Si 50 personnes ont déjà fait la vidéo, la tienne arrive 51e." },
-  { label: "Chute du prix sur 14 jours", weight: w.priceDropAmplitude14d, why: "Une guerre des prix signale que les vendeurs se battent déjà pour écouler." },
-  { label: "Arrivée de vendeurs sur 7 jours", weight: w.newSellerArrivalRate7d, why: "La vitesse compte autant que le nombre : dix nouveaux en une semaine, c'est une ruée." },
-  { label: "Décélération des avis", weight: w.reviewVelocityDeceleration, why: "Les avis ralentissent avant les ventes — c'est un signal avancé." },
+  { label: "Combien de boutiques le vendent", weight: w.competingShops, why: "Plus il y a de vendeurs, plus l'attention et l'argent se divisent." },
+  { label: "Combien de créateurs en parlent", weight: w.creatorDensity, why: "Si 50 personnes ont déjà fait la vidéo, la tienne arrive 51e." },
+  { label: "De combien le prix a baissé en 2 semaines", weight: w.priceDropAmplitude14d, why: "Quand les vendeurs cassent les prix, c'est qu'ils se battent déjà pour écouler." },
+  { label: "Combien de vendeurs sont arrivés cette semaine", weight: w.newSellerArrivalRate7d, why: "La vitesse compte autant que le nombre : dix nouveaux en une semaine, c'est la ruée." },
+  { label: "Si les avis arrivent moins vite qu'avant", weight: w.reviewVelocityDeceleration, why: "Les avis ralentissent avant les ventes — ça prévient à l'avance." },
 ];
 
 function Section({
@@ -105,49 +83,51 @@ export default function MethodePage() {
           ← {SITE_NAME}
         </Link>
         <h1 className="font-[family-name:var(--font-display)] text-3xl font-extrabold leading-tight">
-          Comment on décide qu&apos;un produit TikTok Shop vaut encore le coup
+          Comment on sait si un produit TikTok Shop vaut encore le coup
         </h1>
         <p className="text-[color:var(--color-ink-muted)]">
-          Un produit qui cartonne aujourd&apos;hui peut être saturé dans cinq
-          jours. Toute la question est de savoir où il en est de son cycle —
-          pas combien il a vendu hier. Voici la méthode, en clair, avec les
-          seuils réellement utilisés.
+          Un produit qui cartonne aujourd&apos;hui peut être fait par trois
+          cents personnes dans cinq jours. La vraie question n&apos;est pas
+          combien il a vendu hier, mais s&apos;il te reste de la place. Voici
+          comment on répond, avec les chiffres qu&apos;on utilise vraiment.
         </p>
       </header>
 
       {/* Le moteur tourne dans le navigateur : plutôt que de décrire la
           méthode, on la met entre les mains du visiteur. */}
-      <Section id="essayer" title="Essaie de casser le verdict">
+      <Section id="essayer" title="Essaie toi-même">
         <p className="text-sm text-[color:var(--color-ink-muted)]">
-          Ci-dessous, le moteur de production tourne en direct. Tape sur une
-          situation, ou pousse les curseurs jusqu&apos;à faire basculer le
-          verdict — c&apos;est la façon la plus rapide de comprendre ce que
-          KAIROS regarde.
+          Ci-dessous, c&apos;est le vrai calcul qui tourne, en direct. Tape
+          sur une situation, ou pousse les curseurs jusqu&apos;à faire changer
+          la réponse — c&apos;est le plus rapide pour comprendre ce qu&apos;on
+          regarde.
         </p>
         <VerdictPlayground />
       </Section>
 
-      <Section id="phases" title="Les cinq phases, en une ligne chacune">
+      <Section id="phases" title="Les cinq moments de vie d'un produit">
         <div className="flex flex-col gap-2">
-          {PHASES.map((phase) => (
-            <details key={phase.name} className="kai-card">
+          {PHASE_ORDER.map((phase) => (
+            <details key={phase} className="kai-card">
               <summary className="flex cursor-pointer items-baseline justify-between gap-2">
-                <span className="font-semibold">{phase.name}</span>
+                <span className="font-semibold">{PHASE_LABELS[phase].short}</span>
                 <span className="text-xs text-[color:var(--color-ink-muted)]">
-                  {phase.days}
+                  {PHASE_DAYS[phase]}
                 </span>
               </summary>
-              <p className="mt-2 text-sm">{phase.what}</p>
-              <p className="mt-1 text-sm text-[color:var(--color-ink-muted)]">{phase.todo}</p>
+              <p className="mt-2 text-sm">{PHASE_LABELS[phase].meaning}</p>
+              <p className="mt-1 text-sm text-[color:var(--color-ink-muted)]">
+                {PHASE_LABELS[phase].advice}
+              </p>
             </details>
           ))}
         </div>
       </Section>
 
-      <Section id="saturation" title="Ce que le moteur regarde, et à quel point">
+      <Section id="saturation" title="Ce qu'on regarde, et ce qui pèse le plus">
         <p className="text-sm text-[color:var(--color-ink-muted)]">
-          La saturation est notée sur 100. Elle ne mesure pas si le produit se
-          vend, mais s&apos;il reste de la place pour toi.
+          On note la concurrence sur 100. Ça ne dit pas si le produit se vend
+          bien — ça dit s&apos;il reste de la place pour toi.
         </p>
         {/* Le poids se voit à la longueur de la barre : on comprend d'un
             coup d'œil que la concurrence pèse trois fois la décélération
@@ -178,34 +158,33 @@ export default function MethodePage() {
           ))}
         </ul>
         <p className="text-sm">
-          Au-delà de {t.verdictScoreBands.entrerMaintenantMax}/100, il faut un
-          angle. Au-delà de {t.verdictScoreBands.risqueMax}/100, mieux vaut
-          passer son tour. Et si la saturation bondit de{" "}
+          Au-delà de {t.verdictScoreBands.entrerMaintenantMax} sur 100, il te
+          faut un angle. Au-delà de {t.verdictScoreBands.risqueMax}, mieux vaut
+          passer ton tour. Et si la concurrence bondit de{" "}
           {t.saturationSpikeDeltaPoints} points en{" "}
-          {t.saturationSpikeWindowDays} jours, le verdict est revu à la baisse
-          même si les ventes montent encore — c&apos;est le cas typique du
-          produit sur lequel tout le monde se rue en même temps.
+          {t.saturationSpikeWindowDays} jours, on baisse la recommandation même
+          si les ventes montent encore — c&apos;est le cas typique du produit
+          sur lequel tout le monde se rue en même temps.
         </p>
       </Section>
 
-      <Section id="gains" title="Ton gain, pas le chiffre d'affaires de la boutique">
+      <Section id="gains" title="Ton gain, pas le chiffre d'affaires du vendeur">
         <p className="text-sm">
-          La plupart des outils affichent le volume de ventes total du produit.
-          C&apos;est flatteur et inutile : ce n&apos;est pas ton argent. Le
-          calcul ici part de <em>tes</em> vues :
+          La plupart des outils affichent le total vendu par la boutique.
+          C&apos;est flatteur et ça ne t&apos;apprend rien : ce n&apos;est pas
+          ton argent. Ici le calcul part de <em>tes</em> vues :
         </p>
-        <div className="kai-card font-[family-name:var(--font-mono)] text-sm leading-relaxed">
-          tes vues × taux de conversion × prix × commission ×
-          (1 − taux de retour)
+        <div className="kai-card text-sm leading-relaxed">
+          tes vues → combien achètent → × le prix du produit → × ta commission
+          → moins les gens qui renvoient l&apos;article
         </div>
         <p className="text-sm text-[color:var(--color-ink-muted)]">
-          Avec {DEFAULT_EARNINGS_CONFIG.defaultReturnRatePct}% de retours
-          déduits par défaut, et un taux de conversion volontairement prudent
-          de {(DEFAULT_EARNINGS_CONFIG.defaultConversionRate * 100).toFixed(2)}%
-          — soit environ 2 commandes pour 1 000 vues. Surestimer ce chiffre est
-          la faute la plus facile à commettre, et celle qui coûte le plus cher :
-          tu tournes la vidéo, tu touches le dixième de ce qui t&apos;était
-          annoncé, et tu ne reviens pas.
+          On part sur environ 2 commandes pour 1 000 vues, et on retire{" "}
+          {DEFAULT_EARNINGS_CONFIG.defaultReturnRatePct}% pour les gens qui
+          renvoient l&apos;article. C&apos;est volontairement bas. Gonfler ce
+          chiffre est la faute la plus facile à commettre et la plus coûteuse :
+          tu tournes la vidéo, tu touches le dixième de ce qu&apos;on
+          t&apos;avait annoncé, et tu ne reviens jamais.
         </p>
       </Section>
 
@@ -236,13 +215,41 @@ export default function MethodePage() {
         </ul>
       </Section>
 
+      <Section id="etat" title="Où en est l’app, aujourd’hui">
+        <p className="text-sm">
+          <strong>Ce qui marche et dont tu peux te servir maintenant :</strong>{" "}
+          la liste des produits avec la recommandation pour chacun, le calcul de
+          ce que tu toucherais, ta liste de suivi jusqu&apos;à la publication,
+          et le texte à dire face caméra avec le mode plein écran.
+        </p>
+        <p className="text-sm">
+          <strong>Ce qui n&apos;y est pas encore :</strong> les messages
+          d&apos;alerte quand un produit se remplit, et le fait de revoir les
+          listes des semaines passées. C&apos;est marqué « pas encore là »
+          partout où c&apos;est mentionné.
+        </p>
+        <p className="text-sm">
+          <strong>Comment les produits arrivent :</strong> ils sont relevés à la
+          main, un par un, chaque jour, dans l&apos;espace affilié officiel de
+          TikTok Shop. Il n&apos;y a pas de récupération automatique — l&apos;API
+          d&apos;affiliation de TikTok n&apos;est pas ouverte en France, et
+          aspirer le site est contraire à leurs conditions. C&apos;est donc plus
+          lent, mais les chiffres viennent de la plateforme elle-même.
+        </p>
+        <p className="text-sm">
+          <strong>Les paiements ne sont pas branchés.</strong> Les offres
+          Creator et Pro s&apos;affichent, mais rien n&apos;est encaissé pour
+          l&apos;instant.
+        </p>
+      </Section>
+
       <Section id="limites" title="Les limites, dites franchement">
         <p className="text-sm text-[color:var(--color-ink-muted)]">
-          KAIROS est indépendant de TikTok et de ByteDance — ni partenaire, ni
-          porte-parole. Le marché couvert est la France uniquement. Les seuils
-          ci-dessus sont des valeurs de départ défendables, pas des vérités
-          révélées : ils se calibreront avec le volume de données. Et une
-          estimation reste une estimation, même accompagnée de sa fourchette.
+          KAIROS n&apos;a aucun lien avec TikTok ni ByteDance — ni partenaire,
+          ni porte-parole. Seule la France est couverte. Les seuils ci-dessus
+          sont des valeurs de départ défendables, pas des vérités : ils
+          s&apos;affineront avec le volume de données. Et une estimation reste
+          une estimation, même accompagnée de sa fourchette.
         </p>
       </Section>
 

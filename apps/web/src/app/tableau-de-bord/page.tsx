@@ -3,7 +3,12 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { computeEarnings, DEFAULT_EARNINGS_CONFIG } from "@kairos/core";
-import { entitlementsOf, type EstimatedRange, type WatchlistEntry } from "@kairos/shared";
+import {
+  crowdingWording,
+  entitlementsOf,
+  type EstimatedRange,
+  type WatchlistEntry,
+} from "@kairos/shared";
 import { BottomNav } from "@/components/BottomNav";
 import { EstimatedValue } from "@/components/EstimatedValue";
 import { RankingMeta } from "@/components/RankingMeta";
@@ -207,8 +212,9 @@ function DashboardContent() {
 
         {dashboard && dashboard.totalAnalysed === 0 && (
           <div className="kai-card text-sm text-[color:var(--color-ink-muted)]">
-            Aucun produit n&apos;a encore assez d&apos;historique pour être jugé. Il
-            faut au moins 3 relevés par produit — reviens dans quelques jours.
+            Aucun produit n&apos;a encore assez de recul pour qu&apos;on
+            puisse dire quoi que ce soit. Il faut au moins 3 jours de suivi
+            par produit — reviens dans quelques jours.
           </div>
         )}
 
@@ -217,19 +223,19 @@ function DashboardContent() {
             {/* ---------- Chiffres clés ---------- */}
             <div className="grid grid-cols-2 gap-2">
               <Stat
-                label="Fenêtres ouvertes"
+                label="Encore jouables"
                 value={String(dashboard.openWindowCount)}
-                hint={`sur ${dashboard.totalAnalysed} produits analysés`}
+                hint={`sur ${dashboard.totalAnalysed} produits suivis`}
                 tone="success"
               />
               <Stat
-                label="Se referment bientôt"
+                label="Bientôt trop tard"
                 value={String(dashboard.closingSoon.length)}
-                hint="moins de 3 semaines"
+                hint="moins de 3 semaines devant"
                 tone={dashboard.closingSoon.length > 0 ? "coral" : undefined}
               />
               <Stat
-                label="Dans ton pipeline"
+                label="Tu les suis"
                 value={String(watchlist.length)}
                 hint={
                   dashboard.awaitingSample > 0
@@ -240,7 +246,7 @@ function DashboardContent() {
               <Stat
                 label="À éviter"
                 value={String(dashboard.avoid.length)}
-                hint="saturés ou en déclin"
+                hint="trop de monde, ou ça retombe"
               />
             </div>
 
@@ -307,7 +313,7 @@ function DashboardContent() {
 
                 {windowRangeOf(dashboard.topPick.item) && (
                   <p className="text-xs text-[color:var(--color-ink-muted)]">
-                    Fenêtre avant saturation :{" "}
+                    Il te reste environ :{" "}
                     <EstimatedValue
                       range={windowRangeOf(dashboard.topPick.item)!}
                       format={(v) => `${v} j`}
@@ -377,7 +383,7 @@ function DashboardContent() {
             {dashboard.closingSoon.length > 0 && (
               <section className="kai-card flex flex-col gap-2">
                 <h2 className="font-[family-name:var(--font-display)] font-bold">
-                  Fenêtres qui se referment
+                  Bientôt trop tard
                 </h2>
                 <p className="text-xs text-[color:var(--color-ink-muted)]">
                   Encore jouables, mais plus pour longtemps.
@@ -394,7 +400,7 @@ function DashboardContent() {
             <section className="kai-card flex flex-col gap-2">
               <div className="flex items-baseline justify-between gap-2">
                 <h2 className="font-[family-name:var(--font-display)] font-bold">
-                  Ton pipeline
+                  Où en sont tes produits
                 </h2>
                 <Link href="/watchlist" className="text-xs underline">
                   Gérer
@@ -442,7 +448,7 @@ function DashboardContent() {
                     <ProductLine
                       key={i.id}
                       item={i}
-                      note={`saturation ${i.saturationScore}/100`}
+                      note={crowdingWording(i.saturationScore ?? 0)}
                     />
                   ))}
                 </div>
@@ -453,15 +459,15 @@ function DashboardContent() {
             {dashboard.needsHistory.length > 0 && (
               <section className="kai-card flex flex-col gap-2">
                 <h2 className="font-[family-name:var(--font-display)] font-bold">
-                  Pas encore jugeables
+                  Trop tôt pour se prononcer
                 </h2>
                 <p className="text-xs text-[color:var(--color-ink-muted)]">
-                  Moins de 3 relevés : le verdict n&apos;aurait aucune valeur. Ils sont
-                  listés quand même, pas cachés.
+                  Moins de 3 jours de suivi : une réponse n&apos;aurait
+                  aucune valeur. Ils sont listés quand même, pas cachés.
                 </p>
                 <div>
                   {dashboard.needsHistory.map((i) => (
-                    <ProductLine key={i.id} item={i} note="historique trop court" />
+                    <ProductLine key={i.id} item={i} note="pas encore assez de recul" />
                   ))}
                 </div>
               </section>

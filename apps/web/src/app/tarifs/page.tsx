@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import {
   CAPABILITIES,
-  CAPABILITY_LABELS,
+  CAPABILITY_INFO,
   CAPABILITIES_BY_PLAN,
   formatPlanPrice,
   newCapabilitiesOf,
@@ -98,7 +98,21 @@ export default function TarifsPage() {
                   <li key={c} className="flex gap-2 text-sm">
                     <span style={{ color: "var(--color-success)" }}>✓</span>
                     <span className="text-[color:var(--color-ink-muted)]">
-                      {CAPABILITY_LABELS[c]}
+                      {CAPABILITY_INFO[c].label}
+                      {/* Marquer ce qui n'est pas encore là, à l'endroit
+                          exact où c'est annoncé — pas dans une note de bas
+                          de page que personne ne lit. */}
+                      {CAPABILITY_INFO[c].status === "soon" && (
+                        <span
+                          className="ml-1.5 rounded-full px-1.5 py-0.5 text-[10px] font-bold"
+                          style={{
+                            backgroundColor: "var(--color-warning-soft)",
+                            color: "var(--color-warning)",
+                          }}
+                        >
+                          pas encore là
+                        </span>
+                      )}
                     </span>
                   </li>
                 ))}
@@ -154,7 +168,18 @@ export default function TarifsPage() {
                   style={{ borderColor: "var(--color-border)" }}
                 >
                   <td className="p-2 text-[color:var(--color-ink-muted)]">
-                    {CAPABILITY_LABELS[capability]}
+                    {CAPABILITY_INFO[capability].label}
+                    {CAPABILITY_INFO[capability].status === "soon" && (
+                      <span
+                        className="ml-1.5 rounded-full px-1.5 py-0.5 text-[10px] font-bold whitespace-nowrap"
+                        style={{
+                          backgroundColor: "var(--color-warning-soft)",
+                          color: "var(--color-warning)",
+                        }}
+                      >
+                        pas encore là
+                      </span>
+                    )}
                   </td>
                   {PLANS.map((plan) => {
                     const included = CAPABILITIES_BY_PLAN[plan.slug].includes(capability);
@@ -180,10 +205,32 @@ export default function TarifsPage() {
         </div>
       </section>
 
-      <section className="kai-card flex flex-col gap-2 text-sm">
+      <section className="kai-card flex flex-col gap-3 text-sm">
         <h2 className="font-[family-name:var(--font-display)] font-bold">
-          Ce qu&apos;on ne fait pas
+          Où en est l&apos;app, honnêtement
         </h2>
+        <p className="text-[color:var(--color-ink-muted)]">
+          Ce qui marche aujourd&apos;hui : la liste des produits avec la
+          recommandation pour chacun, le calcul de ce que tu toucherais, la
+          liste de suivi, et le texte à dire face caméra. Tu peux t&apos;en
+          servir maintenant.
+        </p>
+        <p className="text-[color:var(--color-ink-muted)]">
+          Ce qui n&apos;y est pas encore : les messages d&apos;alerte, et le
+          fait de revoir les listes des semaines passées. C&apos;est marqué
+          « pas encore là » partout où ça apparaît, plutôt que noyé dans une
+          liste où tout se ressemble.
+        </p>
+        <p className="text-[color:var(--color-ink-muted)]">
+          Et surtout : les produits ne sont pas encore récupérés
+          automatiquement depuis TikTok Shop. Ils sont relevés à la main, un
+          par un, tous les jours. C&apos;est plus lent, mais les chiffres
+          viennent de l&apos;espace affilié officiel, pas d&apos;une
+          estimation faite de loin.
+        </p>
+        <h3 className="font-[family-name:var(--font-display)] font-bold">
+          Ce qu&apos;on ne fait pas
+        </h3>
         <p className="text-[color:var(--color-ink-muted)]">
           Pas de carte bancaire pour le plan gratuit, pas d&apos;engagement, pas
           de fonctionnalité annoncée qui n&apos;existe pas encore. Les tarifs

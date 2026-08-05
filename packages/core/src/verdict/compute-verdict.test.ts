@@ -139,7 +139,7 @@ describe("computeVerdict", () => {
 
     const verdict = computeVerdict([...early, ...spike]);
 
-    expect(verdict.reasoning.some((line) => line.includes("brutale"))).toBe(true);
+    expect(verdict.reasoning.some((line) => line.includes("d'un coup"))).toBe(true);
     expect(["risque", "eviter"]).toContain(verdict.verdict);
   });
 
@@ -163,7 +163,7 @@ describe("computeVerdict", () => {
 
     const verdict = computeVerdict([...before, ...after]);
 
-    expect(verdict.reasoning.some((line) => line.includes("Trou de collecte"))).toBe(true);
+    expect(verdict.reasoning.some((line) => line.includes("Il manque"))).toBe(true);
     expect(verdict.windowDaysRemaining.confidence).toBeLessThan(0.95);
   });
 });

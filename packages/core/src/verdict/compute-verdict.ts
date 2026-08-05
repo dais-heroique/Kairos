@@ -1,4 +1,5 @@
 import type { ProductSnapshot, ProductVerdict, Phase } from "@kairos/shared";
+import { PHASE_LABELS } from "@kairos/shared";
 import { clamp } from "../lib/math";
 import {
   DEFAULT_SCORING_WEIGHTS,
@@ -115,6 +116,20 @@ function classifyPhase(
   if (span > t.maturityMaxDays) return "maturity";
   return ratio > 0 ? "late_growth" : "maturity";
 }
+
+// Le `reasoning[]` est affiché tel quel à l'utilisateur, sur tous les
+// écrans. Il était rédigé en vocabulaire interne — « Phase "growth" »,
+// « Score de saturation 62/100, principal facteur : competingShops » —
+// c'est-à-dire illisible pour quelqu'un qui débute, soit exactement le
+// public visé. Les noms de champs restent ceux du code ; seules les
+// phrases changent.
+const DRIVER_LABELS: Record<string, string> = {
+  competingShops: "le nombre de boutiques qui le vendent",
+  creatorDensity: "le nombre de créateurs qui en parlent déjà",
+  priceDropAmplitude14d: "la baisse du prix ces deux dernières semaines",
+  newSellerArrivalRate7d: "les vendeurs arrivés cette semaine",
+  reviewVelocityDeceleration: "les avis qui arrivent moins vite qu'avant",
+};
 
 interface SaturationBreakdown {
   score: number;
@@ -284,8 +299,8 @@ export function computeVerdict(
       verdict: "risque",
       reasoning: [
         sorted.length === 0
-          ? "Aucun historique de collecte disponible — verdict prudent par défaut."
-          : `Historique trop court (${sorted.length} jour(s) de données, minimum ${thresholds.minSnapshotsAbsolute}) — verdict prudent par défaut.`,
+          ? "On n'a encore aucun relevé sur ce produit — impossible de se prononcer, donc on reste prudent."
+          : `Trop récent : ${sorted.length} jour(s) de recul seulement, il en faut au moins ${thresholds.minSnapshotsAbsolute} pour dire quoi que ce soit. On reste prudent en attendant.`,
       ],
       computedAt,
     };
@@ -318,26 +333,27 @@ export function computeVerdict(
   const marginLowPct = clamp(marginHighPct - clamp(saturationScore * 0.2, 5, 40), 0, marginHighPct);
 
   let verdict = pickVerdictLabel(phase, saturationScore, thresholds);
+  const salesPct = Math.round(ratio * 100);
   const reasoning: string[] = [
-    `Phase "${phase}" depuis ${daysInPhase} jour(s), tendance des ventes ${ratio >= 0 ? "en hausse" : "en baisse"} (${Math.round(ratio * 100)}%).`,
-    `Score de saturation ${Math.round(saturationScore)}/100, principal facteur : ${topDriver}.`,
+    `${PHASE_LABELS[phase].short} depuis ${daysInPhase} jour(s) — les ventes ont ${salesPct >= 0 ? "augmenté" : "baissé"} de ${Math.abs(salesPct)}%.`,
+    `Concurrence : ${Math.round(saturationScore)} sur 100. Ce qui pèse le plus : ${DRIVER_LABELS[topDriver] ?? topDriver}.`,
   ];
 
   if (spike) {
     verdict = saturationScore >= thresholds.verdictScoreBands.avecUnAngleMax ? "eviter" : "risque";
     reasoning.push(
-      `Saturation brutale détectée sur les ${thresholds.saturationSpikeWindowDays} derniers jours — verdict revu à la baisse malgré la tendance de fond.`,
+      `Beaucoup de monde s'y est mis d'un coup ces ${thresholds.saturationSpikeWindowDays} derniers jours — on baisse la recommandation même si les ventes montent encore.`,
     );
   }
 
   if (maxGap > thresholds.maxAllowedGapDays) {
     reasoning.push(
-      `Trou de collecte de ${maxGap} jour(s) dans la série — confiance sur la fenêtre restante réduite.`,
+      `Il manque ${maxGap} jour(s) de relevés — du coup on est moins sûr du temps qu'il te reste.`,
     );
   }
 
   if (phase === "decline" && pickVerdictLabel(phase, saturationScore, thresholds) === "avec_un_angle") {
-    reasoning.push("Produit en phase de déclin — recommandé uniquement avec un angle différenciant.");
+    reasoning.push("Les ventes reculent — à ne tenter qu'avec une idée vraiment différente.");
   }
 
   return {

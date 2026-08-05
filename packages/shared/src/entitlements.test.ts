@@ -1,7 +1,14 @@
 import { describe, expect, it } from "vitest";
 import type { PlanSlug, User } from "./user";
 import { entitlementsOf, hasAtLeastPlan, isFounder } from "./entitlements";
-import { CAPABILITIES, CAPABILITIES_BY_PLAN, newCapabilitiesOf, planUnlocking, PLANS } from "./plans";
+import {
+  CAPABILITIES,
+  CAPABILITIES_BY_PLAN,
+  CAPABILITY_INFO,
+  newCapabilitiesOf,
+  planUnlocking,
+  PLANS,
+} from "./plans";
 
 function makeUser(overrides: {
   email?: string;
@@ -132,6 +139,46 @@ describe("cohérence du catalogue d'offres", () => {
     // c'est un montant inventé qu'on ne peut pas encaisser.
     for (const plan of PLANS) {
       expect(plan.priceCents === null || plan.priceCents >= 0).toBe(true);
+    }
+  });
+});
+
+// Deux fonctionnalités étaient annoncées sans exister : les alertes (un
+// simple booléen stocké, aucune notification) et l'archive des classements
+// (le document est écrasé à chaque calcul). Vendre ça, c'est vendre du
+// vide — d'où le statut, et ces tests pour qu'il ne se perde pas.
+describe("statut réel des fonctionnalités", () => {
+  it("marque comme « à venir » ce qui n'est pas implémenté", () => {
+    expect(CAPABILITY_INFO.alerts.status).toBe("soon");
+    expect(CAPABILITY_INFO.rankingArchive.status).toBe("soon");
+  });
+
+  it("ne marque pas « à venir » ce qui marche déjà", () => {
+    for (const c of ["rankings", "earningsAll", "watchlist", "simulator", "productHistory", "brief"] as const) {
+      expect(CAPABILITY_INFO[c].status).toBe("live");
+    }
+  });
+
+  // Le public visé débute : « GMV », « saturation » ou « phase » ne veulent
+  // rien dire pour lui. Ces mots restent utiles dans le code, jamais à
+  // l'écran.
+  it("n'emploie aucun jargon dans les libellés visibles", () => {
+    const jargon = /\b(GMV|saturation|satur[ée]|phase|churn|ROI|CPM|funnel)\b/i;
+    for (const c of CAPABILITIES) {
+      expect(CAPABILITY_INFO[c].label).not.toMatch(jargon);
+    }
+  });
+
+  it("décrit ce que ça fait, pas un nom de fonctionnalité", () => {
+    for (const c of CAPABILITIES) {
+      // Un libellé de trois mots est une étiquette, pas une explication.
+      expect(CAPABILITY_INFO[c].label.split(/\s+/).length).toBeGreaterThan(6);
+    }
+  });
+
+  it("le plan gratuit ne repose que sur des fonctionnalités qui marchent", () => {
+    for (const c of CAPABILITIES_BY_PLAN.radar) {
+      expect(CAPABILITY_INFO[c].status).toBe("live");
     }
   });
 });

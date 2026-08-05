@@ -95,7 +95,7 @@ describe("les cas limites du produit sont réellement représentés", () => {
   it("détecte la saturation brutale malgré une tendance de fond en hausse", () => {
     const v = verdictFor("masque-led-visage");
     expect(v.verdict === "risque" || v.verdict === "eviter").toBe(true);
-    expect(v.reasoning.join(" ")).toMatch(/[Ss]aturation brutale/);
+    expect(v.reasoning.join(" ")).toMatch(/d'un coup/);
   });
 
   it("un produit tout juste saisi affiche « historique trop court »", () => {
@@ -103,13 +103,13 @@ describe("les cas limites du produit sont réellement représentés", () => {
     expect(hasInsufficientHistory(snaps)).toBe(true);
     const v = computeVerdict(snaps);
     expect(v.verdict).toBe("risque");
-    expect(v.reasoning.join(" ")).toMatch(/[Hh]istorique trop court/);
+    expect(v.reasoning.join(" ")).toMatch(/[Tt]rop récent/);
     expect(v.windowDaysRemaining.confidence).toBeLessThan(0.1);
   });
 
   it("une série trouée signale le trou et perd de la confiance", () => {
     const v = verdictFor("aspirateur-main-voiture");
-    expect(v.reasoning.join(" ")).toMatch(/[Tt]rou de collecte/);
+    expect(v.reasoning.join(" ")).toMatch(/Il manque/);
   });
 
   it("couvre les quatre verdicts possibles, pas seulement les flatteurs", () => {
