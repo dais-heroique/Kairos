@@ -63,7 +63,11 @@ type T = ReturnType<typeof useTranslations>;
 function SiteNav({ ctaLabel }: { ctaLabel: string }) {
   return (
     <nav className="sticky top-0 z-20 border-b border-[color:var(--color-border)] bg-[color:var(--color-bg)]">
-      <div className="mx-auto flex max-w-5xl items-center justify-between px-5 py-3">
+      {/* Même conteneur que la coquille de l'app (AppShell) : la barre du
+          haut garde la même largeur et le même alignement avant et après
+          connexion. Les sections de contenu restent en max-w-5xl, largeur
+          de lecture voulue pour du texte de présentation. */}
+      <div className="kai-shell flex items-center justify-between py-3">
         <Link href="/" className="flex items-center gap-2">
           <Logo className="h-6 w-6" style={{ color: "var(--color-coral)" }} />
           <span className="font-[family-name:var(--font-display)] text-lg font-extrabold tracking-tight">
@@ -184,7 +188,7 @@ function HeroCardStack({ t }: { t: T }) {
             className="font-[family-name:var(--font-mono)] text-2xl font-bold"
             style={{ color: "var(--color-success)" }}
           >
-            38–61€
+            3,80–6,10€
           </p>
         </div>
 

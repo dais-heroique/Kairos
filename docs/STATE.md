@@ -196,11 +196,254 @@ Une seule branche pour tout ce round (voir décision #3), un commit par lot. Dé
 
 **Tous les lots (0 à 8) sont terminés, fusionnés dans `main` et déployés.**
 
+## Source de données : Apify (2026-08-02) — partiellement branchée
+
+Décision #8 (saisie manuelle) reste valable pour les commissions ; Apify la
+complète sur le catalogue. Détail complet dans `docs/APIFY.md`.
+
+**Fait et vérifié** :
+- Actor **TikTok Shop Search Pro** (`Hr1hjEAGdYMr1RbUj`) appelé avec succès
+  depuis `apps/jobs` — 3 requêtes, 90 produits bruts, ~0,48 €.
+- Source Apify dans `apps/collector` (9 tests verts) et dans `apps/jobs`.
+- `recover:apify` relit les datasets de runs déjà facturés sans relancer
+  l'actor (donc sans coût) et écrit en prod via l'**Admin SDK**, qui ignore
+  les règles de sécurité — aucune règle Firestore n'est assouplie.
+
+**⚠️ La documentation publique de l'actor est fausse sur les noms de champs.**
+Elle annonce du snake_case (`product_id`, `product_name`, `avg_price`,
+`product_rating`, `review_count`, `discount_pct`) ; l'actor renvoie du
+camelCase (`productId`, `name`, `amount`, `rating`, `reviews`,
+`discountDecimal`) et expose des champs non documentés, dont `sold` (unités
+vendues, cumulé) et `image`. Coder d'après la doc fait rejeter **100 %** des
+produits en silence. Le parsing est centralisé dans
+`apps/jobs/src/datasource/apify-product.ts`, écrit contre un vrai dataset.
+Vérifier contre un dataset réel, jamais contre la doc.
+
+`reviews` arrive en chaîne ("6096"), `rating` et `sold` peuvent être absents.
+`sold` étant un cumul exact, il alimente `estSalesLow`/`estSalesHigh` à
+l'identique (pas de fourchette) : le moteur compare les relevés entre jours,
+donc la différence redonne les ventes de la journée.
+
+**Limites réelles, mesurées, pas théoriques** :
+- ⚠️ **L'actor ne renvoie aucun taux de commission.** `discount_pct` est une
+  remise acheteur, pas une rémunération affilié. Le code le mappait comme
+  commission (`products-strategy.ts`) : corrigé, `commission` reste à
+  `NEUTRAL_COMMISSION`. **Cette source alimente les classements, pas le
+  simulateur de gains.**
+- ⚠️ Marché **US uniquement** (`searchRegion` non configurable), prix en USD
+  convertis à taux fixe. Les requêtes en français renvoient 0 résultat.
+- ⚠️ Plan gratuit Apify : « limited to preview results », champs partiels.
+- ⚠️ Une collecte = 1 relevé/produit, donc verdicts « Historique trop court »
+  jusqu'à 3 jours de collecte. Aucun historique n'est fabriqué.
+- ⚠️ Le scoring multi-niches de `products-strategy.ts` n'a jamais tourné
+  contre de vraies données ; ses seuils sont des hypothèses non calibrées.
+
+**Reste à faire** : générer une clé de compte de service Firebase (action
+utilisateur), lancer `recover:apify`, puis collecter 3 jours pour obtenir des
+verdicts exploitables.
+
+## Refonte de l'interface connectée (2026-08-02)
+
+- **Nouvelle coquille `AppShell`** (`components/AppShell.tsx`) — remplace
+  `BottomNav` (supprimé), qui portait mal son nom (`sticky top-0`) et
+  n'offrait que 4 liens en `text-xs` sur toute la largeur. Barre avec logo,
+  icônes, conteneur centré `.kai-shell` (max 72rem) au lieu du `px-5` bord à
+  bord. Appliquée à classements, watchlist, simulateur, compte ; la barre de
+  la landing utilise le même conteneur.
+- **4e couleur : `--color-accent` (indigo)**, uniquement pour la chrome
+  d'interface (onglet actif, filtre appliqué). Les couleurs existantes sont
+  inchangées. Motif : l'état actif était en corail, qui entrait en
+  concurrence visuelle avec le verdict « entrer maintenant » — le corail est
+  désormais réservé à l'action.
+- **Réglages des classements** (`components/RankingControls.tsx`) : période
+  (24h/7j/30j) et marché (FR/US/UK) relisent Firestore ; tri et filtres
+  (verdict, tendance, fourchette de prix) s'appliquent côté client sans
+  lecture supplémentaire. Repliés derrière un bouton sous 768px. Le test de
+  budget de lecture (≤5 opérations/page) reste vert.
+- ⚠️ Les tris « croissance » et « opportunité » n'ont pas été implémentés :
+  ces scores ne sont pas embarqués dans `rankings/*.items[]`. Tris réels :
+  classement, tendance, commission, prix.
+- ⚠️ Le sélecteur de marché propose US/UK alors que l'onboarding les annonce
+  « Bientôt disponible » et qu'aucune donnée n'existe pour eux — ils
+  affichent un état vide. À trancher : les masquer, ou les marquer.
+- **Bug corrigé dans `server/firebase-client.ts`** : `getPublicFirestore()`
+  ne basculait sur l'émulateur que via `FIRESTORE_EMULATOR_HOST`, variable
+  serveur absente du bundle navigateur. En développement local, les pages de
+  classement lisaient donc la **production** pendant que le reste de l'app
+  parlait à l'émulateur — invisible car `getRankingPageData` avale l'erreur.
+  Le fallback `NEXT_PUBLIC_USE_FIREBASE_EMULATORS` corrige l'écart.
+- **Largeur** : `.kai-shell` passe à pleine largeur (plafond 160rem pour les
+  moniteurs ultra-larges). Ces écrans sont des listes denses, pas de la
+  prose ; brider à 72rem laissait de grandes marges vides sur un écran de
+  bureau.
+- **« 0 % commission » corrigé en « commission inconnue »** — et la ligne de
+  gain « 0€–0€ » remplacée par « Gain non calculable ». Zéro était un
+  mensonge d'affichage : aucun programme d'affiliation ne rémunère à 0 %, la
+  donnée est absente. `NEUTRAL_COMMISSION` (ratePct 0) sert de marqueur
+  d'absence, l'UI doit le traiter comme tel. « 0€–0€ » se lisait « ce produit
+  ne rapporte rien » alors que la vérité est « on ne sait pas ».
+- **`sold` remonté jusqu'à l'UI** — la donnée existait dans `products/*`
+  depuis la correction du parsing mais n'était affichée nulle part. Ajoutée à
+  `ProductMeta`, aux items de `rankings/*`, au type `ProductRankItem` et à la
+  carte, avec le prix. Nouveau tri « Ventes » basé dessus (les produits sans
+  donnée tombent en fin de liste, pas traités comme « 0 vendu »).
+- **Vérifié** avec 90 vrais produits Apify chargés dans l'émulateur, à 390px
+  et 1280px : typecheck 12/12, lint vert, 24/24 tests web et 18/18 tests jobs
+  (émulateur inclus), aucune erreur console.
+- **Déployé en production** le 2026-08-02 : données (90 produits, 68
+  boutiques, 27 documents de classement) + hébergement. Build 100 % statique
+  vérifié (aucune route `ƒ`, plan Spark préservé) et bundle contrôlé après
+  déploiement — `NEXT_PUBLIC_USE_FIREBASE_EMULATORS` figé à `"false"`.
+  ⚠️ Procédure obligatoire : sortir `apps/web/.env.local` avant le build. Le
+  correctif de `firebase-client.ts` rend cet oubli bien plus grave qu'avant —
+  le drapeau redirigerait Firestore vers `127.0.0.1` chez les visiteurs.
+
+## Classements : ce qui est peuplé, et pourquoi le reste ne l'est pas
+
+Sur les 9 classements, 4 sont réellement alimentés par la source produit.
+Les 5 autres ne le sont pas par manque de **source**, pas par manque de code
+— aucune configuration de l'actor Apify ne les remplira.
+
+| Classement | État | Raison |
+|---|---|---|
+| Produits | ✅ 90 | volume de ventes |
+| Opportunités | ✅ 90 | score d'opportunité |
+| Boutiques | ✅ 68 | agrégat par `sellerId`/`shopName` — calcul, pas collecte |
+| Catégories | ⚠️ 3 | agrégat par **mot-clé de collecte**, pas la taxonomie TikTok (la source ne l'expose pas) — la page le dit explicitement |
+| Créateurs, Vidéos, Sons | ❌ | l'actor est un scraper **produit** : aucune donnée créateur/vidéo/son. Voir l'impasse #5 ci-dessous |
+| Nouveautés | ✅ | `products/{id}.firstSeenAt`, posé une seule fois à l'insertion et jamais réécrit (idempotence vérifiée : 2e passage = « 0 jamais vu, 90 déjà connus »). Discriminant à partir de la 2e collecte |
+| Vagues | ❌ | exige une collecte multi-marchés |
+
+Les pages sans source affichent désormais *quelle* source manque, plutôt
+qu'un « bientôt disponible » qui laissait croire à un travail en cours.
+
+### Impasse #5 — TikTok Creative Center est authentifié (vérifié 2026-08-02)
+
+La décision #8 notait Creative Center comme « gratuit, officiel, public,
+France supportée », écarté seulement parce qu'il ne couvre pas les produits.
+Il couvre en revanche sons, hashtags et créateurs — donc réexaminé pour ces
+trois classements. **Testé, et fermé** :
+
+- `ads.tiktok.com/creative_radar_api/v1/popular_trend/hashtag/list` répond
+  HTTP 200 mais avec `{"code":40101,"msg":"no permission"}` dans le corps —
+  un piège : le code HTTP seul laisse croire au succès.
+- La page publique redirige vers `/creative/creativeCenter/trends`, une
+  application rendue côté client dont le HTML ne contient aucune donnée.
+
+Y accéder demanderait un compte TikTok Business connecté ou l'extraction de
+jetons de session, c'est-à-dire contourner un contrôle d'accès. **Non fait,
+et à ne pas faire.** « Public » décrivait la consultation dans un navigateur,
+pas un accès programmatique libre.
+
+### Recherche de sources (2026-08-03) — deux conclusions fermes
+
+**1. Les taux de commission d'affiliation ne sont PAS récupérables.**
+Vérifié sur deux actors Apify indépendants qui se présentent pourtant comme
+« affiliate » :
+- `sentry/tiktok-shop-affiliate-products` documente des champs
+  `commissionRate`/`commission`, mais précise noir sur blanc : *« This Actor
+  does **not** claim to expose private TikTok Shop affiliate marketplace
+  commission data »* et *« Most public TikTok Shop search results do not
+  include reliable raw affiliate commission rates »*. Il conclut que
+  l'utilisateur doit valider les taux dans son propre compte affilié.
+- `george.the.developer/tiktok-shop-affiliate-sales-scraper` ne renvoie
+  aucun champ de commission.
+
+Le taux de commission est une **donnée privée du compte affilié**, pas une
+donnée publique de la fiche produit. Aucun scraper ne peut la sortir. Les
+seules voies : saisie manuelle par produit (`/admin/produits`, champ déjà
+présent), ou un taux d'hypothèse par niche **explicitement présenté comme
+une hypothèse** — décision produit à trancher, puisque cela touche à la
+promesse « jamais un chiffre inventé ».
+
+**2. Créateurs / Vidéos / Sons SONT récupérables — mais par un autre actor.**
+`clockworks/tiktok-scraper` (scraper de contenu, pas de commerce) renvoie
+vidéos (`playCount`, `diggCount`, `shareCount`), sons (`musicMeta`) et
+profils créateurs (`authorMeta`, abonnés), avec ciblage pays via
+`proxyCountryCode` (donc FR), sans login ni cookies. Tarif annoncé :
+~1,70 $ / 1 000 résultats. **Non branché** — en attente d'arbitrage
+budgétaire de l'utilisateur.
+
+L'impasse #5 (Creative Center) reste valable : c'est la voie *gratuite* qui
+est fermée, pas la voie payante.
+
+## Finitions (2026-08-03)
+
+- **Photos produit** — `imageUrl` était collecté et stocké depuis le
+  2026-08-02 mais n'était affiché nulle part. Remonté jusqu'aux cartes
+  (classements + watchlist), avec repli sur l'icône si le lien CDN expire
+  (les URL TikTok sont signées). `<img>` volontaire plutôt que `next/image` :
+  ce dernier exige un serveur d'optimisation (plan Blaze) et une liste figée
+  de domaines distants, or le CDN TikTok en change.
+- **Watchlist enrichie** — affichait l'identifiant brut
+  (`1729385482393260168`). Affiche désormais photo, titre, boutique et prix
+  via `lib/firestore/product-summary.ts` (lecture groupée par lots de 30,
+  jamais un `get()` par ligne). Échec non bloquant : on retombe sur
+  l'identifiant plutôt que sur une page vide.
+- **Simulateur** — affichait « Commission 0 % » et un gain de 0 €. Même
+  mensonge que les cartes : dit maintenant que le taux n'est pas renseigné et
+  renvoie vers `/admin/produits`.
+- **Opportunités** — a désormais les mêmes réglages que Produits
+  (période, marché, tri, filtres).
+- **Vignettes redimensionnées** (`lib/product-image.ts`) — le CDN TikTok
+  sert les visuels en pleine résolution : les URL collectées portent un
+  gabarit `~tplv-<id>-<transfo>:3000:3000`, soit ~150 Ko par image pour une
+  vignette de 56 px. Sur 90 produits, ~14 Mo, et la liste paraissait vide le
+  temps du chargement. Réécrire le gabarit en `:200:200` ramène l'image à
+  ~4 Ko (mesuré : 154 634 → 3 852 octets, **facteur 40**). Réécriture faite à
+  l'affichage, pas au stockage : les URL déjà en base en bénéficient sans
+  recollecte. Combiné à `loading="lazy"`, seules les vignettes visibles sont
+  téléchargées (13 au lieu de 90 au premier écran).
+- ⚠️ **Piège de breakpoint** : `sm` vaut **390px** dans ce projet
+  (`globals.css`), pas 640px. Un `sm:flex-row` s'active donc en plein écran
+  mobile. Utiliser `md` (768px) pour « à partir de la tablette ».
+
+## Gains exprimés pour 1 000 vues (2026-08-03)
+
+**Le profil ne demande plus les vues moyennes.** Un créateur ne connaît pas
+ce chiffre de façon fiable (la portée varie d'un facteur 100 d'une vidéo à
+l'autre), et en tirer un montant en euros donnait une fausse précision —
+contraire à la promesse « jamais un chiffre inventé ».
+
+- `userProfileSchema.avgViews` → `postsPerDay` (rythme de publication, sans
+  effet sur le calcul de gain). `.default(1)` pour que les documents
+  antérieurs restent lisibles.
+- L'onboarding demande le nombre de vidéos par jour, et explique pourquoi il
+  ne demande pas les vues.
+- `RankingList` évalue `computeEarnings` à **1 000 vues** (la fonction est
+  linéaire en `expectedViews`, donc c'est un taux exact, pas une
+  prédiction). Libellé : « Gain pour 1 000 vues ».
+- Le simulateur garde son curseur de vues : là, c'est une hypothèse que
+  l'utilisateur pose lui-même, plus une moyenne auto-déclarée. Valeur de
+  départ neutre (10 000) au lieu du profil.
+- Textes alignés : accroche, « comment ça marche », carte d'exemple, et
+  **politique de confidentialité** (qui listait une donnée qu'on ne collecte
+  plus).
+- `creator.avgViews` est conservé : ce sont des vues **observées** d'un
+  créateur tiers, pas une auto-déclaration.
+
+**Bug corrigé au passage** : `recover:apify` réécrivait
+`commission: NEUTRAL_COMMISSION` à chaque passage, effaçant donc tout taux
+saisi à la main dans `/admin/produits` — seule source possible pour cette
+donnée. Un taux existant (> 0) est désormais préservé, comme `firstSeenAt`.
+
+⚠️ **À calibrer avant de se fier aux montants** : `DEFAULT_MEDIAN_CONVERSION_RATE`
+vaut 0,015 dans `RankingList` (1,5 % de conversion depuis les vues), un
+placeholder documenté en attente de `bigquery/08_calibration_factors.sql`.
+Sur un produit à 73,59 € en commission 22 %, cela affiche **158–296 € pour
+1 000 vues**, soit 15 ventes pour 1 000 vues. L'ordre de grandeur réel sur
+TikTok Shop est plutôt 0,05–0,3 %, donc environ **10 à 30× trop élevé**. Le
+chiffre était moins visible tant qu'il dépendait d'une moyenne de vues
+personnelle ; exprimé pour 1 000 vues, il devient directement comparable et
+l'erreur saute aux yeux. À trancher avec une vraie valeur métier.
+
 ## Point de reprise pour la prochaine session
 
-Le développement de fonctionnalités est terminé ; le site est en ligne et utilisable. Il ne reste que du branchement sur du réel, par ordre de priorité :
-
-1. **API TikTok Shop** (bloquant pour tout le reste) — attendre que l'utilisateur ait ses identifiants, **puis d'abord vérifier quels scopes son app expose réellement** avant d'écrire du code. Si l'Affiliate API est bien fermée à l'UE comme le dit la doc, la Seller API ne donnera que sa propre boutique, pas le marketplace : ce serait à rediscuter avec lui plutôt qu'à contourner. Architecture cible : `apps/jobs` en local (voir « Piste ouverte »).
+1. **Commissions d'affiliation** — c'est le maillon manquant, pas le
+   catalogue. Sans elles, le simulateur de gains (cœur de la promesse
+   produit) ne peut rien afficher de vrai. Options : API Affiliate TikTok
+   (fermée à l'UE d'après décision #8), autre fournisseur, ou saisie manuelle
+   par produit depuis `/admin/produits`.
 2. **Clés Gemini/Claude** (Lot 6) — la génération de brief n'est pas câblée.
 3. **Clé Stripe test** (Lot 7) — `server/stripe/connect.ts` reste à écrire.
 4. **Assets de design** pour le kit de partage (Lot 7).

@@ -13,7 +13,15 @@ export interface ProductRankItem {
   priceCents: number;
   verdict: VerdictLabel;
   salesTrend: "up" | "down" | "flat";
+  /** 0 = taux inconnu, pas un taux nul — voir apps/jobs/src/rank.ts. */
   commissionRatePct: number;
+  // Optionnels : tous les producteurs d'items ne les fournissent pas (le
+  // tableau de bord construit ses propres lignes), et la carte retombe sur
+  // une icône quand le visuel manque.
+  /** Unités vendues annoncées par la plateforme ; absent si non collecté. */
+  soldTotal?: number | null;
+  /** Visuel produit ; absent si non collecté. */
+  imageUrl?: string | null;
   emoji?: string;
   category?: string;
 

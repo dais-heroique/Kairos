@@ -8,12 +8,20 @@
     "build": "tsc -p tsconfig.json",
     "start": "node dist/index.js",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run"
+    "test": "vitest run",
+    "apify:scrape": "tsx src/apify-scrape.ts",
+    "apify:scrape:dry": "tsx src/apify-scrape.ts --dry-run",
+    "apify:intelligent": "tsx src/apify-intelligent-scrape.ts",
+    "apify:intelligent:dry": "tsx src/apify-intelligent-scrape.ts --dry-run",
+    "apify:intelligent:verbose": "tsx src/apify-intelligent-scrape.ts --verbose",
+    "recover:apify": "tsx src/recover-apify-data.ts"
   },
   "dependencies": {
     "@google-cloud/bigquery": "^7.9.0",
     "@kairos/core": "workspace:*",
     "@kairos/shared": "workspace:*",
+    "apify-client": "^2.24.0",
+    "firebase": "^11.10.0",
     "firebase-admin": "^13.0.0"
   },
   "devDependencies": {

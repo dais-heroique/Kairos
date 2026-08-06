@@ -71,6 +71,8 @@ function toProductRankItem(
     priceCents?: number;
     shopId?: string | null;
     commissionRatePct?: number;
+    soldTotal?: number | null;
+    imageUrl?: string | null;
     verdict?: ProductRankItem["verdict"];
     salesTrend?: ProductRankItem["salesTrend"];
     emoji?: string | null;
@@ -96,6 +98,8 @@ function toProductRankItem(
     priceCents: item.priceCents ?? 0,
     shopName: (item.shopId && shopNames.get(item.shopId)) || "Boutique",
     commissionRatePct: item.commissionRatePct ?? 0,
+    soldTotal: item.soldTotal ?? null,
+    imageUrl: item.imageUrl ?? null,
     verdict: item.verdict ?? "risque",
     salesTrend: item.salesTrend ?? "flat",
     // Le pipeline écrit bien `emoji` dans les items, mais cette conversion

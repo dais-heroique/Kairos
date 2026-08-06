@@ -3,19 +3,25 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
-import { BottomNav } from "@/components/BottomNav";
+import { AppShell } from "@/components/AppShell";
 import { RequireAuth } from "@/components/RequireAuth";
 
+// Seuls les classements réellement alimentés sont proposés dans la
+// navigation. Créateurs, Vidéos, Sons et Vagues sont masqués : aucune source
+// gratuite ne peut les remplir (voir docs/STATE.md — l'API Creative Center
+// est authentifiée, et le seul scraper de contenu qui fonctionne est
+// payant). Quatre onglets vides sur neuf donnaient un produit inachevé.
+//
+// Rien n'est supprimé pour autant : les routes répondent toujours (un
+// favori ne tombe pas en 404, la page explique quelle source manque) et le
+// pipeline continue d'écrire leurs documents vides. Rendre un onglet à la
+// navigation = rajouter sa ligne ici.
 const CATEGORIES = [
   { slug: "produits", label: "Produits" },
-  { slug: "boutiques", label: "Boutiques" },
-  { slug: "createurs", label: "Créateurs" },
-  { slug: "videos", label: "Vidéos" },
-  { slug: "sons", label: "Sons" },
-  { slug: "categories", label: "Catégories" },
-  { slug: "nouveautes", label: "Nouveautés" },
-  { slug: "vagues", label: "Vagues" },
   { slug: "opportunites", label: "Opportunités" },
+  { slug: "boutiques", label: "Boutiques" },
+  { slug: "nouveautes", label: "Nouveautés" },
+  { slug: "categories", label: "Catégories" },
 ] as const;
 
 export default function ClassementsLayout({
@@ -27,47 +33,49 @@ export default function ClassementsLayout({
 
   return (
     <RequireAuth>
-      <div className="flex min-h-dvh flex-col">
-        <BottomNav />
+      <AppShell
+        header={
+          <div
+            className="border-b bg-[color:var(--color-surface-raised)]"
+            style={{ borderColor: "var(--color-border)" }}
+          >
+            <div className="kai-shell pt-5">
+              <h1 className="font-[family-name:var(--font-display)] text-2xl font-extrabold tracking-tight md:text-3xl">
+                Classements
+              </h1>
 
-        <header className="px-5 pt-6 pb-2">
-          <h1 className="font-[family-name:var(--font-display)] text-2xl font-extrabold">
-            Classements
-          </h1>
-        </header>
-
-        <div
-          className="flex gap-2 overflow-x-auto border-b px-5 pb-3"
-          style={{ borderColor: "var(--color-border)" }}
-        >
-          {CATEGORIES.map((cat) => {
-            const href = `/classements/${cat.slug}`;
-            const active = pathname === href;
-            return (
-              <Link
-                key={cat.slug}
-                href={href}
-                className="shrink-0 rounded-full px-3 py-1.5 text-sm font-semibold"
-                style={
-                  active
-                    ? {
-                        backgroundColor: "var(--color-coral)",
-                        color: "var(--color-coral-ink)",
-                      }
-                    : {
-                        backgroundColor: "var(--color-surface)",
-                        color: "var(--color-ink-muted)",
-                      }
-                }
-              >
-                {cat.label}
-              </Link>
-            );
-          })}
-        </div>
-
-        <div className="flex-1 px-5 py-4">{children}</div>
-      </div>
+              {/* Onglets plutôt que pastilles pleines : à neuf entrées, une
+                  rangée de pastilles corail saturait la page et entrait en
+                  concurrence avec les badges de verdict. Le soulignement
+                  indigo suffit à marquer l'actif. */}
+              <div className="-mb-px flex gap-1 overflow-x-auto pt-3">
+                {CATEGORIES.map((cat) => {
+                  const href = `/classements/${cat.slug}`;
+                  const active = pathname === href;
+                  return (
+                    <Link
+                      key={cat.slug}
+                      href={href}
+                      aria-current={active ? "page" : undefined}
+                      className="shrink-0 border-b-2 px-3 pb-2.5 text-sm font-semibold transition-colors"
+                      style={{
+                        borderColor: active ? "var(--color-accent)" : "transparent",
+                        color: active
+                          ? "var(--color-accent)"
+                          : "var(--color-ink-muted)",
+                      }}
+                    >
+                      {cat.label}
+                    </Link>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        }
+      >
+        {children}
+      </AppShell>
     </RequireAuth>
   );
 }

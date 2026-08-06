@@ -8,6 +8,7 @@ import { handleCollectTask, type CollectTaskPayload } from "./queue/task-handler
 import { thirdpartySource } from "./sources/thirdparty.js";
 import { tiktokApiSource } from "./sources/tiktok-api.js";
 import { createTiktokWebSource } from "./sources/tiktok-web.js";
+import { apifySource } from "./sources/apify.js";
 import type { CollectorSource } from "./sources/types.js";
 
 // Cloud Run uniquement — jamais Cloud Functions (timeouts trop courts, IP
@@ -30,6 +31,7 @@ async function buildSources(): Promise<Record<string, CollectorSource>> {
     thirdparty: thirdpartySource,
     "tiktok-api": tiktokApiSource,
     "tiktok-web": createTiktokWebSource(await getBrowser()),
+    apify: apifySource,
   };
 }
 

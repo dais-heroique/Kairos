@@ -10,6 +10,15 @@ export interface ProductMeta {
   title: string;
   priceCents: number;
   shopId: string | null;
+  shopName: string | null;
+  /** Unités vendues (cumul annoncé par la plateforme), si connu. */
+  soldTotal: number | null;
+  /** Mot-clé de recherche qui a fait remonter ce produit, si collecté. */
+  sourceQuery: string | null;
+  /** ISO 8601 — première fois que KAIROS a vu ce produit. */
+  firstSeenAt: string | null;
+  /** Visuel produit fourni par la source, si collecté. */
+  imageUrl: string | null;
   commission: Commission;
   sellerTrust: SellerTrust;
 }
@@ -18,6 +27,11 @@ const NEUTRAL_META: Omit<ProductMeta, "commission" | "sellerTrust"> = {
   title: "",
   priceCents: 0,
   shopId: null,
+  shopName: null,
+  soldTotal: null,
+  sourceQuery: null,
+  firstSeenAt: null,
+  imageUrl: null,
 };
 
 // db.getAll() = une seule RPC batchée pour tous les produits, jamais un
@@ -42,6 +56,11 @@ export async function readProductMeta(
       title: (data?.title as string | undefined) ?? NEUTRAL_META.title,
       priceCents: (data?.priceCents as number | undefined) ?? NEUTRAL_META.priceCents,
       shopId: (data?.shopId as string | undefined) ?? NEUTRAL_META.shopId,
+      shopName: (data?.shopName as string | undefined) ?? NEUTRAL_META.shopName,
+      soldTotal: (data?.soldTotal as number | undefined) ?? NEUTRAL_META.soldTotal,
+      sourceQuery: (data?.sourceQuery as string | undefined) ?? NEUTRAL_META.sourceQuery,
+      firstSeenAt: (data?.firstSeenAt as string | undefined) ?? NEUTRAL_META.firstSeenAt,
+      imageUrl: (data?.imageUrl as string | undefined) ?? NEUTRAL_META.imageUrl,
       commission: (data?.commission as Commission | undefined) ?? NEUTRAL_COMMISSION,
       sellerTrust: (data?.sellerTrust as SellerTrust | undefined) ?? NEUTRAL_SELLER_TRUST,
     });

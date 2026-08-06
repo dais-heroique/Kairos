@@ -3,6 +3,7 @@
 import Link from "next/link";
 
 import { useState } from "react";
+import { productImageUrl } from "@/lib/product-image";
 import type { EstimatedRange } from "@kairos/shared";
 import type { ProductRankItem } from "@/types/product-rank-item";
 import { LockedValue } from "./PaywallGate";
@@ -42,6 +43,9 @@ export function ProductRankCard({
   locked?: boolean;
 }) {
   const [pending, setPending] = useState(false);
+  // Un lien CDN TikTok est signé et peut expirer : on retombe alors sur
+  // l'icône plutôt que d'afficher une image cassée.
+  const [imageFailed, setImageFailed] = useState(false);
 
   async function handleToggle() {
     setPending(true);
@@ -59,11 +63,33 @@ export function ProductRankCard({
       </span>
 
       <div
-        className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl text-2xl"
+        className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-xl text-2xl"
         style={{ backgroundColor: "var(--color-surface-raised)", border: "1px solid var(--color-border)" }}
         aria-hidden
       >
-        {item.emoji ?? "📦"}
+        {/* `<img>` et non next/image : les visuels viennent du CDN TikTok,
+            dont les sous-domaines changent (p16/p19-oec-general-useastN…).
+            Les déclarer un par un dans remotePatterns casserait l'affichage
+            au premier domaine nouveau, et l'optimisation Next exige un
+            serveur — exclu sur le plan Spark.
+            productImageUrl() réécrit le gabarit de taille du CDN : les URL
+            collectées demandent du 3000×3000 (~150 Ko) pour une vignette de
+            56 px, soit ~14 Mo sur une page de 90 produits. */}
+        {item.imageUrl && !imageFailed ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={productImageUrl(item.imageUrl) ?? undefined}
+            alt=""
+            loading="lazy"
+            decoding="async"
+            width={56}
+            height={56}
+            className="h-full w-full object-cover"
+            onError={() => setImageFailed(true)}
+          />
+        ) : (
+          (item.emoji ?? "📦")
+        )}
       </div>
 
       <div className="min-w-0 flex-1">

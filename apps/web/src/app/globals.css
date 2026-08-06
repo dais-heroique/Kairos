@@ -3,9 +3,16 @@
 /* Mobile-first : conçu à 390px de large, testé au pouce. Le desktop est
    la version élargie du mobile, jamais l'inverse — voir §1. */
 
-/* Système de couleur KAIROS — fond blanc, propre. Trois accents avec un sens
+/* Système de couleur KAIROS — fond blanc, propre. Quatre accents avec un sens
    produit (pas de la déco) : corail = action/urgence, vert = opportunité/
-   gain, ambre = nuance. Voir les badges verdict (M2). */
+   gain, ambre = nuance, indigo = chrome d'interface. Voir les badges
+   verdict (M2).
+
+   L'indigo ne porte aucun sens produit : il marque uniquement l'état
+   sélectionné des contrôles (onglet actif, filtre appliqué). Avant lui, ces
+   états utilisaient le corail, qui entrait en concurrence visuelle avec le
+   verdict « entrer maintenant » — un onglet actif se lisait comme une
+   urgence. Le corail est désormais réservé à l'action et à l'urgence. */
 :root {
   --color-bg: #ffffff;
   --color-surface: #f7f7f8;
@@ -23,6 +30,10 @@
 
   --color-warning: #b45309;
   --color-warning-soft: #fdf1e2;
+
+  --color-accent: #4338ca;
+  --color-accent-ink: #ffffff;
+  --color-accent-soft: #eef0fd;
 }
 
 /* Le blanc est la couleur principale du site, partout, y compris quand
@@ -53,6 +64,9 @@
   --color-success-soft: var(--color-success-soft);
   --color-warning: var(--color-warning);
   --color-warning-soft: var(--color-warning-soft);
+  --color-accent: var(--color-accent);
+  --color-accent-ink: var(--color-accent-ink);
+  --color-accent-soft: var(--color-accent-soft);
 
   --font-display: var(--font-bricolage), system-ui, sans-serif;
   --font-body: var(--font-instrument), system-ui, sans-serif;
@@ -164,5 +178,99 @@ body {
     border: 1px solid var(--color-border);
     background-color: var(--color-surface);
     padding: 1rem;
+  }
+
+  /* Conteneur commun à toutes les pages connectées. Avant, le contenu
+     s'étirait bord à bord (px-5 sans largeur maximale) : illisible au-delà
+     de 1200px. Le mobile reste la référence, le desktop est la version
+     élargie — pas une mise en page différente. */
+  .kai-shell {
+    margin-inline: auto;
+    width: 100%;
+    /* Pleine largeur : ces écrans sont des listes denses, pas de la prose —
+       brider à 72rem laissait d'énormes marges vides sur un écran de bureau.
+       Le plafond très haut n'existe que pour les moniteurs ultra-larges. */
+    max-width: 160rem;
+    padding-inline: 1.25rem;
+  }
+  @media (min-width: 768px) {
+    .kai-shell {
+      padding-inline: 2rem;
+    }
+  }
+
+  /* Contrôle segmenté — un seul choix parmi peu d'options (période, marché).
+     Préféré à un <select> quand toutes les options tiennent à l'écran :
+     un tap au lieu de deux, et l'état courant reste lisible sans ouvrir. */
+  .kai-seg {
+    display: inline-flex;
+    border-radius: 0.6rem;
+    border: 1px solid var(--color-border);
+    background-color: var(--color-surface);
+    padding: 0.15rem;
+  }
+  .kai-seg-item {
+    border-radius: 0.45rem;
+    padding: 0.35rem 0.7rem;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: var(--color-ink-muted);
+    transition:
+      background-color 0.15s ease,
+      color 0.15s ease;
+    white-space: nowrap;
+  }
+  .kai-seg-item[aria-pressed="true"] {
+    background-color: var(--color-surface-raised);
+    color: var(--color-accent);
+    box-shadow: 0 1px 2px rgb(0 0 0 / 0.06);
+  }
+
+  /* Puce de filtre — plusieurs choix cumulables. L'état actif utilise
+     l'indigo, jamais le corail : un filtre appliqué n'est pas une urgence. */
+  .kai-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    border-radius: 999px;
+    border: 1px solid var(--color-border);
+    background-color: var(--color-surface-raised);
+    padding: 0.3rem 0.7rem;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: var(--color-ink-muted);
+    white-space: nowrap;
+    transition:
+      background-color 0.15s ease,
+      border-color 0.15s ease,
+      color 0.15s ease;
+  }
+  .kai-chip[aria-pressed="true"] {
+    border-color: var(--color-accent);
+    background-color: var(--color-accent-soft);
+    color: var(--color-accent);
+  }
+
+  .kai-select {
+    appearance: none;
+    border-radius: 0.6rem;
+    border: 1px solid var(--color-border);
+    background-color: var(--color-surface-raised);
+    padding: 0.4rem 2rem 0.4rem 0.7rem;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: var(--color-ink);
+    background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='none' stroke='%236b7280' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round' d='M3 4.5 6 7.5 9 4.5'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 0.6rem center;
+  }
+}
+
+/* Cible de tap confortable au pouce sur mobile, sans grossir les contrôles
+   au clavier/souris où la précision est meilleure. */
+@media (pointer: coarse) {
+  .kai-seg-item,
+  .kai-chip {
+    padding-block: 0.5rem;
   }
 }

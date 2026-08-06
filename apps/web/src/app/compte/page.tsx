@@ -3,7 +3,7 @@
 import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import { type FormEvent, useState } from "react";
-import { BottomNav } from "@/components/BottomNav";
+import { AppShell } from "@/components/AppShell";
 import { RequireAuth } from "@/components/RequireAuth";
 import { deleteCurrentUserAccount, signOutUser } from "@/lib/firebase/auth";
 import { useAuth } from "@/lib/firebase/auth-context";
@@ -101,9 +101,11 @@ function AccountContent() {
   }
 
   return (
-    <div className="flex min-h-dvh flex-col">
-    <BottomNav />
-    <main className="mx-auto flex w-full max-w-[390px] flex-1 flex-col gap-8 px-5 py-8 sm:max-w-md">
+    <AppShell>
+    {/* Colonne volontairement plus étroite que la coquille : au-delà d'une
+        soixantaine de caractères, les libellés de réglages et les blocs de
+        texte légal deviennent pénibles à lire. */}
+    <main className="mx-auto flex w-full max-w-2xl flex-col gap-8 py-4">
       <div>
         <h1 className="font-[family-name:var(--font-display)] text-2xl font-extrabold">
           {t("title")}
@@ -263,7 +265,7 @@ function AccountContent() {
         </p>
       )}
     </main>
-    </div>
+    </AppShell>
   );
 }
 

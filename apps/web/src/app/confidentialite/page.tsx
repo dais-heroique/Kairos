@@ -26,7 +26,7 @@ export default function ConfidentialitePage() {
       <h2>Données collectées</h2>
       <p>
         Email, informations de profil créateur (niches, marché, fourchette
-        d&apos;abonnés, vues moyennes), historique d&apos;usage du service
+        d&apos;abonnés, rythme de publication), historique d&apos;usage du service
         (produits suivis, briefs générés), données de paiement (traitées par
         Stripe, jamais stockées par KAIROS), et — si tu es affilié — code de
         parrainage, revenus d&apos;affiliation et informations Stripe

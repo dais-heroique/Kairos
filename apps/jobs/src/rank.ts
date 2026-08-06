@@ -53,6 +53,12 @@ function buildDisplayItem(
     title: meta?.title ?? "",
     priceCents: meta?.priceCents ?? 0,
     shopId: meta?.shopId ?? null,
+    soldTotal: meta?.soldTotal ?? null,
+    imageUrl: meta?.imageUrl ?? null,
+    // 0 signifie ici « taux inconnu » : aucun programme d'affiliation ne
+    // rémunère à 0 %. NEUTRAL_COMMISSION sert justement de marqueur d'absence
+    // (voir compute.ts). L'affichage doit distinguer les deux — montrer
+    // « 0 % » ferait passer une donnée manquante pour une mesure.
     commissionRatePct: meta?.commission.ratePct ?? 0,
     verdict: c.verdict.verdict,
     salesTrend: TREND_BY_PHASE[c.verdict.phase],
@@ -70,14 +76,127 @@ function buildDisplayItem(
   };
 }
 
-// Les 9 classements de M2. "products" (volume de ventes estimé) et
-// "opportunities" (score d'opportunité) sont réellement calculés à partir
-// des données produit. Les 7 autres (shops, creators, videos, sounds,
-// categories, newcomers, waves) dépendent d'agrégations boutique/
-// créateur/vidéo/son qui n'existent pas encore dans ce lot — documents
-// valides mais vides (items: []), à peupler par un futur lot une fois ces
-// agrégations construites, plutôt que de ne pas écrire le document du tout
-// (l'UI doit pouvoir lire un doc "classement vide" sans erreur).
+// Agrégation boutique — dérivée des produits déjà collectés, sans source
+// supplémentaire : la source produit expose le vendeur de chaque article
+// (sellerId + shopName), donc regrouper est du calcul, pas de la collecte.
+function buildShopItems(
+  computed: ComputedProduct[],
+  metaByProduct: Map<string, ProductMeta>,
+): Array<{ id: string; rank: number } & Record<string, unknown>> {
+  const byShop = new Map<
+    string,
+    { shopName: string | null; productCount: number; totalSold: number; priceSum: number }
+  >();
+
+  for (const c of computed) {
+    const meta = metaByProduct.get(c.productId);
+    if (!meta?.shopId) continue;
+    const agg = byShop.get(meta.shopId) ?? {
+      shopName: meta.shopName,
+      productCount: 0,
+      totalSold: 0,
+      priceSum: 0,
+    };
+    agg.productCount += 1;
+    agg.totalSold += meta.soldTotal ?? 0;
+    agg.priceSum += meta.priceCents;
+    agg.shopName ??= meta.shopName;
+    byShop.set(meta.shopId, agg);
+  }
+
+  return [...byShop.entries()]
+    .sort((a, b) => b[1].totalSold - a[1].totalSold || b[1].productCount - a[1].productCount)
+    .slice(0, MAX_RANKING_ITEMS)
+    .map(([shopId, agg], i) => ({
+      id: shopId,
+      rank: i + 1,
+      title: agg.shopName ?? "Boutique",
+      shopId,
+      productCount: agg.productCount,
+      soldTotal: agg.totalSold,
+      // Prix moyen du catalogue observé — pas le panier moyen réel, qui
+      // demanderait des volumes par SKU dont on ne dispose pas.
+      priceCents: Math.round(agg.priceSum / agg.productCount),
+    }));
+}
+
+// Agrégation par mot-clé de recherche. ⚠️ Ce n'est PAS la taxonomie de
+// catégories TikTok Shop : la source ne l'expose pas. Ce sont les requêtes
+// qui ont servi à la collecte (products.config.ts / products-strategy.ts).
+// Le libellé côté UI doit le dire, sinon l'utilisateur lira un classement
+// de catégories officielles là où il n'y a que nos propres mots-clés.
+function buildKeywordItems(
+  computed: ComputedProduct[],
+  metaByProduct: Map<string, ProductMeta>,
+): Array<{ id: string; rank: number } & Record<string, unknown>> {
+  const byQuery = new Map<string, { productCount: number; totalSold: number; priceSum: number }>();
+
+  for (const c of computed) {
+    const meta = metaByProduct.get(c.productId);
+    if (!meta?.sourceQuery) continue;
+    const agg = byQuery.get(meta.sourceQuery) ?? { productCount: 0, totalSold: 0, priceSum: 0 };
+    agg.productCount += 1;
+    agg.totalSold += meta.soldTotal ?? 0;
+    agg.priceSum += meta.priceCents;
+    byQuery.set(meta.sourceQuery, agg);
+  }
+
+  return [...byQuery.entries()]
+    .sort((a, b) => b[1].totalSold - a[1].totalSold)
+    .slice(0, MAX_RANKING_ITEMS)
+    .map(([query, agg], i) => ({
+      id: query,
+      rank: i + 1,
+      title: query,
+      productCount: agg.productCount,
+      soldTotal: agg.totalSold,
+      priceCents: Math.round(agg.priceSum / agg.productCount),
+    }));
+}
+
+const PERIOD_DAYS: Record<RankingPeriod, number> = { "24h": 1, "7d": 7, "30d": 30 };
+
+// Nouveautés — produits dont la première apparition tombe dans la fenêtre de
+// la période. Dérivé de products/{id}.firstSeenAt, posé une seule fois à
+// l'insertion (voir recover-apify-data.ts). Aucune source supplémentaire.
+//
+// ⚠️ À la toute première collecte, tout est neuf : ce classement duplique
+// alors "Produits". Il ne devient discriminant qu'à partir de la deuxième
+// collecte, quand une partie du catalogue est déjà connue.
+function buildNewcomerItems(
+  computed: ComputedProduct[],
+  metaByProduct: Map<string, ProductMeta>,
+  period: RankingPeriod,
+  generatedAt: string,
+): Array<{ id: string; rank: number } & Record<string, unknown>> {
+  const cutoff = Date.parse(generatedAt) - PERIOD_DAYS[period] * 24 * 60 * 60 * 1000;
+
+  return computed
+    .filter((c) => {
+      const seen = metaByProduct.get(c.productId)?.firstSeenAt;
+      if (!seen) return false;
+      const t = Date.parse(seen);
+      return Number.isFinite(t) && t >= cutoff;
+    })
+    // Le plus vendu d'abord : une nouveauté qui part fort est le signal
+    // utile, pas simplement la plus récente.
+    .sort(
+      (a, b) =>
+        (metaByProduct.get(b.productId)?.soldTotal ?? 0) -
+        (metaByProduct.get(a.productId)?.soldTotal ?? 0),
+    )
+    .slice(0, MAX_RANKING_ITEMS)
+    .map((c, i) => buildDisplayItem(c, i + 1, metaByProduct.get(c.productId)));
+}
+
+// Les 9 classements de M2. "products" (volume de ventes estimé),
+// "opportunities" (score d'opportunité), "shops" et "categories" sont
+// réellement calculés à partir des données produit. Les 5 autres
+// (creators, videos, sounds, newcomers, waves) dépendent de signaux que la
+// source produit n'expose pas — documents valides mais vides (items: []),
+// à peupler une fois une source créateur/vidéo/son branchée, plutôt que de
+// ne pas écrire le document du tout (l'UI doit pouvoir lire un doc
+// "classement vide" sans erreur).
 export function buildRankings(
   computed: ComputedProduct[],
   market: Market,
@@ -129,6 +248,12 @@ export function buildRankings(
     });
   }
 
+  const derived: Partial<Record<(typeof RANKING_TYPES)[number], unknown[]>> = {
+    shops: buildShopItems(computed, metaByProduct),
+    categories: buildKeywordItems(computed, metaByProduct),
+    newcomers: buildNewcomerItems(computed, metaByProduct, period, generatedAt),
+  };
+
   for (const type of RANKING_TYPES) {
     if (type === "products" || type === "opportunities") continue;
     docs.set(rankingDocId(type, market, period, null), {
@@ -137,7 +262,7 @@ export function buildRankings(
       market,
       period,
       category: null,
-      items: [],
+      items: (derived[type] ?? []) as RankingDoc["items"],
     });
   }
 
