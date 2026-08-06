@@ -4,13 +4,51 @@ Source de vérité du projet. Lu en premier à chaque session, mis à jour en de
 
 ## Snapshot
 
-- Date : 2026-07-29 (mise à jour : 2026-07-31, fin de journée)
-- Branche : `main` (la branche `claude/check-old-conversations-o3nwu4` a été fusionnée dans `main`, commit `cb407a2`)
-- **Lots 0 à 8 faits, fusionnés dans `main`, et `apps/web/src/lib/` reçu de l'utilisateur (commit `10e379d`).**
-- **`pnpm typecheck` et `pnpm lint` sont 100 % verts sur les 12 packages/apps.**
-- **🚀 EN LIGNE : <https://kairos-on.web.app>** — build 100 % statique, plan Spark (gratuit) préservé, aucune Cloud Function déployée.
-- ⚠️ **La version en ligne est en retard sur `claude/check-old-conversations-o3nwu4`.** Le dernier déploiement date de la fusion dans `main` ; les 8 commits de la session du 2026-08-05 (`88bf20d` → `e4ca28f`) sont poussés sur GitHub mais **pas déployés**. Le déploiement se fait depuis le PC de l'utilisateur (aucune authentification Firebase dans l'environnement d'agent, et `kairos-on.web.app` y est injoignable). **Ce déploiement-là doit impérativement inclure `firestore:rules`** : le catalogue produits n'est plus lisible sans compte et `paidPlan()` protège désormais les relevés — déployer l'hébergement seul laisserait les anciennes règles ouvertes et le paywall serait décoratif.
-- **Le pipeline tourne réellement**, mais sur des relevés saisis à la main (voir décision #8) : aucune collecte automatisée n'est branchée.
+- Date : **2026-08-06**
+- Branche : `main`, tout est fusionné et poussé. Aucune autre branche ne
+  contient de travail (vérifié : `origin`, `origin/main` et
+  `origin/claude/check-old-conversations-o3nwu4` pointaient toutes sur le
+  même commit avant cette session).
+- **🚀 EN LIGNE et à jour : <https://kairos-on.web.app>** — déployé avec
+  `./scripts/deploy.sh`, règles Firestore comprises. Build 100 % statique,
+  plan Spark préservé.
+- **90 vrais produits TikTok Shop en base de production**, collectés via
+  Apify, avec photos, prix, notes, avis et unités vendues.
+- `pnpm typecheck` et `pnpm lint` verts sur les 12 packages. Tests : 92 web,
+  48 collector, 48 core, 30 shared, 18 jobs, 89 règles.
+
+### ⚠️ Deux pièges qui font perdre du temps si on les ignore
+
+1. **`pnpm build` avant tout** après un `git pull`. `packages/*/lib/` est
+   gitignoré : un `lib/` périmé fait échouer `apps/web` sur des exports
+   « manquants » qui existent pourtant dans `src/`. Symptôme typique :
+   *« Module '@kairos/shared' has no exported member X »*.
+2. **Ne jamais lancer `pnpm --filter @kairos/web build` pendant que le
+   serveur de dev tourne** : le build de production écrase le `.next` du
+   dev, qui répond ensuite « Internal Server Error » sur toutes les pages.
+   Il faut `rm -rf apps/web/.next` puis redémarrer.
+
+### Ce qu'il reste à trancher (par ordre d'impact)
+
+1. **Les taux de commission.** Le simulateur et les gains affichés sont
+   inertes sans eux. Vérifié sur deux actors Apify se présentant comme
+   « affiliate » : le taux est une **donnée privée du compte affilié**,
+   absente des pages produit publiques. Aucun scraper ne la sortira. Deux
+   voies : saisie manuelle par produit (`/admin/produits`, le champ existe
+   et est désormais préservé d'une collecte à l'autre), ou un taux
+   d'hypothèse par niche **affiché comme tel**. La seconde touche à la
+   promesse « jamais un chiffre inventé » — décision produit, pas technique.
+2. **`DEFAULT_MEDIAN_CONVERSION_RATE` = 0,015** dans `RankingList` est un
+   placeholder. Sur un produit à 73,59 € en commission 22 %, il produit
+   **158–296 € pour 1 000 vues**, soit 15 ventes pour 1 000 vues. L'ordre de
+   grandeur réel sur TikTok Shop est plutôt 0,05–0,3 % : **10 à 30× trop
+   élevé**. À remplacer par une vraie valeur métier.
+3. **Collecter 2 jours de plus.** `computeVerdict` exige 3 relevés ; avec un
+   seul jour, tous les verdicts disent « Historique trop court ». Aucun
+   historique n'est fabriqué — c'est le comportement voulu.
+
+- **Le pipeline tourne réellement**, et désormais sur une vraie collecte
+  Apify (voir la section Apify plus bas) en plus de la saisie manuelle.
 
 ## Décisions actées
 
@@ -437,6 +475,22 @@ chiffre était moins visible tant qu'il dépendait d'une moyenne de vues
 personnelle ; exprimé pour 1 000 vues, il devient directement comparable et
 l'erreur saute aux yeux. À trancher avec une vraie valeur métier.
 
+## Navigation unifiée (2026-08-06)
+
+`BottomNav` est la **seule** barre de navigation. Elle porte mal son nom
+(elle est en `sticky top-0`), mais 7 pages l'importent — la renommer
+demanderait de toutes les toucher pour un gain nul.
+
+`AppShell` ne redéfinit plus la sienne : il l'utilise. Auparavant les deux
+divergeaient — indigo large sur `/classements/*`, corail étroit ailleurs —
+et le changement d'onglet donnait l'impression de changer d'application.
+`AppShell` n'apporte donc que le bandeau de titre (`PageHeader`) et le
+conteneur de contenu ; les pages qui n'en ont pas besoin (tableau de bord,
+fiche produit, brief) importent `BottomNav` directement et sont identiques.
+
+Toute modification de la navigation se fait dans `BottomNav`, jamais dans
+`AppShell`.
+
 ## Point de reprise pour la prochaine session
 
 1. **Commissions d'affiliation** — c'est le maillon manquant, pas le
@@ -449,7 +503,37 @@ l'erreur saute aux yeux. À trancher avec une vraie valeur métier.
 4. **Assets de design** pour le kit de partage (Lot 7).
 5. **Projet GCP réel** — seulement si BigQuery devient nécessaire ; le produit fonctionne sans, Firestore suffit à l'échelle actuelle.
 
-**À ne pas refaire** : les quatre impasses de source de données sont documentées en décision #8 (API Affiliate fermée UE, CAPTCHA TikTok, Kalodata refusé, Creative Center hors-sujet produits). Ne pas les réexplorer sans élément nouveau.
+**À ne pas refaire** : les impasses de source de données sont documentées en
+décision #8 et en impasse #5 — API Affiliate fermée à l'UE, CAPTCHA sur
+`shop.tiktok.com`, Kalodata refusé, et **Creative Center authentifié**
+(testé le 2026-08-02 : l'API répond HTTP 200 avec
+`{"code":40101,"msg":"no permission"}` dans le corps, et la page publique ne
+contient aucune donnée). Ne pas les réexplorer sans élément nouveau, et ne
+pas chercher à contourner une authentification.
+
+**Ce qui existe mais coûte de l'argent** : `clockworks/tiktok-scraper`
+(~1,70 $/1 000 résultats) renvoie vidéos, sons et profils créateurs avec
+ciblage France, sans login. C'est la seule voie connue pour remplir les
+classements Créateurs / Vidéos / Sons. Écartée pour l'instant : contrainte
+« gratuit en tout ». Ces quatre onglets (+ Vagues) sont donc masqués de la
+navigation, routes conservées.
+
+**Travail en attente d'arbitrage, non commité** : un `git stash` local sur
+le poste de l'utilisateur (`stash@{0}`, session du 2026-08-03) contient deux
+changements écartés de la fusion faute de compatibilité avec les pages plus
+récentes :
+- remplacer les vues moyennes auto-déclarées par le rythme de publication
+  (`postsPerDay`) et afficher les gains **pour 1 000 vues** plutôt qu'un
+  total — un créateur ne connaît pas sa portée future, et en tirer un
+  montant donne une fausse précision. Bloqué parce que `produit`,
+  `tableau-de-bord` et `simulateur` lisent tous `profile.avgViews` ;
+- afficher « commission inconnue » au lieu de « 0 % », et « gain non
+  calculable » au lieu de « 0 € — 0 € ». Zéro n'est pas une mesure ici,
+  c'est une absence, et « 0 € » se lit « ce produit ne rapporte rien ».
+
+Ce stash n'existe que sur ce poste : il sera perdu si le dépôt est recloné
+ailleurs. Les deux idées sont décrites ici pour pouvoir être refaites de
+zéro sur la base actuelle.
 
 ## Commandes utiles
 
