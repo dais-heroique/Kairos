@@ -64,7 +64,7 @@ function WatchlistContent() {
     <div className="flex min-h-dvh flex-col">
       <BottomNav />
 
-      <header className="px-5 pt-6 pb-2">
+      <header className="kai-shell pt-6 pb-2">
         <h1 className="font-[family-name:var(--font-display)] text-2xl font-extrabold">
           Watchlist
         </h1>
@@ -73,7 +73,7 @@ function WatchlistContent() {
         </p>
       </header>
 
-      <div className="flex flex-1 flex-col gap-2 px-5 py-4">
+      <div className="flex flex-1 flex-col gap-2 kai-shell py-4">
         {entries && entries.length === 0 && (
           <p className="text-sm text-[color:var(--color-ink-muted)]">
             Rien pour l&apos;instant — ajoute des produits depuis les

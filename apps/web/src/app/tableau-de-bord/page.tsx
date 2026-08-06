@@ -163,7 +163,7 @@ function DashboardContent() {
     <div className="flex min-h-dvh flex-col">
       <BottomNav />
 
-      <header className="flex items-start justify-between gap-3 px-5 pt-6 pb-2">
+      <header className="flex items-start justify-between gap-3 kai-shell pt-6 pb-2">
         <div>
           <h1 className="font-[family-name:var(--font-display)] text-2xl font-extrabold">
             {firstName ? `Salut ${firstName}` : "Ta semaine"}
@@ -189,7 +189,7 @@ function DashboardContent() {
         </Link>
       </header>
 
-      <div className="flex flex-1 flex-col gap-4 px-5 py-3">
+      <div className="flex flex-1 flex-col gap-4 kai-shell py-3">
         <RankingMeta generatedAt={generatedAt} isDemo={isDemo} />
 
         {profileIncomplete && (

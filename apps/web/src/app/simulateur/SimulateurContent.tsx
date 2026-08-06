@@ -58,7 +58,7 @@ export function SimulateurContent() {
     return (
       <div className="flex min-h-dvh flex-col">
         <BottomNav />
-        <div className="flex flex-1 flex-col items-center justify-center gap-2 px-5 text-center">
+        <div className="flex flex-1 flex-col items-center justify-center gap-2 kai-shell text-center">
           <p className="text-sm text-[color:var(--color-ink-muted)]">Chargement…</p>
         </div>
       </div>
@@ -69,7 +69,7 @@ export function SimulateurContent() {
     return (
       <div className="flex min-h-dvh flex-col">
         <BottomNav />
-        <div className="flex flex-1 flex-col items-center justify-center gap-2 px-5 text-center">
+        <div className="flex flex-1 flex-col items-center justify-center gap-2 kai-shell text-center">
           <p className="text-sm text-[color:var(--color-ink-muted)]">
             Pas encore de produits à simuler — reviens une fois le classement
             alimenté par la collecte réelle.
@@ -83,7 +83,7 @@ export function SimulateurContent() {
     <div className="flex min-h-dvh flex-col">
       <BottomNav />
 
-      <header className="px-5 pt-6 pb-2">
+      <header className="kai-shell pt-6 pb-2">
         <h1 className="font-[family-name:var(--font-display)] text-2xl font-extrabold">
           Simulateur de gains
         </h1>
@@ -92,7 +92,7 @@ export function SimulateurContent() {
         </p>
       </header>
 
-      <div className="flex flex-1 flex-col gap-6 px-5 py-4">
+      <div className="flex flex-1 flex-col gap-6 kai-shell py-4">
         <label className="flex flex-col gap-1 text-sm font-medium">
           Produit
           <select

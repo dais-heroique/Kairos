@@ -122,7 +122,7 @@ function ProduitContent() {
     v.toLocaleString("fr-FR", { style: "currency", currency: "EUR", maximumFractionDigits: 0 });
 
   return (
-    <div className="flex flex-1 flex-col gap-4 px-5 py-4">
+    <div className="flex flex-1 flex-col gap-4 kai-shell py-4">
       <Link href="/tableau-de-bord" className="text-sm underline">
         ← Retour
       </Link>
