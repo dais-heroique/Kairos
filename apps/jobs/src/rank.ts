@@ -1,3 +1,4 @@
+import { compareOpportunityOf } from "@kairos/core";
 import { RANKING_TYPES } from "@kairos/shared";
 import type {
   FeedDoc,
@@ -219,9 +220,11 @@ export function buildRankings(
     items: byVolume.map((c, i) => buildDisplayItem(c, i + 1, metaByProduct.get(c.productId))),
   });
 
-  const byOpportunity = [...computed]
-    .sort((a, b) => b.opportunityScore - a.opportunityScore)
-    .slice(0, MAX_RANKING_ITEMS);
+  // Ordre partagé avec le pipeline client (compareOpportunity, packages/core) :
+  // opportunités jouables, puis produits pas encore jugeables, puis ceux
+  // que le verdict dit d'éviter. Le rang stocké reflète donc déjà cet
+  // ordre — l'UI n'a qu'à séparer visuellement les groupes.
+  const byOpportunity = [...computed].sort(compareOpportunityOf).slice(0, MAX_RANKING_ITEMS);
   docs.set(rankingDocId("opportunities", market, period, null), {
     generatedAt,
     type: "opportunities",
@@ -281,9 +284,9 @@ export function buildFeed(
   metaByProduct: Map<string, ProductMeta> = new Map(),
   generatedAt: string = new Date().toISOString(),
 ): FeedDoc {
-  const top = [...computed]
-    .sort((a, b) => b.opportunityScore - a.opportunityScore)
-    .slice(0, MAX_FEED_ITEMS);
+  // Même ordre que le classement : un feed « à la une » ne peut pas ouvrir
+  // sur un produit que le verdict dit d'éviter.
+  const top = [...computed].sort(compareOpportunityOf).slice(0, MAX_FEED_ITEMS);
   return {
     generatedAt,
     market,

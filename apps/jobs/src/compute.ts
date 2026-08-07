@@ -11,7 +11,13 @@ export interface ComputedProduct {
   productId: string;
   verdict: ProductVerdict;
   estimates: ProductEstimates;
-  opportunityScore: number;
+  /**
+   * `null` quand aucun des quatre axes du score ne repose sur une donnée
+   * réelle — voir `computeOpportunityScore`. Le produit reste classé, mais
+   * dans le groupe « pas encore classable » plutôt qu'avec un rang qui ne
+   * mesure rien.
+   */
+  opportunityScore: number | null;
 }
 
 // Utilisées quand le document products/{id} existant n'a pas encore de
@@ -52,7 +58,9 @@ export function computeProductVerdictAndEstimates(
       }
     : { salesLow: 0, salesHigh: 0, confidence: 0.05, method: "insufficient_data" };
 
-  const opportunityScore = computeOpportunityScore(verdict, commission, sellerTrust);
+  const opportunityScore = computeOpportunityScore(verdict, commission, sellerTrust, {
+    hasMeasuredHistory: !insufficientData,
+  });
 
   return { productId, verdict, estimates, opportunityScore };
 }

@@ -17,7 +17,27 @@ import { ProductRankCard } from "./ProductRankCard";
 // et Pro voient tout.
 const FREE_PLAN_LIMIT = 10;
 
-export function RankingList({ items }: { items: ProductRankItem[] }) {
+interface RankingListProps {
+  items: ProductRankItem[];
+  /**
+   * Position de `items[0]` dans le classement complet. Le classement
+   * « Opportunités » est rendu en plusieurs tranches (opportunités
+   * jouables / pas encore classables / à éviter) : sans cet décalage,
+   * chaque tranche rouvrirait son propre top 10 gratuit.
+   */
+  startIndex?: number;
+  /** Nombre total de lignes du classement, tranches comprises. */
+  totalCount?: number;
+  /** N'afficher le récapitulatif « N gains masqués » qu'une fois par page. */
+  showLockedSummary?: boolean;
+}
+
+export function RankingList({
+  items,
+  startIndex = 0,
+  totalCount,
+  showLockedSummary = true,
+}: RankingListProps) {
   const { firebaseUser, userDoc } = useAuth();
   const [saved, setSaved] = useState<Set<string>>(new Set());
 
@@ -49,7 +69,8 @@ export function RankingList({ items }: { items: ProductRankItem[] }) {
   // entier pour tout le monde (capacité « rankings »), seuls les gains
   // au-delà du top 10 sont retenus.
   const isFreePlan = !entitlements.can("earningsAll");
-  const lockedCount = isFreePlan ? Math.max(0, items.length - FREE_PLAN_LIMIT) : 0;
+  const total = totalCount ?? items.length;
+  const lockedCount = isFreePlan ? Math.max(0, total - FREE_PLAN_LIMIT) : 0;
 
   // Gains personnalisés — jamais du GMV global (règle invariante #5) :
   // computeEarnings (packages/core, Lot 1) à partir du profil réel de
@@ -60,7 +81,9 @@ export function RankingList({ items }: { items: ProductRankItem[] }) {
   const earningsByItem = useMemo(() => {
     const map = new Map<string, EstimatedRange>();
     if (!userDoc) return map;
-    const unlocked = isFreePlan ? items.slice(0, FREE_PLAN_LIMIT) : items;
+    const unlocked = isFreePlan
+      ? items.slice(0, Math.max(0, FREE_PLAN_LIMIT - startIndex))
+      : items;
     for (const item of unlocked) {
       map.set(
         item.id,
@@ -76,7 +99,7 @@ export function RankingList({ items }: { items: ProductRankItem[] }) {
       );
     }
     return map;
-  }, [items, userDoc, isFreePlan]);
+  }, [items, userDoc, isFreePlan, startIndex]);
 
   // Rien ne force l'onboarding à être terminé (RequireAuth ne vérifie que
   // l'authentification) : on peut donc arriver ici avec `avgViews` à 0,
@@ -86,7 +109,7 @@ export function RankingList({ items }: { items: ProductRankItem[] }) {
 
   return (
     <div className="flex flex-col gap-2">
-      {profileIncomplete && (
+      {profileIncomplete && startIndex === 0 && (
         <div className="kai-card flex flex-col gap-1 text-sm">
           <p className="font-[family-name:var(--font-display)] font-bold">
             Tes gains ne sont pas encore calculables
@@ -107,11 +130,11 @@ export function RankingList({ items }: { items: ProductRankItem[] }) {
           saved={saved.has(item.id)}
           onToggleSave={handleToggleSave}
           estimatedEarnings={earningsByItem.get(item.id) ?? null}
-          locked={isFreePlan && index >= FREE_PLAN_LIMIT}
+          locked={isFreePlan && startIndex + index >= FREE_PLAN_LIMIT}
         />
       ))}
 
-      {lockedCount > 0 && (
+      {showLockedSummary && lockedCount > 0 && (
         <div className="kai-card flex flex-col items-center gap-2 text-center">
           <p className="font-[family-name:var(--font-display)] font-bold">
             {lockedCount} gains encore masqués

@@ -35,6 +35,11 @@ export interface ProductRankItem {
   verdictConfidence?: number;
   /** Pourquoi ce verdict — la vraie valeur ajoutée, longtemps jamais affichée. */
   reasoning?: string[];
+  /**
+   * Absent quand aucun des quatre axes du score n'est mesuré : le produit
+   * n'est pas classable en opportunité, et ne reçoit donc pas de note.
+   * Voir `computeOpportunityScore` (packages/core).
+   */
   opportunityScore?: number;
   snapshotCount?: number;
 }

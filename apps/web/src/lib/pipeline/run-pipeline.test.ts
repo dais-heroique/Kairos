@@ -87,9 +87,12 @@ describe("chaîne de calcul du pipeline de saisie manuelle", () => {
     expect(verdict.saturationScore).toBeGreaterThanOrEqual(0);
     expect(verdict.saturationScore).toBeLessThanOrEqual(100);
 
-    const score = computeOpportunityScore(verdict, COMMISSION, SELLER_TRUST);
-    expect(score).toBeGreaterThanOrEqual(0);
-    expect(score).toBeLessThanOrEqual(100);
+    const score = computeOpportunityScore(verdict, COMMISSION, SELLER_TRUST, {
+      hasMeasuredHistory: true,
+    });
+    expect(score).not.toBeNull();
+    expect(score!).toBeGreaterThanOrEqual(0);
+    expect(score!).toBeLessThanOrEqual(100);
   });
 
   it("classe une commission plus élevée au-dessus, toutes choses égales par ailleurs", () => {
@@ -100,9 +103,35 @@ describe("chaîne de calcul du pipeline de saisie manuelle", () => {
     ];
     const verdict = computeVerdict(snapshots);
 
-    const high = computeOpportunityScore(verdict, { ...COMMISSION, ratePct: 30 }, SELLER_TRUST);
-    const low = computeOpportunityScore(verdict, { ...COMMISSION, ratePct: 5 }, SELLER_TRUST);
+    const basis = { hasMeasuredHistory: true };
+    const high = computeOpportunityScore(verdict, { ...COMMISSION, ratePct: 30 }, SELLER_TRUST, basis);
+    const low = computeOpportunityScore(verdict, { ...COMMISSION, ratePct: 5 }, SELLER_TRUST, basis);
 
-    expect(high).toBeGreaterThan(low);
+    expect(high!).toBeGreaterThan(low!);
+  });
+
+  // Le cas réellement en production : les 90 produits Apify n'ont qu'un
+  // relevé, aucun taux de commission (l'actor n'en renvoie pas) et une
+  // confiance vendeur de remplissage. Les quatre axes du score sont alors
+  // des constantes, donc identiques d'un produit à l'autre.
+  it("ne note pas un produit dont aucun axe n'est mesuré", () => {
+    const verdict = computeVerdict([snapshot("2026-07-01")]);
+    const score = computeOpportunityScore(
+      verdict,
+      { ratePct: 0, isOpenCollab: false, isTargetedOnly: false },
+      { ...SELLER_TRUST, score: 50, sampleCount: 0 },
+      { hasMeasuredHistory: false },
+    );
+
+    expect(score).toBeNull();
+  });
+
+  it("un taux de commission saisi à la main suffit à rendre le produit classable", () => {
+    const verdict = computeVerdict([snapshot("2026-07-01")]);
+    const score = computeOpportunityScore(verdict, COMMISSION, SELLER_TRUST, {
+      hasMeasuredHistory: false,
+    });
+
+    expect(score).not.toBeNull();
   });
 });

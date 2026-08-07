@@ -83,7 +83,10 @@ function toProductRankItem(
     windowDaysHigh?: number;
     verdictConfidence?: number;
     reasoning?: string[];
-    opportunityScore?: number;
+    // `null` est écrit explicitement par les deux pipelines quand aucun
+    // axe du score n'est mesuré. `optional()` le laisse tomber : côté UI,
+    // « score absent » et « pas encore classable » sont la même chose.
+    opportunityScore?: number | null;
     snapshotCount?: number;
   };
   // `exactOptionalPropertyTypes` est actif : un champ optionnel se pose

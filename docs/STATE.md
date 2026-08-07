@@ -4,7 +4,7 @@ Source de vérité du projet. Lu en premier à chaque session, mis à jour en de
 
 ## Snapshot
 
-- Date : **2026-08-06**
+- Date : **2026-08-07**
 - Branche : `main`, tout est fusionné et poussé. Aucune autre branche ne
   contient de travail (vérifié : `origin`, `origin/main` et
   `origin/claude/check-old-conversations-o3nwu4` pointaient toutes sur le
@@ -14,8 +14,12 @@ Source de vérité du projet. Lu en premier à chaque session, mis à jour en de
   plan Spark préservé.
 - **90 vrais produits TikTok Shop en base de production**, collectés via
   Apify, avec photos, prix, notes, avis et unités vendues.
-- `pnpm typecheck` et `pnpm lint` verts sur les 12 packages. Tests : 92 web,
-  48 collector, 48 core, 30 shared, 18 jobs, 89 règles.
+- `pnpm typecheck` et `pnpm lint` verts sur les 12 packages. Tests
+  (2026-08-07, émulateur compris) : **98 web, 56 core, 48 collector,
+  40 règles, 37 affiliate, 30 shared, 18 jobs, 15 créa DNA, 12 ai-gateway**.
+- ⚠️ **Le classement « Opportunités » de la production est périmé** : il a
+  été calculé avant la décision #52 et donne 30/100 aux 90 produits. Il faut
+  relancer le pipeline pour qu'il reflète la correction.
 
 ### ⚠️ Deux pièges qui font perdre du temps si on les ignore
 
@@ -38,14 +42,20 @@ Source de vérité du projet. Lu en premier à chaque session, mis à jour en de
    et est désormais préservé d'une collecte à l'autre), ou un taux
    d'hypothèse par niche **affiché comme tel**. La seconde touche à la
    promesse « jamais un chiffre inventé » — décision produit, pas technique.
-2. **`DEFAULT_MEDIAN_CONVERSION_RATE` = 0,015** dans `RankingList` est un
-   placeholder. Sur un produit à 73,59 € en commission 22 %, il produit
-   **158–296 € pour 1 000 vues**, soit 15 ventes pour 1 000 vues. L'ordre de
-   grandeur réel sur TikTok Shop est plutôt 0,05–0,3 % : **10 à 30× trop
-   élevé**. À remplacer par une vraie valeur métier.
-3. **Collecter 2 jours de plus.** `computeVerdict` exige 3 relevés ; avec un
+2. **Collecter 2 jours de plus.** `computeVerdict` exige 3 relevés ; avec un
    seul jour, tous les verdicts disent « Historique trop court ». Aucun
-   historique n'est fabriqué — c'est le comportement voulu.
+   historique n'est fabriqué — c'est le comportement voulu. ⚠️ Ce n'est
+   **pas gratuit** : ~0,48 € par collecte Apify, soit ~1 € pour les deux
+   jours. `recover:apify` ne rejoue que des runs déjà facturés.
+
+~~3. `DEFAULT_MEDIAN_CONVERSION_RATE` = 0,015 dans `RankingList`.~~
+**Déjà réglé le 2026-08-03 par la décision #20**, cette entrée n'avait
+jamais été retirée d'ici et a coûté une session à être revérifiée. La
+constante n'existe plus : c'est `DEFAULT_EARNINGS_CONFIG.defaultConversionRate`
+= **0,002** dans `packages/core/src/config/weights.ts`, source unique lue
+par `RankingList`, `HeroEarningsTeaser`, `/produit`, `/tableau-de-bord` et
+le simulateur. Reste un ordre de grandeur à calibrer, pas un placeholder à
+10–30× près.
 
 - **Le pipeline tourne réellement**, et désormais sur une vraie collecte
   Apify (voir la section Apify plus bas) en plus de la saisie manuelle.
@@ -124,10 +134,27 @@ Source de vérité du projet. Lu en premier à chaque session, mis à jour en de
    - **`FOUNDING_PRICE_LOCK`** : les inscrits d'aujourd'hui gardent le tarif de lancement. Seule raison honnête de s'inscrire maintenant plutôt que dans six mois — une promesse qui ne dépend que de nous, donc tenable. La constante à `false` la retire partout.
 51. **`TYPICAL_WINDOW_DAYS` utilise `min`/`max`, pas `low`/`high`** (2026-08-05) — la règle ESLint `kairos/no-raw-estimate-number` a refusé l'affichage, et elle avait raison : `low`/`high` désignent partout ailleurs les bornes d'une estimation portant sur un produit précis, qui doit alors passer par `<EstimatedValue>` avec sa confiance. Ici c'est un ordre de grandeur général.
 
+52. **Les 90 produits avaient tous exactement le même score d'opportunité** (2026-08-07) — trouvé en dérivant le score à partir des constantes, pas en lisant l'écran. Avec un seul relevé, `computeVerdict` sort par la branche « historique insuffisant » et renvoie des valeurs **fixes** (`saturationScore: 50`, `confidence: 0.05`) ; l'actor Apify ne fournit **aucun** taux de commission (`NEUTRAL_COMMISSION`, ratePct 0) ; et la confiance vendeur est un remplissage identique pour tous (`NEUTRAL_SELLER_TRUST`, score 50). Les quatre termes de la somme sont alors des constantes :
+
+    | Axe | Poids | Valeur | Contribution |
+    |---|---|---|---|
+    | Phase | 0,35 | 25 + 75 × 0,05 = 28,75 | 10,06 |
+    | Commission | 0,25 | 0 (absente) | 0 |
+    | Confiance vendeur | 0,25 | 50 (constante) | 12,5 |
+    | Saturation inverse | 0,15 | 100 − 50 = 50 | 7,5 |
+
+    **Total : 30/100 pour les 90 produits.** Et `rank.ts` triait sur ce score sans départage : à égalité parfaite, `Array.sort` étant stable, l'ordre affiché était celui d'arrivée des documents — l'ordre alphabétique des identifiants, présenté comme un classement d'opportunités. Le score lui-même n'est affiché nulle part, mais le **rang** l'est, et « 1er sur 90 » est une affirmation.
+
+    Corrigé selon la doctrine déjà en place pour les gains (décision #22) : `computeOpportunityScore` renvoie **`number | null`** et refuse de produire un nombre quand aucun des quatre axes ne repose sur une donnée réelle. Un seul axe mesuré suffit à rendre le score publiable — un taux de commission saisi à la main, par exemple. Les marqueurs d'absence sont ceux que le projet utilise déjà : `ratePct === 0` (aucun programme ne rémunère à 0 %) et `sampleCount === 0` (posé par les deux constantes de remplissage). L'historique, lui, ne se devine pas depuis le verdict — `confidence` est bornée à `[0,05 ; 0,95]` et 0,05 est **aussi** atteignable par un vrai calcul avec un gros trou de collecte — il est donc passé explicitement (`OpportunityBasis`), ce qui a fait échouer la compilation des quatre appelants, exactement comme la décision #16.
+
+53. **« Éviter » relégué, pas exclu, du classement Opportunités** (2026-08-07) — question ouverte du 2026-08-03, tranchée. Un classement d'opportunités qui liste en 8e position ce que l'outil dit d'éviter se contredit à l'écran. Trois options étaient posées : exclure, reléguer, séparer visuellement. **Retenu : reléguer *et* séparer**, jamais exclure — le projet montre ce qu'il sait plutôt que de le masquer (même choix que les produits sans historique, affichés avec « historique trop court »). Ordre par utilité décroissante pour le lecteur : ce qu'il peut jouer, ce qui n'est pas encore jugeable, ce qu'on lui dit d'éviter. Le comparateur `compareOpportunity` vit dans `packages/core` et sert aux **deux** pipelines, donc le rang stocké dans `rankings/*` porte déjà cet ordre et l'UI n'a qu'à dessiner les frontières. ⚠️ **Cela modifie les classements existants** — c'est voulu, et il faut relancer le pipeline pour que la production en bénéficie. Passer à l'exclusion pure demanderait un `filter`, pas une refonte.
+
+54. **Le paywall aurait fui en découpant la liste** (2026-08-07) — attrapé en écrivant la correction précédente, pas après. `RankingList` calculait le verrou du plan gratuit sur `index` dans **sa** liste : rendu en trois tranches, chaque tranche rouvrait son propre top 10, c'est-à-dire donnait gratuitement ce que le plan Creator vend. Le composant reçoit désormais `startIndex`/`totalCount` (défauts inchangés pour les deux autres pages de classement, qui rendent une seule liste), et 4 tests couvrent le décalage — dont celui qui échouerait sans lui.
+
 ## Questions ouvertes (posées le 2026-08-03, aucune action prise)
 
 - ~~**La lecture publique du catalogue (décision #10) ne sert à rien.**~~ **Traité le 2026-08-05** (décision #39) : `/classements/*` est enveloppé dans `<RequireAuth>` : aucun visiteur anonyme n'atteint jamais ces pages — vérifié en naviguant réellement, on est redirigé vers `/connexion`. La justification d'origine (« rendues sans utilisateur connecté ») valait pour un rendu statique au build ; les pages sont depuis passées en `"use client"` + `useEffect`, ce qui l'a rendue caduque, mais la règle n'a jamais été refermée. **Repasser `products`/`shops`/`rankings`/`snapshots` en `isSignedIn()` ne coûterait aucune fonctionnalité** et fermerait le trou « n'importe qui vide la base ».
-- **Un produit « Éviter » apparaît dans le classement « Opportunités »** (8e sur 22 après correction, avec le gain affiché le plus élevé de la page). Un classement d'opportunités qui liste ce que l'outil dit d'éviter s'auto-contredit. Trois options : les exclure, les reléguer en fin de liste, ou séparer visuellement.
+- ~~**Un produit « Éviter » apparaît dans le classement « Opportunités »**~~ **Tranché le 2026-08-07** (décision #53) : relégué en fin de classement et séparé visuellement, jamais exclu.
 - **L'échelle du score de commission est bancale** : `commissionScoreOf` traite le taux en pourcentage comme une note sur 100, donc une commission de 30 % — excellente en affiliation — ne pèse que 33/100. L'axe commission est de fait sous-pondéré par rapport aux trois autres.
 - **La bande « maturity » du moteur est plus étroite que le bruit.** `classifyPhase` ne range en maturité qu'un ratio de croissance dans ±2 %, mesuré sur des moyennes de 3 points. Avec un bruit quotidien réaliste (±12 %), l'erreur type dépasse largement ce seuil et un produit parfaitement plat ressort en `late_growth` au hasard. En pratique la maturité n'est atteignable de façon fiable que par la règle de durée (`span > 150 jours`).
 
@@ -138,7 +165,7 @@ Ces points sont des arbitrages, pas des bugs : ils ne sont pas corrigés unilat�
 - ~~**Le catalogue est entièrement public.**~~ **Fermé le 2026-08-05** (décision #39). Ce qui suit est conservé pour mémoire : `products`, `snapshots`, `shops`, `rankings` étaient en `allow read: if true` (décision #10, prise pour que les pages statiques se chargent sans utilisateur connecté). Conséquence : n'importe qui peut vider toute la base avec quelques lignes de JS et la config Firebase, qui est publique par conception. Le verrouillage du plan gratuit (`FREE_PLAN_LIMIT`) est un rendu côté client — il ne peut rien empêcher. Sans objet tant que le produit est « pour des amis » ; bloquant le jour où il se vend. Solution à 0 € si besoin : scinder les données (public = ce que le plan gratuit peut voir ; le reste dans une collection dont les règles lisent le `plan` de l'utilisateur via `get()`).
 - **App Check n'est pas actif** — `NEXT_PUBLIC_FIREBASE_APPCHECK_SITE_KEY` est vide dans `.env.production`. Sur le plan Spark, épuiser le quota gratuit ne coûte rien (0 € tient), mais **coupe le site** jusqu'au lendemain. C'est le garde-fou prévu contre ça.
 - **Porte dérobée admin toujours ouverte** — `isBootstrapAdminEmail()` (`firestore.rules`) code en dur `contact.conforva@gmail.com`, avec un commentaire « BOOTSTRAP TEMPORAIRE — à supprimer après la première promotion admin » qui n'a jamais été suivi. Quiconque contrôle cette adresse peut se promouvoir admin, donc écrire dans tout le catalogue. À retirer une fois le compte admin réel en place.
-- **Score d'opportunité partiellement fabriqué** (voir décision #18) — trois options : demander ces champs dans le formulaire, les retirer du calcul, ou afficher le score comme un rang plutôt qu'une note absolue.
+- **Score d'opportunité partiellement fabriqué** (voir décision #18) — trois options : demander ces champs dans le formulaire, les retirer du calcul, ou afficher le score comme un rang plutôt qu'une note absolue. **Partiellement traité le 2026-08-07** (décision #52) : le cas extrême — *aucun* axe mesuré — ne produit plus de note du tout. Reste entier le cas intermédiaire : un produit dont seule la commission est saisie reçoit une note dont trois quarts du poids viennent encore de constantes.
 - **`config/complianceRules` est vide** — le Compliance Guard tourne donc sur zéro règle. Il est inerte au moment précis où il servirait : la génération de briefs (Lot 6). À peupler **avant** de brancher Gemini/Claude, pas après. Contexte français : loi n°2023-451 sur l'influence commerciale (mentions « publicité »/« collaboration commerciale » obligatoires, allégations santé/beauté encadrées) — le brief dicte ce que le créateur va dire à l'écran.
 - **L'identifiant produit est `slugify(titre)`** — deux titres proches entrent en collision et fusionnent leurs historiques ; renommer un produit en crée un nouveau et abandonne tout son historique de relevés. C'est l'actif le plus précieux du produit (il ne se reconstitue pas rétroactivement).
 - **Pas de saisie rétroactive** — le formulaire écrit toujours à la date du jour. Un week-end ou un oubli crée un trou irrattrapable, alors que `saveProductWithSnapshot()` accepte déjà un paramètre `capturedDate` qu'il suffirait d'exposer.
@@ -172,6 +199,7 @@ Ces points sont des arbitrages, pas des bugs : ils ne sont pas corrigés unilat�
 | Parcours utilisateur vérifié bout en bout | ✅ 2026-08-03, navigateur réel (Chromium/Playwright) contre les émulateurs : inscription par lien email → onboarding → classements → simulateur → watchlist → compte. C'est ce parcours qui a fait apparaître les décisions #20 à #23 |
 | Verrouillage plan gratuit | ✅ pattern « ligne visible, gain flouté » au-delà du top 10 (observé chez Kalodata) au lieu de masquer les produits |
 | Règle ESLint anti-nombre-nu | ✅ `kairos/no-raw-estimate-number`, testée (7 tests) |
+| Score d'opportunité | ✅ **corrigé** — `number \| null`, refuse de noter sans un seul axe mesuré ; « éviter » relégué et séparé à l'écran ; comparateur partagé par les deux pipelines (décisions #52-54, 14 tests core + 4 tests paywall) |
 | Test de budget de lecture Firestore | ✅ `read-budget.test.ts`, prouve ≤5 opérations/page contre l'émulateur réel |
 | BigQuery | Schéma complet (11 tables DDL avec `video_comments`), 0 ligne de données réelles (aucune infra GCP branchée depuis cette session) |
 | `firestore.rules` + tests | Solides, tests réels et **verts** (30/30) |
@@ -345,7 +373,7 @@ Les 5 autres ne le sont pas par manque de **source**, pas par manque de code
 | Classement | État | Raison |
 |---|---|---|
 | Produits | ✅ 90 | volume de ventes |
-| Opportunités | ✅ 90 | score d'opportunité |
+| Opportunités | ⚠️ 90 collectés, **0 classable** | Le score exige au moins un axe mesuré (décision #52). Ces 90 produits n'ont ni 3 relevés, ni commission, ni confiance vendeur : ils s'affichent sous « Pas encore classables ». Deux jours de collecte de plus, ou un taux de commission saisi, suffisent à en faire sortir |
 | Boutiques | ✅ 68 | agrégat par `sellerId`/`shopName` — calcul, pas collecte |
 | Catégories | ⚠️ 3 | agrégat par **mot-clé de collecte**, pas la taxonomie TikTok (la source ne l'expose pas) — la page le dit explicitement |
 | Créateurs, Vidéos, Sons | ❌ | l'actor est un scraper **produit** : aucune donnée créateur/vidéo/son. Voir l'impasse #5 ci-dessous |
@@ -432,9 +460,11 @@ est fermée, pas la voie payante.
   l'affichage, pas au stockage : les URL déjà en base en bénéficient sans
   recollecte. Combiné à `loading="lazy"`, seules les vignettes visibles sont
   téléchargées (13 au lieu de 90 au premier écran).
-- ⚠️ **Piège de breakpoint** : `sm` vaut **390px** dans ce projet
-  (`globals.css`), pas 640px. Un `sm:flex-row` s'active donc en plein écran
-  mobile. Utiliser `md` (768px) pour « à partir de la tablette ».
+- ~~⚠️ **Piège de breakpoint** : `sm` vaut **390px** dans ce projet.~~
+  **Périmé depuis la décision #48 (2026-08-05)** : `--breakpoint-sm` vaut
+  **640px**, la valeur par défaut de Tailwind. `sm:` veut donc bien dire
+  « plus large qu'un téléphone ». La consigne d'utiliser `md` (768px) pour
+  une grille de trois cartes reste valable, elle.
 
 ## Gains exprimés pour 1 000 vues (2026-08-03)
 
@@ -465,15 +495,13 @@ contraire à la promesse « jamais un chiffre inventé ».
 saisi à la main dans `/admin/produits` — seule source possible pour cette
 donnée. Un taux existant (> 0) est désormais préservé, comme `firstSeenAt`.
 
-⚠️ **À calibrer avant de se fier aux montants** : `DEFAULT_MEDIAN_CONVERSION_RATE`
-vaut 0,015 dans `RankingList` (1,5 % de conversion depuis les vues), un
-placeholder documenté en attente de `bigquery/08_calibration_factors.sql`.
-Sur un produit à 73,59 € en commission 22 %, cela affiche **158–296 € pour
-1 000 vues**, soit 15 ventes pour 1 000 vues. L'ordre de grandeur réel sur
-TikTok Shop est plutôt 0,05–0,3 %, donc environ **10 à 30× trop élevé**. Le
-chiffre était moins visible tant qu'il dépendait d'une moyenne de vues
-personnelle ; exprimé pour 1 000 vues, il devient directement comparable et
-l'erreur saute aux yeux. À trancher avec une vraie valeur métier.
+⚠️ **À calibrer avant de se fier aux montants** — mais l'alerte d'origine
+est close. Le taux de conversion par défaut est passé de 1,5 % à **0,2 %**
+le 2026-08-03 (décision #20) et vit désormais dans
+`DEFAULT_EARNINGS_CONFIG.defaultConversionRate`, en un seul endroit. Ce qui
+reste vrai : 0,2 % est un **ordre de grandeur, pas une mesure**, en attente
+de `bigquery/08_calibration_factors.sql`. Ce qui n'est plus vrai : le
+facteur 10 à 30 et la double valeur codée en dur dans deux écrans.
 
 ## Navigation unifiée (2026-08-06)
 
@@ -519,31 +547,35 @@ classements Créateurs / Vidéos / Sons. Écartée pour l'instant : contrainte
 navigation, routes conservées.
 
 **Travail en attente d'arbitrage, non commité** : un `git stash` local sur
-le poste de l'utilisateur (`stash@{0}`, session du 2026-08-03) contient deux
-changements écartés de la fusion faute de compatibilité avec les pages plus
-récentes :
-- remplacer les vues moyennes auto-déclarées par le rythme de publication
-  (`postsPerDay`) et afficher les gains **pour 1 000 vues** plutôt qu'un
-  total — un créateur ne connaît pas sa portée future, et en tirer un
-  montant donne une fausse précision. Bloqué parce que `produit`,
-  `tableau-de-bord` et `simulateur` lisent tous `profile.avgViews` ;
-- afficher « commission inconnue » au lieu de « 0 % », et « gain non
-  calculable » au lieu de « 0 € — 0 € ». Zéro n'est pas une mesure ici,
-  c'est une absence, et « 0 € » se lit « ce produit ne rapporte rien ».
+le poste de l'utilisateur (`stash@{0}`, session du 2026-08-03) contenait
+deux changements. **Vérifié dans le code le 2026-08-07 — un seul reste à
+faire :**
+
+- ⏳ **À refaire** : remplacer les vues moyennes auto-déclarées par le
+  rythme de publication (`postsPerDay`) et afficher les gains **pour
+  1 000 vues** plutôt qu'un total — un créateur ne connaît pas sa portée
+  future, et en tirer un montant donne une fausse précision. Toujours
+  bloqué par la même raison : `RankingList`, `produit`, `tableau-de-bord`,
+  `simulateur` et `onboarding/profil` lisent tous `profile.avgViews`, et
+  `userProfileSchema` le déclare encore.
+- ✅ **Déjà fait, ne pas refaire** : « commission inconnue » au lieu de
+  « 0 % » et « gain non calculable » au lieu de « 0 € — 0 € ». C'est en
+  place depuis la refonte du 2026-08-02 (`NEUTRAL_COMMISSION` traité comme
+  marqueur d'absence) et la décision #22.
 
 Ce stash n'existe que sur ce poste : il sera perdu si le dépôt est recloné
-ailleurs. Les deux idées sont décrites ici pour pouvoir être refaites de
-zéro sur la base actuelle.
+ailleurs. L'idée restante est décrite ici pour pouvoir être refaite de zéro
+sur la base actuelle.
 
 ## Commandes utiles
 
 ```bash
 pnpm typecheck && pnpm lint          # 12 packages, doit être 100 % vert
 pnpm test                            # les suites émulateur échouent ici, c'est normal
-pnpm test:rules                      # 34/34 contre l'émulateur Firestore
+pnpm test:rules                      # 40/40 contre l'émulateur Firestore
 pnpm test:jobs-integration           # 18/18
-pnpm test:web-integration            # 92/92 (démarre firestore + auth)
-# Total vérifié le 2026-08-05 : 320 tests, tous verts.
+pnpm test:web-integration            # 98/98 (démarre firestore + auth)
+# Total vérifié le 2026-08-07 : 354 tests, tous verts.
 # Build vérifié : 0 route « ƒ » — 100 % statique, plan Spark préservé.
 ```
 

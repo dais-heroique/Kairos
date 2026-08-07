@@ -2,6 +2,7 @@
 
 import { doc, setDoc } from "firebase/firestore";
 import {
+  compareOpportunityOf,
   computeOpportunityScore,
   computeVerdict,
   hasInsufficientHistory,
@@ -44,7 +45,8 @@ export interface PipelineResult {
 interface ScoredProduct {
   product: StoredProduct;
   verdict: ProductVerdict;
-  opportunityScore: number;
+  /** `null` = aucun des quatre axes du score n'est mesuré, donc rien à classer. */
+  opportunityScore: number | null;
   estSales: number;
 }
 
@@ -116,13 +118,15 @@ export async function runPipeline(): Promise<PipelineResult> {
     // court". On garde le produit au classement avec ce message plutôt que
     // de le masquer : l'utilisateur voit ce qu'il a saisi et comprend
     // pourquoi le verdict n'est pas encore fiable.
-    if (hasInsufficientHistory(snapshots)) needMoreHistory++;
+    const insufficientHistory = hasInsufficientHistory(snapshots);
+    if (insufficientHistory) needMoreHistory++;
 
     const verdict = computeVerdict(snapshots);
     const opportunityScore = computeOpportunityScore(
       verdict,
       commissionOf(product),
       sellerTrustOf(product),
+      { hasMeasuredHistory: !insufficientHistory },
     );
     const latest = snapshots[snapshots.length - 1]!;
     const estSales = (latest.estSalesLow + latest.estSalesHigh) / 2;
@@ -149,9 +153,9 @@ export async function runPipeline(): Promise<PipelineResult> {
   }
 
   const byVolume = [...scored].sort((a, b) => b.estSales - a.estSales);
-  const byOpportunity = [...scored].sort(
-    (a, b) => b.opportunityScore - a.opportunityScore,
-  );
+  // Ordre partagé avec apps/jobs (compareOpportunity, packages/core) :
+  // opportunités jouables, puis pas-encore-jugeables, puis « éviter ».
+  const byOpportunity = [...scored].sort(compareOpportunityOf);
 
   // Un seul produit simulé suffit à marquer le classement : l'utilisateur
   // doit savoir que ce qu'il lit n'est pas entièrement adossé à des
