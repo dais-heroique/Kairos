@@ -2,10 +2,15 @@
 
 import { doc, setDoc } from "firebase/firestore";
 import {
+  aggregateCategories,
+  aggregateShops,
   compareOpportunityOf,
   computeOpportunityScore,
   computeVerdict,
   hasInsufficientHistory,
+  PERIOD_DAYS,
+  selectNewcomers,
+  type AggregableProduct,
 } from "@kairos/core";
 import type { Commission, ProductVerdict, SellerTrust } from "@kairos/shared";
 import { firestore } from "@/lib/firebase/client";
@@ -39,6 +44,10 @@ export interface PipelineResult {
   productsSkippedNoHistory: number;
   /** Produits classés mais dont le verdict reste prudent faute d'historique. */
   productsNeedingMoreHistory: number;
+  /** Agrégations dérivées des mêmes produits, sans source supplémentaire. */
+  shopsRanked: number;
+  categoriesRanked: number;
+  newcomersRanked: number;
   generatedAt: string;
 }
 
@@ -48,6 +57,30 @@ interface ScoredProduct {
   /** `null` = aucun des quatre axes du score n'est mesuré, donc rien à classer. */
   opportunityScore: number | null;
   estSales: number;
+  /**
+   * Date du relevé le plus ancien. C'est la première fois que KAIROS a vu
+   * ce produit — dérivé de l'historique plutôt que d'un champ à maintenir,
+   * donc impossible à désynchroniser. `firstSeenAt` stocké (posé par
+   * `recover:apify` à l'insertion) reste prioritaire quand il existe.
+   */
+  firstSeenAt: string;
+}
+
+// Forme commune attendue par les agrégations de packages/core, partagées
+// avec apps/jobs pour que les deux pipelines écrivent les mêmes documents.
+function aggregable(scored: ScoredProduct): AggregableProduct {
+  return {
+    id: scored.product.id,
+    shopId: scored.product.shopId || null,
+    shopName: scored.product.shopName || null,
+    priceCents: scored.product.priceCents,
+    soldTotal: scored.product.soldTotal,
+    // Mot-clé de collecte quand il existe (produits Apify), sinon la
+    // catégorie déclarée à la saisie. Ni l'un ni l'autre n'est la
+    // taxonomie officielle TikTok Shop — la page le dit.
+    groupKey: scored.product.sourceQuery || scored.product.category || null,
+    firstSeenAt: scored.firstSeenAt,
+  };
 }
 
 function commissionOf(product: StoredProduct): Commission {
@@ -130,8 +163,9 @@ export async function runPipeline(): Promise<PipelineResult> {
     );
     const latest = snapshots[snapshots.length - 1]!;
     const estSales = (latest.estSalesLow + latest.estSalesHigh) / 2;
+    const firstSeenAt = product.firstSeenAt ?? snapshots[0]!.capturedDate;
 
-    scored.push({ product, verdict, opportunityScore, estSales });
+    scored.push({ product, verdict, opportunityScore, estSales, firstSeenAt });
 
     // Le verdict et l'estimation les plus récents sont dénormalisés sur
     // le produit — la page détail les lit sans relire tout l'historique.
@@ -164,25 +198,48 @@ export async function runPipeline(): Promise<PipelineResult> {
   // appartient au lecteur, pas à nous.
   const isDemo = scored.some((s) => s.product.isDemo);
 
+  // Boutiques, Catégories et Nouveautés sont des **agrégations** des mêmes
+  // produits : aucune source supplémentaire n'est nécessaire. Ce pipeline
+  // ne les écrivait pas — seul apps/jobs le faisait, or c'est celui-ci qui
+  // tourne. Les trois pages affichaient donc « le pipeline n'a pas encore
+  // tourné » juste après l'avoir fait tourner.
+  const aggregables = scored.map(aggregable);
+  const newcomerIds = new Set(
+    selectNewcomers(aggregables, PERIOD_DAYS["7d"]!, generatedAt).map((p) => p.id),
+  );
+  const newcomers = byVolume.filter((s) => newcomerIds.has(s.product.id));
+
+  const rankingDoc = (type: string, items: unknown[]) => ({
+    generatedAt,
+    isDemo,
+    type,
+    market: "FR",
+    period: "7d",
+    category: null,
+    items,
+  });
+
   await Promise.all([
-    setDoc(doc(firestore, "rankings", "products_FR_7d_all"), {
-      generatedAt,
-      isDemo,
-      type: "products",
-      market: "FR",
-      period: "7d",
-      category: null,
-      items: byVolume.map((s, i) => rankingItem(s, i + 1)),
-    }),
-    setDoc(doc(firestore, "rankings", "opportunities_FR_7d_all"), {
-      generatedAt,
-      isDemo,
-      type: "opportunities",
-      market: "FR",
-      period: "7d",
-      category: null,
-      items: byOpportunity.map((s, i) => rankingItem(s, i + 1)),
-    }),
+    setDoc(
+      doc(firestore, "rankings", "products_FR_7d_all"),
+      rankingDoc("products", byVolume.map((s, i) => rankingItem(s, i + 1))),
+    ),
+    setDoc(
+      doc(firestore, "rankings", "opportunities_FR_7d_all"),
+      rankingDoc("opportunities", byOpportunity.map((s, i) => rankingItem(s, i + 1))),
+    ),
+    setDoc(
+      doc(firestore, "rankings", "shops_FR_7d_all"),
+      rankingDoc("shops", aggregateShops(aggregables)),
+    ),
+    setDoc(
+      doc(firestore, "rankings", "categories_FR_7d_all"),
+      rankingDoc("categories", aggregateCategories(aggregables)),
+    ),
+    setDoc(
+      doc(firestore, "rankings", "newcomers_FR_7d_all"),
+      rankingDoc("newcomers", newcomers.map((s, i) => rankingItem(s, i + 1))),
+    ),
   ]);
 
   return {
@@ -190,6 +247,9 @@ export async function runPipeline(): Promise<PipelineResult> {
     productsRanked: scored.length,
     productsSkippedNoHistory: skipped,
     productsNeedingMoreHistory: needMoreHistory,
+    shopsRanked: aggregateShops(aggregables).length,
+    categoriesRanked: aggregateCategories(aggregables).length,
+    newcomersRanked: newcomers.length,
     generatedAt,
   };
 }

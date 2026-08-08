@@ -169,6 +169,16 @@ export interface StoredProduct extends ProductEntry {
   snapshotCount: number;
   /** Produit issu du marché simulé (`seedDemoRankingData`), pas d'un relevé réel. */
   isDemo: boolean;
+  // Champs posés par la collecte Apify (`recover:apify`). Absents sur une
+  // saisie manuelle — `null` veut dire « pas collecté », jamais « zéro ».
+  // Le pipeline en a besoin pour les classements Boutiques / Catégories /
+  // Nouveautés, qui sont des agrégations de ces mêmes produits.
+  /** Unités vendues, cumul annoncé par la plateforme. */
+  soldTotal: number | null;
+  /** Mot-clé de recherche qui a fait remonter ce produit. */
+  sourceQuery: string | null;
+  /** ISO 8601 — première fois que KAIROS a vu ce produit. */
+  firstSeenAt: string | null;
 }
 
 // Le quota gratuit Firestore (50 000 lectures/jour) est la seule chose qui
@@ -211,6 +221,9 @@ export async function listStoredProducts(): Promise<StoredProduct[]> {
       ...(emoji ? { emoji } : {}),
       snapshotCount: snapshotCount.data().count,
       isDemo: data.isDemo === true,
+      soldTotal: (data.soldTotal as number | undefined) ?? null,
+      sourceQuery: (data.sourceQuery as string | undefined) ?? null,
+      firstSeenAt: (data.firstSeenAt as string | undefined) ?? null,
     });
   }
   return results;

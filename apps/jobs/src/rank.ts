@@ -1,4 +1,11 @@
-import { compareOpportunityOf } from "@kairos/core";
+import {
+  aggregateCategories,
+  aggregateShops,
+  compareOpportunityOf,
+  PERIOD_DAYS,
+  selectNewcomers,
+  type AggregableProduct,
+} from "@kairos/core";
 import { RANKING_TYPES } from "@kairos/shared";
 import type {
   FeedDoc,
@@ -77,117 +84,29 @@ function buildDisplayItem(
   };
 }
 
-// Agrégation boutique — dérivée des produits déjà collectés, sans source
-// supplémentaire : la source produit expose le vendeur de chaque article
-// (sellerId + shopName), donc regrouper est du calcul, pas de la collecte.
-function buildShopItems(
-  computed: ComputedProduct[],
-  metaByProduct: Map<string, ProductMeta>,
-): Array<{ id: string; rank: number } & Record<string, unknown>> {
-  const byShop = new Map<
-    string,
-    { shopName: string | null; productCount: number; totalSold: number; priceSum: number }
-  >();
-
-  for (const c of computed) {
-    const meta = metaByProduct.get(c.productId);
-    if (!meta?.shopId) continue;
-    const agg = byShop.get(meta.shopId) ?? {
-      shopName: meta.shopName,
-      productCount: 0,
-      totalSold: 0,
-      priceSum: 0,
-    };
-    agg.productCount += 1;
-    agg.totalSold += meta.soldTotal ?? 0;
-    agg.priceSum += meta.priceCents;
-    agg.shopName ??= meta.shopName;
-    byShop.set(meta.shopId, agg);
-  }
-
-  return [...byShop.entries()]
-    .sort((a, b) => b[1].totalSold - a[1].totalSold || b[1].productCount - a[1].productCount)
-    .slice(0, MAX_RANKING_ITEMS)
-    .map(([shopId, agg], i) => ({
-      id: shopId,
-      rank: i + 1,
-      title: agg.shopName ?? "Boutique",
-      shopId,
-      productCount: agg.productCount,
-      soldTotal: agg.totalSold,
-      // Prix moyen du catalogue observé — pas le panier moyen réel, qui
-      // demanderait des volumes par SKU dont on ne dispose pas.
-      priceCents: Math.round(agg.priceSum / agg.productCount),
-    }));
+// Les agrégations elles-mêmes vivent dans packages/core (fonctions pures,
+// partagées avec le pipeline navigateur pour que les deux écrivent les
+// mêmes documents). Ici, seule la conversion ProductMeta → forme commune.
+function aggregable(c: ComputedProduct, meta: ProductMeta | undefined): AggregableProduct {
+  return {
+    id: c.productId,
+    shopId: meta?.shopId ?? null,
+    shopName: meta?.shopName ?? null,
+    priceCents: meta?.priceCents ?? 0,
+    soldTotal: meta?.soldTotal ?? null,
+    // Côté collecte automatisée, la clé de regroupement est le mot-clé de
+    // recherche : ce n'est PAS la taxonomie TikTok Shop, que la source
+    // n'expose pas.
+    groupKey: meta?.sourceQuery ?? null,
+    firstSeenAt: meta?.firstSeenAt ?? null,
+  };
 }
 
-// Agrégation par mot-clé de recherche. ⚠️ Ce n'est PAS la taxonomie de
-// catégories TikTok Shop : la source ne l'expose pas. Ce sont les requêtes
-// qui ont servi à la collecte (products.config.ts / products-strategy.ts).
-// Le libellé côté UI doit le dire, sinon l'utilisateur lira un classement
-// de catégories officielles là où il n'y a que nos propres mots-clés.
-function buildKeywordItems(
+function aggregablesOf(
   computed: ComputedProduct[],
   metaByProduct: Map<string, ProductMeta>,
-): Array<{ id: string; rank: number } & Record<string, unknown>> {
-  const byQuery = new Map<string, { productCount: number; totalSold: number; priceSum: number }>();
-
-  for (const c of computed) {
-    const meta = metaByProduct.get(c.productId);
-    if (!meta?.sourceQuery) continue;
-    const agg = byQuery.get(meta.sourceQuery) ?? { productCount: 0, totalSold: 0, priceSum: 0 };
-    agg.productCount += 1;
-    agg.totalSold += meta.soldTotal ?? 0;
-    agg.priceSum += meta.priceCents;
-    byQuery.set(meta.sourceQuery, agg);
-  }
-
-  return [...byQuery.entries()]
-    .sort((a, b) => b[1].totalSold - a[1].totalSold)
-    .slice(0, MAX_RANKING_ITEMS)
-    .map(([query, agg], i) => ({
-      id: query,
-      rank: i + 1,
-      title: query,
-      productCount: agg.productCount,
-      soldTotal: agg.totalSold,
-      priceCents: Math.round(agg.priceSum / agg.productCount),
-    }));
-}
-
-const PERIOD_DAYS: Record<RankingPeriod, number> = { "24h": 1, "7d": 7, "30d": 30 };
-
-// Nouveautés — produits dont la première apparition tombe dans la fenêtre de
-// la période. Dérivé de products/{id}.firstSeenAt, posé une seule fois à
-// l'insertion (voir recover-apify-data.ts). Aucune source supplémentaire.
-//
-// ⚠️ À la toute première collecte, tout est neuf : ce classement duplique
-// alors "Produits". Il ne devient discriminant qu'à partir de la deuxième
-// collecte, quand une partie du catalogue est déjà connue.
-function buildNewcomerItems(
-  computed: ComputedProduct[],
-  metaByProduct: Map<string, ProductMeta>,
-  period: RankingPeriod,
-  generatedAt: string,
-): Array<{ id: string; rank: number } & Record<string, unknown>> {
-  const cutoff = Date.parse(generatedAt) - PERIOD_DAYS[period] * 24 * 60 * 60 * 1000;
-
-  return computed
-    .filter((c) => {
-      const seen = metaByProduct.get(c.productId)?.firstSeenAt;
-      if (!seen) return false;
-      const t = Date.parse(seen);
-      return Number.isFinite(t) && t >= cutoff;
-    })
-    // Le plus vendu d'abord : une nouveauté qui part fort est le signal
-    // utile, pas simplement la plus récente.
-    .sort(
-      (a, b) =>
-        (metaByProduct.get(b.productId)?.soldTotal ?? 0) -
-        (metaByProduct.get(a.productId)?.soldTotal ?? 0),
-    )
-    .slice(0, MAX_RANKING_ITEMS)
-    .map((c, i) => buildDisplayItem(c, i + 1, metaByProduct.get(c.productId)));
+): AggregableProduct[] {
+  return computed.map((c) => aggregable(c, metaByProduct.get(c.productId)));
 }
 
 // Les 9 classements de M2. "products" (volume de ventes estimé),
@@ -251,10 +170,26 @@ export function buildRankings(
     });
   }
 
+  const aggregables = aggregablesOf(computed, metaByProduct);
+  const newcomerIds = new Set(
+    selectNewcomers(aggregables, PERIOD_DAYS[period] ?? 7, generatedAt, MAX_RANKING_ITEMS).map(
+      (p) => p.id,
+    ),
+  );
   const derived: Partial<Record<(typeof RANKING_TYPES)[number], unknown[]>> = {
-    shops: buildShopItems(computed, metaByProduct),
-    categories: buildKeywordItems(computed, metaByProduct),
-    newcomers: buildNewcomerItems(computed, metaByProduct, period, generatedAt),
+    shops: aggregateShops(aggregables, MAX_RANKING_ITEMS),
+    categories: aggregateCategories(aggregables, MAX_RANKING_ITEMS),
+    // Les nouveautés sont des lignes *produit*, pas des agrégats : on garde
+    // l'ordre choisi par selectNewcomers et on rend chaque produit comme
+    // ailleurs dans ce fichier.
+    newcomers: computed
+      .filter((c) => newcomerIds.has(c.productId))
+      .sort(
+        (a, b) =>
+          (metaByProduct.get(b.productId)?.soldTotal ?? 0) -
+          (metaByProduct.get(a.productId)?.soldTotal ?? 0),
+      )
+      .map((c, i) => buildDisplayItem(c, i + 1, metaByProduct.get(c.productId))),
   };
 
   for (const type of RANKING_TYPES) {

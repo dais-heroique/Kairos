@@ -15,11 +15,19 @@ Source de vérité du projet. Lu en premier à chaque session, mis à jour en de
 - **90 vrais produits TikTok Shop en base de production**, collectés via
   Apify, avec photos, prix, notes, avis et unités vendues.
 - `pnpm typecheck` et `pnpm lint` verts sur les 12 packages. Tests
-  (2026-08-07, émulateur compris) : **98 web, 56 core, 48 collector,
+  (2026-08-08, émulateur compris) : **98 web, 65 core, 48 collector,
   40 règles, 37 affiliate, 30 shared, 18 jobs, 15 créa DNA, 12 ai-gateway**.
-- ⚠️ **Le classement « Opportunités » de la production est périmé** : il a
-  été calculé avant la décision #52 et donne 30/100 aux 90 produits. Il faut
-  relancer le pipeline pour qu'il reflète la correction.
+- ⚠️ **Les classements de production sont périmés** : ils datent d'avant les
+  décisions #52 à #55. Il faut **relancer le pipeline depuis `/admin`** pour
+  que la production en bénéficie — sans ça, « Opportunités » garde son
+  30/100 uniforme et Boutiques / Catégories / Nouveautés restent vides.
+- ✅ **Parcours vérifié bout en bout le 2026-08-08** (Chromium contre les
+  émulateurs) : inscription par lien email → onboarding → bootstrap admin →
+  seed + pipeline → les 19 pages → fiche produit → brief. **0 problème
+  d'affichage, 0 erreur applicative.** Les seules erreurs console viennent
+  d'App Check qui tente de joindre `www.google.com/recaptcha` depuis un
+  conteneur sans accès sortant — inactif en production
+  (`NEXT_PUBLIC_FIREBASE_APPCHECK_SITE_KEY` vide).
 
 ### ⚠️ Deux pièges qui font perdre du temps si on les ignore
 
@@ -151,6 +159,14 @@ le simulateur. Reste un ordre de grandeur à calibrer, pas un placeholder à
 
 54. **Le paywall aurait fui en découpant la liste** (2026-08-07) — attrapé en écrivant la correction précédente, pas après. `RankingList` calculait le verrou du plan gratuit sur `index` dans **sa** liste : rendu en trois tranches, chaque tranche rouvrait son propre top 10, c'est-à-dire donnait gratuitement ce que le plan Creator vend. Le composant reçoit désormais `startIndex`/`totalCount` (défauts inchangés pour les deux autres pages de classement, qui rendent une seule liste), et 4 tests couvrent le décalage — dont celui qui échouerait sans lui.
 
+55. **Le pipeline qui tourne n'écrivait que 2 des 9 classements** (2026-08-08) — trouvé en faisant tourner l'app pour de vrai (Chromium contre les émulateurs, parcours complet inscription → onboarding → seed → toutes les pages). Boutiques, Nouveautés et Catégories affichaient *« le pipeline n'a pas encore tourné sur des produits collectés »* **juste après l'avoir fait tourner**. La cause n'était ni une source manquante ni un bug d'affichage : `apps/jobs/src/rank.ts` sait construire les 9 documents, mais c'est le **pipeline navigateur** qui tourne (décision #9), et `run-pipeline.ts` n'écrivait que `products` et `opportunities`. Trois onglets vides sur cinq visibles, alors que la donnée était là.
+
+    Ces trois classements sont des **agrégations des mêmes produits** — aucune collecte supplémentaire. Les fonctions sont remontées dans `packages/core/src/rankings/aggregate.ts` (pures, 9 tests) et les **deux** pipelines les appellent, donc ils ne peuvent plus diverger. Résultat mesuré sur le marché de démonstration : **7 boutiques, 8 catégories, 2 nouveautés** au lieu de trois pages vides.
+
+    Deux détails qui comptent : (a) le tri retombe sur le nombre de produits quand `soldTotal` est absent — avec les 90 produits Apify, qui n'ont aucune donnée de ventes, un tri sur des zéros partagés n'aurait départagé personne ; (b) « Nouveautés » a besoin de `firstSeenAt`, que seule la collecte Apify pose : côté navigateur il est **dérivé du relevé le plus ancien**, ce qui est exactement la même chose et ne peut pas se désynchroniser. Le classement est donc discriminant dès la démo (2 produits sur 22, pas 22 sur 22).
+
+56. **Créateurs / Vidéos / Sons / Vagues restent vides, et c'est correct** (2026-08-08) — vérifié à l'écran pendant le même parcours. Ce sont les **seuls** onglets réellement bloqués, par absence de source et non par du code manquant (impasse #5 et recherche de sources du 2026-08-03). Ils sont déjà masqués de la navigation, leurs routes répondent toujours, et chaque page nomme la source qui manque. **Rien à corriger ici sans dépenser de l'argent** (`clockworks/tiktok-scraper`, ~1,70 $/1 000 résultats) — ce serait un arbitrage budgétaire, pas un correctif.
+
 ## Questions ouvertes (posées le 2026-08-03, aucune action prise)
 
 - ~~**La lecture publique du catalogue (décision #10) ne sert à rien.**~~ **Traité le 2026-08-05** (décision #39) : `/classements/*` est enveloppé dans `<RequireAuth>` : aucun visiteur anonyme n'atteint jamais ces pages — vérifié en naviguant réellement, on est redirigé vers `/connexion`. La justification d'origine (« rendues sans utilisateur connecté ») valait pour un rendu statique au build ; les pages sont depuis passées en `"use client"` + `useEffect`, ce qui l'a rendue caduque, mais la règle n'a jamais été refermée. **Repasser `products`/`shops`/`rankings`/`snapshots` en `isSignedIn()` ne coûterait aucune fonctionnalité** et fermerait le trou « n'importe qui vide la base ».
@@ -200,6 +216,7 @@ Ces points sont des arbitrages, pas des bugs : ils ne sont pas corrigés unilat�
 | Verrouillage plan gratuit | ✅ pattern « ligne visible, gain flouté » au-delà du top 10 (observé chez Kalodata) au lieu de masquer les produits |
 | Règle ESLint anti-nombre-nu | ✅ `kairos/no-raw-estimate-number`, testée (7 tests) |
 | Score d'opportunité | ✅ **corrigé** — `number \| null`, refuse de noter sans un seul axe mesuré ; « éviter » relégué et séparé à l'écran ; comparateur partagé par les deux pipelines (décisions #52-54, 14 tests core + 4 tests paywall) |
+| Agrégations de classement (`packages/core/src/rankings/`) | ✅ **nouveau** — `aggregateShops`, `aggregateCategories`, `selectNewcomers`, pures et partagées par les deux pipelines (9 tests). Le pipeline navigateur écrit désormais 5 documents au lieu de 2 : Boutiques, Catégories et Nouveautés ne sont plus vides (décision #55) |
 | Test de budget de lecture Firestore | ✅ `read-budget.test.ts`, prouve ≤5 opérations/page contre l'émulateur réel |
 | BigQuery | Schéma complet (11 tables DDL avec `video_comments`), 0 ligne de données réelles (aucune infra GCP branchée depuis cette session) |
 | `firestore.rules` + tests | Solides, tests réels et **verts** (30/30) |
@@ -374,10 +391,10 @@ Les 5 autres ne le sont pas par manque de **source**, pas par manque de code
 |---|---|---|
 | Produits | ✅ 90 | volume de ventes |
 | Opportunités | ⚠️ 90 collectés, **0 classable** | Le score exige au moins un axe mesuré (décision #52). Ces 90 produits n'ont ni 3 relevés, ni commission, ni confiance vendeur : ils s'affichent sous « Pas encore classables ». Deux jours de collecte de plus, ou un taux de commission saisi, suffisent à en faire sortir |
-| Boutiques | ✅ 68 | agrégat par `sellerId`/`shopName` — calcul, pas collecte |
-| Catégories | ⚠️ 3 | agrégat par **mot-clé de collecte**, pas la taxonomie TikTok (la source ne l'expose pas) — la page le dit explicitement |
+| Boutiques | ✅ 68 | agrégat par `sellerId`/`shopName` — calcul, pas collecte. **Écrit par les deux pipelines depuis le 2026-08-08** (décision #55) ; le pipeline navigateur l'oubliait |
+| Catégories | ⚠️ 3 | agrégat par **mot-clé de collecte** (Apify) ou par **catégorie déclarée à la saisie**, jamais la taxonomie TikTok — la source ne l'expose pas, et la page le dit. Idem #55 : le pipeline navigateur ne l'écrivait pas |
 | Créateurs, Vidéos, Sons | ❌ | l'actor est un scraper **produit** : aucune donnée créateur/vidéo/son. Voir l'impasse #5 ci-dessous |
-| Nouveautés | ✅ | `products/{id}.firstSeenAt`, posé une seule fois à l'insertion et jamais réécrit (idempotence vérifiée : 2e passage = « 0 jamais vu, 90 déjà connus »). Discriminant à partir de la 2e collecte |
+| Nouveautés | ✅ | `products/{id}.firstSeenAt`, posé une seule fois à l'insertion et jamais réécrit (idempotence vérifiée : 2e passage = « 0 jamais vu, 90 déjà connus »). Côté navigateur, dérivé du relevé le plus ancien quand le champ est absent (saisie manuelle, démo). Discriminant à partir de la 2e collecte |
 | Vagues | ❌ | exige une collecte multi-marchés |
 
 Les pages sans source affichent désormais *quelle* source manque, plutôt
@@ -575,7 +592,7 @@ pnpm test                            # les suites émulateur échouent ici, c'es
 pnpm test:rules                      # 40/40 contre l'émulateur Firestore
 pnpm test:jobs-integration           # 18/18
 pnpm test:web-integration            # 98/98 (démarre firestore + auth)
-# Total vérifié le 2026-08-07 : 354 tests, tous verts.
+# Total vérifié le 2026-08-08 : 363 tests, tous verts.
 # Build vérifié : 0 route « ƒ » — 100 % statique, plan Spark préservé.
 ```
 

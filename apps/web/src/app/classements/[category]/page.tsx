@@ -25,7 +25,9 @@ const RANKING_TYPE: Record<string, { type: string; countLabel: string; note?: st
     countLabel: "produit",
     // Sans cette mention, la page se lirait comme un classement des
     // catégories officielles TikTok Shop, que la source n'expose pas.
-    note: "Agrégé par mot-clé de collecte, pas par catégorie officielle TikTok Shop.",
+    // Deux origines possibles selon comment le produit est entré : le
+    // mot-clé de collecte (Apify) ou la catégorie déclarée à la saisie.
+    note: "Regroupé par mot-clé de collecte ou par catégorie déclarée à la saisie — ce n'est pas la taxonomie officielle TikTok Shop, que la source n'expose pas.",
   },
 };
 
