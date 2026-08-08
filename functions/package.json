@@ -16,7 +16,9 @@
     "@kairos/core": "workspace:*",
     "@kairos/shared": "workspace:*",
     "firebase-admin": "^13.0.0",
-    "firebase-functions": "^6.1.0"
+    "firebase-functions": "^6.1.0",
+    "@kairos/payments": "workspace:*",
+    "stripe": "^17.5.0"
   },
   "devDependencies": {
     "@types/node": "^22.10.0",

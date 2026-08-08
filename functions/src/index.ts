@@ -12,3 +12,9 @@ initializeApp();
 export const ping = onCall({ enforceAppCheck: true }, () => {
   return { ok: true, at: new Date().toISOString() };
 });
+
+// Adaptateur Stripe — voir functions/src/stripe.ts et docs/STRIPE.md.
+// ⚠️ Déployer ces deux fonctions exige le plan Blaze et casse donc la
+// contrainte « 0 €, aucune Cloud Function ». Le fichier est écrit et
+// typé ; il n'est pas déployé tant que ce choix n'est pas fait.
+export { createCheckoutSession, stripeWebhook } from "./stripe.js";

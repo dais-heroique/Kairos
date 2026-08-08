@@ -16,7 +16,8 @@ Source de vérité du projet. Lu en premier à chaque session, mis à jour en de
   Apify, avec photos, prix, notes, avis et unités vendues.
 - `pnpm typecheck` et `pnpm lint` verts sur les 12 packages. Tests
   (2026-08-08, émulateur compris) : **106 web, 65 core, 48 collector,
-  40 règles, 37 affiliate, 30 shared, 18 jobs, 15 créa DNA, 12 ai-gateway**.
+  40 règles, 37 affiliate, 30 shared, 18 jobs, 18 payments, 15 créa DNA,
+  12 ai-gateway**.
 - ⚠️ **Les classements de production sont périmés** : ils datent d'avant les
   décisions #52 à #55. Il faut **relancer le pipeline depuis `/admin`** pour
   que la production en bénéficie — sans ça, « Opportunités » garde son
@@ -186,6 +187,16 @@ le simulateur. Reste un ordre de grandeur à calibrer, pas un placeholder à
 
 60. **Le tableau comparatif était invisible sur téléphone** (2026-08-08) — `hidden md:flex` depuis la décision #49, qui réglait le bon problème (le défilement horizontal) par le mauvais moyen (le masquer). Or c'est la seule vue qui répond à « qu'est-ce que je perds si je ne paie pas », et `/tarifs` perdait 27 % de son contenu sur mobile (688 → 502 mots). Il devient un dépliant fermé par défaut, avec les colonnes de plan en initiale pour tenir dans 390 px. S'y ajoute `PaywallDemo` : un classement de 12 lignes où l'on bascule Radar/Creator et où les gains au-delà du top 10 se verrouillent sous les yeux — le motif exact de l'application, « ligne visible, chiffre masqué ». Mobile : 502 → **750 mots**.
 
+61. **Stripe : le cœur est écrit et testé, l'encaissement demande une décision** (2026-08-08) — `packages/payments` (nouveau paquet pur, 18 tests) porte ce qui doit être juste : la table prix Stripe → plan, et la traduction d'un événement en changement de droits. Volontairement conservateur — un prix inconnu (prix archivé dont un abonnement en cours se réclame) ou un `uid` manquant ressortent en `unresolved` plutôt qu'en décision par défaut : rétrograder un client à jour et promouvoir un non-payant sont deux fautes, pas une. `buildPriceCatalog` **refuse de démarrer** si deux offres portent le même identifiant de prix — un client paierait pour l'une et recevrait l'autre.
+
+    **Le point qui n'est pas technique** : Stripe exige un serveur, pour deux raisons irréductibles. Créer une session de paiement demande `STRIPE_SECRET_KEY`, qui ne peut pas partir dans un bundle navigateur ; recevoir un webhook demande de vérifier une signature puis d'écrire `users/{uid}.plan`, que `planUnchanged()` interdit au client — précisément pour qu'on ne puisse pas s'offrir un plan payant. Le plan Spark n'autorise aucune Cloud Function. Les trois issues sont détaillées dans **`docs/STRIPE.md`** ; aucune n'a été choisie unilatéralement, parce que celle qui automatise tout (Blaze) transforme « 0 € garanti » en « 0 € probable ».
+
+62. **`pnpm grant:plan` — encaisser sans serveur, et rattraper les webhooks** (2026-08-08) — `apps/jobs/src/grant-plan.ts` attribue un plan par email via l'Admin SDK, depuis le Mac. Il sert deux fois : il rend viable l'encaissement par lien de paiement Stripe **sans casser Spark** (le client paie, on active à la main — honnête jusqu'à ~20 clients), et il tranche les cas que le webhook refuse de deviner. `--dry-run` montre l'avant/après sans écrire. Il ne contourne aucune règle : l'Admin SDK est le seul chemin légitime vers `plan`, et il tourne en local, jamais dans un navigateur.
+
+63. **`functions/src/stripe.ts` écrit, pas déployé** (2026-08-08) — session de paiement + webhook, signature vérifiée sur le corps brut (`req.rawBody` : `req.body` a déjà été réécrit par le parsing JSON, la signature ne correspondrait plus), idempotence par `stripeEvents/{id}` — Stripe réémet tant qu'il n'a pas reçu de 2xx. L'`uid` est posé **deux fois** (`client_reference_id` sur la session, `subscription_data.metadata.uid` sur l'abonnement) parce que Stripe ne le recopie pas : sans le second, tous les événements de cycle de vie arrivent orphelins. ⚠️ **Jamais exécuté contre l'API Stripe réelle** — aucune clé n'existait. La logique métier est testée ; la plomberie HTTP reste à confirmer, § 4.3 de `docs/STRIPE.md`.
+
+64. **Ce qui bloque la vente n'est pas du code** (2026-08-08) — audit fait avant d'écrire une ligne de Stripe. Par ordre de blocage : (a) il faut une **entité légale** (SIRET + IBAN) pour ouvrir un compte Stripe ; (b) **`/mentions-legales` contient encore `[Nom légal de la société]`, `[SIREN/SIRET]`, `[adresse complète]`** — publier un site marchand avec ces crochets est une infraction à la LCEN, pas une coquetterie ; (c) la **TVA** sur un service numérique vendu à des particuliers de l'UE (`automatic_tax` est activé dans le code, mais Stripe Tax doit être activé côté tableau de bord) ; (d) un **moyen de résilier**, obligation légale — le portail client hébergé de Stripe est le plus rapide, son lien reste à poser dans `/compte` ; (e) **les deux montants**, seule chose qui reste à décider dans `plans.ts`. Tant que `priceCents` vaut `null`, aucun bouton de paiement n'apparaît : c'est la décision #42 qui tient toute seule.
+
 ## Questions ouvertes (posées le 2026-08-03, aucune action prise)
 
 - ~~**La lecture publique du catalogue (décision #10) ne sert à rien.**~~ **Traité le 2026-08-05** (décision #39) : `/classements/*` est enveloppé dans `<RequireAuth>` : aucun visiteur anonyme n'atteint jamais ces pages — vérifié en naviguant réellement, on est redirigé vers `/connexion`. La justification d'origine (« rendues sans utilisateur connecté ») valait pour un rendu statique au build ; les pages sont depuis passées en `"use client"` + `useEffect`, ce qui l'a rendue caduque, mais la règle n'a jamais été refermée. **Repasser `products`/`shops`/`rankings`/`snapshots` en `isSignedIn()` ne coûterait aucune fonctionnalité** et fermerait le trou « n'importe qui vide la base ».
@@ -224,6 +235,8 @@ Ces points sont des arbitrages, pas des bugs : ils ne sont pas corrigés unilat�
 | Rédaction | ✅ **refondue** — plus aucun jargon sur les pages publiques (vérifié à l'écran) ; libellés centralisés dans `labels.ts` ; `reasoning[]` du moteur réécrit en français courant ; statut `live`/`soon` affiché par fonctionnalité (décisions #43-47) |
 | Offres & paywall | ✅ **refondu** — catalogue unique (`plans.ts`) dont dérivent les droits, la page `/tarifs` et l'accueil ; `PaywallGate` montre l'aperçu flouté + tout ce que le palier débloque ; `productHistory` réellement appliqué dans `firestore.rules` (décisions #37-42) |
 | Interactivité | ✅ **étendue au site public** — `/methode` fait tourner le vrai moteur (préréglages + 5 curseurs) ; curseur de gains dans le hero ; `VerdictShowcase` et `ProductTour` sur l'accueil ; `PaywallDemo` sur `/tarifs`. Tout tourne dans le navigateur, sur les moteurs de production (décisions #34-35, #57-60) |
+| Paiement (`packages/payments`) | ✅ **cœur écrit et testé** (18 tests) — table prix→plan, événement→droits, refus de deviner. ⚠️ L'encaissement demande un serveur : trois options dans `docs/STRIPE.md`, aucune choisie unilatéralement (décisions #61-63) |
+| Activation manuelle | ✅ `pnpm grant:plan` — attribue un plan par email via l'Admin SDK depuis le Mac. Rend viable l'encaissement par lien de paiement sans casser Spark, et rattrape les webhooks non résolus (décision #62) |
 | Site public | ✅ **refondu** — `PublicNav` relie enfin accueil / méthode / tarifs ; l'accueil montre les écrans au lieu de les décrire ; le paywall est démontré, plus seulement listé (décisions #57-60) |
 | Référencement | ✅ **nouveau** — `/methode` publique (le seul contenu indexable au-delà de l'accueil), métadonnées complètes + Open Graph, `robots.txt`, `sitemap.xml`, JSON-LD Organization/SoftwareApplication/FAQPage (décisions #29-30) |
 | Compliance Guard | ✅ **actif** — 16 règles FR par défaut chargeables depuis `/admin/compliance` ; il tournait jusqu'ici sur zéro règle, en silence (décision #31) |
@@ -280,6 +293,9 @@ L'utilisateur affirme pouvoir obtenir un accès API TikTok Shop pour la France e
   `gcloud billing budgets create --billing-account=<ID> --display-name="Kairos IA" --budget-amount=<montant>EUR --threshold-rule=percent=0.5 --threshold-rule=percent=0.8 --threshold-rule=percent=1.0`
 - Vérifier/ajuster `DEFAULT_MODEL_PRICING` dans `packages/ai-gateway/src/spend-guard.ts` contre les tarifs réels de Gemini/Claude au moment du déploiement (valeurs actuelles provisoires).
 - Créer le document Firestore `config/costGuards` (`{ dailyCapCents: <valeur> }`) — sans lui, le plafond par défaut (50€/jour) s'applique silencieusement.
+- **Décider les deux montants** (Creator, Pro) et les reporter dans `packages/shared/src/plans.ts` **et** dans Stripe. Tant que `priceCents` vaut `null`, la page affiche « Bientôt » et aucun bouton de paiement n'apparaît — voir `docs/STRIPE.md` § 2.4.
+- **Remplir `/mentions-legales`** : `[Nom légal de la société]`, `[SIREN/SIRET]`, `[adresse complète]` sont encore des crochets. Bloquant pour vendre.
+- **Choisir l'option d'encaissement** (`docs/STRIPE.md` § 0) : lien de paiement + `grant:plan` (0 €, Spark préservé), Cloud Functions (automatique, plan Blaze), ou les deux fonctions chez un tiers gratuit.
 - **Lot 7** : `apps/web/src/server/stripe/connect.ts` (création de compte Connect + webhooks) n'a pas été écrit — la logique de déclenchement (`shouldCreateStripeConnectAccount`, testée) est prête, mais le paquet `stripe` n'est pas installé et il n'y a pas de clé de test pour vérifier un vrai appel API ; écrire ce wrapper une fois une clé Stripe test disponible plutôt que deviner l'intégration. Ajouter aussi `stripe`, `STRIPE_CONNECT_WEBHOOK_SECRET` déjà dans `.env.example`.
 - Fournir des templates de design pour les 3 visuels 1080×1920 du kit de partage (Lot 7) — seuls le QR code et les légendes texte sont générés (`packages/affiliate/src/share-kit.ts`), la composition d'image via `sharp` dépend d'assets non fournis dans cet environnement.
 - Peupler `config/complianceRules` (Lot 8) — le document n'existe pas encore, `evaluateCompliance` reçoit un tableau de règles vide tant que personne ne l'a rempli via `/admin/compliance`.
@@ -558,6 +574,7 @@ Toute modification de la navigation se fait dans `BottomNav`, jamais dans
 
 ## Point de reprise pour la prochaine session
 
+0. **Encaissement** — `docs/STRIPE.md` va de zéro au premier euro. La seule décision à prendre est celle du § 0 ; tout le reste est écrit.
 1. **Commissions d'affiliation** — c'est le maillon manquant, pas le
    catalogue. Sans elles, le simulateur de gains (cœur de la promesse
    produit) ne peut rien afficher de vrai. Options : API Affiliate TikTok
@@ -612,7 +629,7 @@ pnpm test                            # les suites émulateur échouent ici, c'es
 pnpm test:rules                      # 40/40 contre l'émulateur Firestore
 pnpm test:jobs-integration           # 18/18
 pnpm test:web-integration            # 98/98 (démarre firestore + auth)
-# Total vérifié le 2026-08-08 : 371 tests, tous verts.
+# Total vérifié le 2026-08-08 : 389 tests, tous verts.
 # Build vérifié : 0 route « ƒ » — 100 % statique, plan Spark préservé.
 ```
 

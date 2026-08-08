@@ -85,6 +85,9 @@ importers:
       '@kairos/core':
         specifier: workspace:*
         version: link:../../packages/core
+      '@kairos/payments':
+        specifier: workspace:*
+        version: link:../../packages/payments
       '@kairos/shared':
         specifier: workspace:*
         version: link:../../packages/shared
@@ -186,6 +189,9 @@ importers:
       '@kairos/core':
         specifier: workspace:*
         version: link:../packages/core
+      '@kairos/payments':
+        specifier: workspace:*
+        version: link:../packages/payments
       '@kairos/shared':
         specifier: workspace:*
         version: link:../packages/shared
@@ -195,6 +201,9 @@ importers:
       firebase-functions:
         specifier: ^6.1.0
         version: 6.6.0(firebase-admin@13.10.0)
+      stripe:
+        specifier: ^17.5.0
+        version: 17.7.0
     devDependencies:
       '@types/node':
         specifier: ^22.10.0
@@ -248,6 +257,22 @@ importers:
         version: 3.2.7(@types/node@22.20.1)(jiti@2.7.0)(jsdom@25.0.1)(lightningcss@1.32.0)(tsx@4.23.1)
 
   packages/core:
+    dependencies:
+      '@kairos/shared':
+        specifier: workspace:*
+        version: link:../shared
+      zod:
+        specifier: ^3.24.0
+        version: 3.25.76
+    devDependencies:
+      typescript:
+        specifier: ^5.7.0
+        version: 5.9.3
+      vitest:
+        specifier: ^3.0.0
+        version: 3.2.7(@types/node@22.20.1)(jiti@2.7.0)(jsdom@25.0.1)(lightningcss@1.32.0)(tsx@4.23.1)
+
+  packages/payments:
     dependencies:
       '@kairos/shared':
         specifier: workspace:*
@@ -3698,6 +3723,10 @@ packages:
 
   strip-literal@3.1.0:
     resolution: {integrity: sha512-8r3mkIM/2+PpjHoOtiAW8Rg3jJLHaV7xPwG+YRGrv6FP0wwk/toTpATxWYOW0BKdWwl82VT2tFYi5DlROa0Mxg==}
+
+  stripe@17.7.0:
+    resolution: {integrity: sha512-aT2BU9KkizY9SATf14WhhYVv2uOapBWX0OFWF4xvcj1mPaNotlSc2CsxpS4DS46ZueSppmCF5BX1sNYBtwBvfw==}
+    engines: {node: '>=12.*'}
 
   strnum@2.4.1:
     resolution: {integrity: sha512-M9eUSMT2dCB2cTNPG7UYj6KuK7RJR2SN2+yCV/fTW3xzTCS6EaGZ5pSMgDIjB7r8zSfTGk+dvvn9rTjpVS9Mwg==}
@@ -7909,6 +7938,11 @@ snapshots:
   strip-literal@3.1.0:
     dependencies:
       js-tokens: 9.0.1
+
+  stripe@17.7.0:
+    dependencies:
+      '@types/node': 22.20.1
+      qs: 6.15.3
 
   strnum@2.4.1:
     dependencies:
