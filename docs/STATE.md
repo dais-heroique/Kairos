@@ -15,7 +15,7 @@ Source de vérité du projet. Lu en premier à chaque session, mis à jour en de
 - **90 vrais produits TikTok Shop en base de production**, collectés via
   Apify, avec photos, prix, notes, avis et unités vendues.
 - `pnpm typecheck` et `pnpm lint` verts sur les 12 packages. Tests
-  (2026-08-08, émulateur compris) : **98 web, 65 core, 48 collector,
+  (2026-08-08, émulateur compris) : **106 web, 65 core, 48 collector,
   40 règles, 37 affiliate, 30 shared, 18 jobs, 15 créa DNA, 12 ai-gateway**.
 - ⚠️ **Les classements de production sont périmés** : ils datent d'avant les
   décisions #52 à #55. Il faut **relancer le pipeline depuis `/admin`** pour
@@ -29,7 +29,7 @@ Source de vérité du projet. Lu en premier à chaque session, mis à jour en de
   conteneur sans accès sortant — inactif en production
   (`NEXT_PUBLIC_FIREBASE_APPCHECK_SITE_KEY` vide).
 
-### ⚠️ Deux pièges qui font perdre du temps si on les ignore
+### ⚠️ Trois pièges qui font perdre du temps si on les ignore
 
 1. **`pnpm build` avant tout** après un `git pull`. `packages/*/lib/` est
    gitignoré : un `lib/` périmé fait échouer `apps/web` sur des exports
@@ -39,6 +39,11 @@ Source de vérité du projet. Lu en premier à chaque session, mis à jour en de
    serveur de dev tourne** : le build de production écrase le `.next` du
    dev, qui répond ensuite « Internal Server Error » sur toutes les pages.
    Il faut `rm -rf apps/web/.next` puis redémarrer.
+3. **`tests/firestore-rules/rules.test.ts` code le port 8080 en dur.** Il
+   ignore `FIRESTORE_EMULATOR_HOST` : lancer l'émulateur sur un autre port
+   fait échouer la suite en `TypeError: fetch failed`, et pire, elle passe
+   silencieusement si un *autre* émulateur écoute sur 8080. Toujours lancer
+   les émulateurs sur les ports du projet (8080 / 9099).
 
 ### Ce qu'il reste à trancher (par ordre d'impact)
 
@@ -167,6 +172,20 @@ le simulateur. Reste un ordre de grandeur à calibrer, pas un placeholder à
 
 56. **Créateurs / Vidéos / Sons / Vagues restent vides, et c'est correct** (2026-08-08) — vérifié à l'écran pendant le même parcours. Ce sont les **seuls** onglets réellement bloqués, par absence de source et non par du code manquant (impasse #5 et recherche de sources du 2026-08-03). Ils sont déjà masqués de la navigation, leurs routes répondent toujours, et chaque page nomme la source qui manque. **Rien à corriger ici sans dépenser de l'argent** (`clockworks/tiktok-scraper`, ~1,70 $/1 000 résultats) — ce serait un arbitrage budgétaire, pas un correctif.
 
+57. **Le site public décrivait le produit au lieu de le montrer** (2026-08-08) — mesuré au navigateur avant de toucher quoi que ce soit : accueil à 6 131 px sur desktop et **9 757 px sur téléphone** (11,5 écrans), 1 206 mots, et **un seul élément manipulable** — le curseur de vues du hero. Les cinq sections du milieu étaient ~1 000 mots de prose statique. `/tarifs` : 0 bouton, 0 champ, 0 dépliant.
+
+    Le levier était sous la main : **les moteurs sont des fonctions pures, elles tournent gratuitement dans le navigateur d'un visiteur non connecté**. C'est ce qui permet d'être à la fois interactif et honnête — le visiteur manipule le vrai calcul, pas une maquette.
+
+    - `VerdictShowcase` remplace les quatre cartes de texte : quatre situations tapables, et `computeVerdict` répond à l'écran avec sa pastille, sa concurrence, sa fenêtre et son `reasoning[]` — le texte exact de l'application. Un test vérifie que **les quatre situations donnent bien quatre verdicts distincts** : c'est ce que le titre promet, et un réglage du moteur pourrait le faire tomber à trois sans que rien ne le signale.
+    - `ProductTour` remplace « ce qu'il y a dedans » : quatre onglets qui montrent les écrans réels (la liste avec ses verdicts, les gains via `<EstimatedValue>`, la courbe via `SnapshotChart`, et le brief produit par le vrai `buildBrief`, mention « Collaboration commerciale » comprise).
+    - Résultat mesuré : accueil de 1 à **8 boutons + 8 onglets**, `/tarifs` de 0 à 2 onglets + 1 dépliant. Aucun débordement horizontal à 390 px.
+
+58. **`/methode` n'était reliée à rien** (2026-08-08) — c'est la page la plus convaincante du site (le moteur y tourne en direct), et **aucun lien de l'accueil n'y menait**. Sur les 11 liens de la page d'accueil : 3 vers `/connexion`, 1 vers `/tarifs`, 6 vers les mentions légales, 1 le logo. Elle était dans le `sitemap.xml`, donc Google la trouvait ; un humain, non. Nouveau `PublicNav` partagé par les trois pages publiques.
+
+59. **Le paywall se contredisait d'une page à l'autre** (2026-08-08) — sur l'accueil, chaque colonne listait **tout** ce que le plan donne : sur 21 lignes affichées, **17 étaient des doublons**, et on ne pouvait pas voir ce que Creator ajoutait sans comparer mot à mot. Sur `/tarifs`, l'inverse : le motif « Tout Creator, plus : » ne laissait à Pro **qu'une seule ligne** et 40 % de carte blanche — le plan le plus cher paraissait le plus pauvre. Un seul composant `PlanCards` sert désormais les deux pages : différentiel en tête, hérité replié dans un `<details>` (de l'information réelle à la place du trou), et total par plan. Un test interdit qu'une même capacité soit annoncée deux fois en tête de carte.
+
+60. **Le tableau comparatif était invisible sur téléphone** (2026-08-08) — `hidden md:flex` depuis la décision #49, qui réglait le bon problème (le défilement horizontal) par le mauvais moyen (le masquer). Or c'est la seule vue qui répond à « qu'est-ce que je perds si je ne paie pas », et `/tarifs` perdait 27 % de son contenu sur mobile (688 → 502 mots). Il devient un dépliant fermé par défaut, avec les colonnes de plan en initiale pour tenir dans 390 px. S'y ajoute `PaywallDemo` : un classement de 12 lignes où l'on bascule Radar/Creator et où les gains au-delà du top 10 se verrouillent sous les yeux — le motif exact de l'application, « ligne visible, chiffre masqué ». Mobile : 502 → **750 mots**.
+
 ## Questions ouvertes (posées le 2026-08-03, aucune action prise)
 
 - ~~**La lecture publique du catalogue (décision #10) ne sert à rien.**~~ **Traité le 2026-08-05** (décision #39) : `/classements/*` est enveloppé dans `<RequireAuth>` : aucun visiteur anonyme n'atteint jamais ces pages — vérifié en naviguant réellement, on est redirigé vers `/connexion`. La justification d'origine (« rendues sans utilisateur connecté ») valait pour un rendu statique au build ; les pages sont depuis passées en `"use client"` + `useEffect`, ce qui l'a rendue caduque, mais la règle n'a jamais été refermée. **Repasser `products`/`shops`/`rankings`/`snapshots` en `isSignedIn()` ne coûterait aucune fonctionnalité** et fermerait le trou « n'importe qui vide la base ».
@@ -204,7 +223,8 @@ Ces points sont des arbitrages, pas des bugs : ils ne sont pas corrigés unilat�
 | Thème | ✅ blanc forcé partout, y compris en mode sombre système (décision #12) ; nav principale déplacée en haut (`sticky top-0`) |
 | Rédaction | ✅ **refondue** — plus aucun jargon sur les pages publiques (vérifié à l'écran) ; libellés centralisés dans `labels.ts` ; `reasoning[]` du moteur réécrit en français courant ; statut `live`/`soon` affiché par fonctionnalité (décisions #43-47) |
 | Offres & paywall | ✅ **refondu** — catalogue unique (`plans.ts`) dont dérivent les droits, la page `/tarifs` et l'accueil ; `PaywallGate` montre l'aperçu flouté + tout ce que le palier débloque ; `productHistory` réellement appliqué dans `firestore.rules` (décisions #37-42) |
-| Interactivité | ✅ **nouveau** — `/methode` fait tourner le vrai moteur en direct (préréglages + 5 curseurs, verdict et raisonnement recalculés à chaque mouvement) ; curseur de gains dans le hero d'accueil (décisions #34-35) |
+| Interactivité | ✅ **étendue au site public** — `/methode` fait tourner le vrai moteur (préréglages + 5 curseurs) ; curseur de gains dans le hero ; `VerdictShowcase` et `ProductTour` sur l'accueil ; `PaywallDemo` sur `/tarifs`. Tout tourne dans le navigateur, sur les moteurs de production (décisions #34-35, #57-60) |
+| Site public | ✅ **refondu** — `PublicNav` relie enfin accueil / méthode / tarifs ; l'accueil montre les écrans au lieu de les décrire ; le paywall est démontré, plus seulement listé (décisions #57-60) |
 | Référencement | ✅ **nouveau** — `/methode` publique (le seul contenu indexable au-delà de l'accueil), métadonnées complètes + Open Graph, `robots.txt`, `sitemap.xml`, JSON-LD Organization/SoftwareApplication/FAQPage (décisions #29-30) |
 | Compliance Guard | ✅ **actif** — 16 règles FR par défaut chargeables depuis `/admin/compliance` ; il tournait jusqu'ici sur zéro règle, en silence (décision #31) |
 | Brief de tournage (`/brief?id=`) | ✅ **nouveau** — accroches par phase, plan de tournage, script minuté, objections, interdits dérivés des règles de conformité ; le script passe son propre contrôle. Sans IA, donc sans coût (décision #32) |
@@ -592,7 +612,7 @@ pnpm test                            # les suites émulateur échouent ici, c'es
 pnpm test:rules                      # 40/40 contre l'émulateur Firestore
 pnpm test:jobs-integration           # 18/18
 pnpm test:web-integration            # 98/98 (démarre firestore + auth)
-# Total vérifié le 2026-08-08 : 363 tests, tous verts.
+# Total vérifié le 2026-08-08 : 371 tests, tous verts.
 # Build vérifié : 0 route « ƒ » — 100 % statique, plan Spark préservé.
 ```
 

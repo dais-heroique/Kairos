@@ -5,28 +5,22 @@ import {
   OrganizationJsonLd,
   SoftwareApplicationJsonLd,
 } from "@/components/JsonLd";
-import {
-  CAPABILITIES_BY_PLAN,
-  CAPABILITY_LABELS,
-  formatPlanPrice,
-  PLANS,
-} from "@kairos/shared";
 import { HeroEarningsTeaser } from "@/components/HeroEarningsTeaser";
+import { PlanCards } from "@/components/PlanCards";
+import { ProductTour } from "@/components/ProductTour";
+import { PublicNav } from "@/components/PublicNav";
 import { Reveal } from "@/components/Reveal";
 import { VerdictBadge } from "@/components/VerdictBadge";
+import { VerdictShowcase } from "@/components/VerdictShowcase";
 import {
   IconCheck,
   IconCoin,
-  IconGauge,
-  IconMic,
   IconPackage,
   IconPipeline,
   IconRanking,
   IconScript,
-  IconStar,
   Logo,
 } from "@/components/icons";
-import type { VerdictLabel } from "@kairos/shared";
 
 export default function HomePage() {
   const t = useTranslations("Home");
@@ -43,12 +37,12 @@ export default function HomePage() {
       <OrganizationJsonLd />
       <SoftwareApplicationJsonLd />
       <FaqJsonLd entries={faq} />
-      <SiteNav ctaLabel={t("ctaLogin")} />
+      <PublicNav />
       <Hero t={t} />
       <ProblemStrip t={t} />
       <VerdictsExplained t={t} />
       <HowItWorks t={t} />
-      <FeatureGrid t={t} />
+      <ProductShowcase t={t} />
       <TrustBand t={t} />
       <Plans t={t} />
       <Faq t={t} />
@@ -59,32 +53,6 @@ export default function HomePage() {
 }
 
 type T = ReturnType<typeof useTranslations>;
-
-function SiteNav({ ctaLabel }: { ctaLabel: string }) {
-  return (
-    <nav className="sticky top-0 z-20 border-b border-[color:var(--color-border)] bg-[color:var(--color-bg)]">
-      {/* Même conteneur que la coquille de l'app (AppShell) : la barre du
-          haut garde la même largeur et le même alignement avant et après
-          connexion. Les sections de contenu restent en max-w-5xl, largeur
-          de lecture voulue pour du texte de présentation. */}
-      <div className="kai-shell flex items-center justify-between py-3">
-        <Link href="/" className="flex items-center gap-2">
-          <Logo className="h-6 w-6" style={{ color: "var(--color-coral)" }} />
-          <span className="font-[family-name:var(--font-display)] text-lg font-extrabold tracking-tight">
-            KAIROS
-          </span>
-        </Link>
-        <Link
-          href="/connexion"
-          className="rounded-lg px-3 py-1.5 text-sm font-semibold"
-          style={{ color: "var(--color-ink)" }}
-        >
-          {ctaLabel} →
-        </Link>
-      </div>
-    </nav>
-  );
-}
 
 function Hero({ t }: { t: T }) {
   return (
@@ -231,13 +199,9 @@ function ProblemStrip({ t }: { t: T }) {
   );
 }
 
-const VERDICTS: { key: VerdictLabel; descKey: string }[] = [
-  { key: "entrer_maintenant", descKey: "verdictEnterDesc" },
-  { key: "avec_un_angle", descKey: "verdictAngleDesc" },
-  { key: "risque", descKey: "verdictRiskDesc" },
-  { key: "eviter", descKey: "verdictAvoidDesc" },
-];
-
+// Les quatre verdicts ne sont plus décrits : ils sont calculés à l'écran.
+// Voir VerdictShowcase — le moteur tourne dans le navigateur du visiteur,
+// donc cette section ne peut pas raconter autre chose que le produit.
 function VerdictsExplained({ t }: { t: T }) {
   return (
     <section className="px-5 py-20">
@@ -252,23 +216,14 @@ function VerdictsExplained({ t }: { t: T }) {
           <h2 className="mt-3 font-[family-name:var(--font-display)] text-3xl font-extrabold tracking-tight sm:text-4xl">
             {t("verdictsTitle")}
           </h2>
+          <p className="mt-4 text-base text-[color:var(--color-ink-muted)]">
+            Clique sur une situation : le moteur la juge sous tes yeux.
+          </p>
         </Reveal>
 
-        <div className="mt-12 grid gap-4 sm:grid-cols-2">
-          {VERDICTS.map((v, i) => (
-            <Reveal key={v.key} delay={i * 70}>
-              <div
-                className="flex h-full flex-col gap-3 rounded-2xl p-6"
-                style={{ border: "1px solid var(--color-border)" }}
-              >
-                <VerdictBadge verdict={v.key} />
-                <p className="text-sm leading-relaxed text-[color:var(--color-ink-muted)]">
-                  {t(v.descKey)}
-                </p>
-              </div>
-            </Reveal>
-          ))}
-        </div>
+        <Reveal className="mt-10">
+          <VerdictShowcase />
+        </Reveal>
       </div>
     </section>
   );
@@ -349,16 +304,9 @@ function HowItWorks({ t }: { t: T }) {
   );
 }
 
-const FEATURE_ICONS = [IconRanking, IconGauge, IconStar, IconMic] as const;
-
-function FeatureGrid({ t }: { t: T }) {
-  const features = [
-    { title: t("feature1Title"), body: t("feature1Body") },
-    { title: t("feature2Title"), body: t("feature2Body") },
-    { title: t("feature3Title"), body: t("feature3Body") },
-    { title: t("feature4Title"), body: t("feature4Body") },
-  ];
-
+// « Ce qu'il y a dedans » : on montre les écrans au lieu de les décrire.
+// Voir ProductTour.
+function ProductShowcase({ t }: { t: T }) {
   return (
     <section className="px-5 py-20">
       <div className="mx-auto max-w-5xl">
@@ -372,34 +320,14 @@ function FeatureGrid({ t }: { t: T }) {
           <h2 className="mt-3 font-[family-name:var(--font-display)] text-3xl font-extrabold tracking-tight sm:text-4xl">
             {t("featuresTitle")}
           </h2>
+          <p className="mt-4 text-base text-[color:var(--color-ink-muted)]">
+            Les quatre écrans que tu utiliseras, avec de vrais calculs.
+          </p>
         </Reveal>
 
-        <div className="mt-12 grid gap-4 sm:grid-cols-2">
-          {features.map((f, i) => {
-            const Icon = FEATURE_ICONS[i]!;
-            return (
-              <Reveal key={f.title} delay={i * 70}>
-                <div
-                  className="flex h-full flex-col gap-3 rounded-2xl p-6"
-                  style={{ backgroundColor: "var(--color-surface)", border: "1px solid var(--color-border)" }}
-                >
-                  <span
-                    className="flex h-10 w-10 items-center justify-center rounded-xl"
-                    style={{ backgroundColor: "var(--color-coral-soft)", color: "var(--color-coral)" }}
-                  >
-                    <Icon className="h-5 w-5" />
-                  </span>
-                  <h3 className="font-[family-name:var(--font-display)] text-lg font-bold">
-                    {f.title}
-                  </h3>
-                  <p className="text-sm leading-relaxed text-[color:var(--color-ink-muted)]">
-                    {f.body}
-                  </p>
-                </div>
-              </Reveal>
-            );
-          })}
-        </div>
+        <Reveal className="mt-10">
+          <ProductTour />
+        </Reveal>
       </div>
     </section>
   );
@@ -456,14 +384,6 @@ function TrustBand({ t }: { t: T }) {
 // garantissait qu'un jour la page promette ce que l'application ne délivre
 // pas.
 function Plans({ t }: { t: T }) {
-  const plans = PLANS.map((plan) => ({
-    name: plan.name,
-    price: formatPlanPrice(plan),
-    tagline: plan.tagline,
-    features: CAPABILITIES_BY_PLAN[plan.slug].map((c) => CAPABILITY_LABELS[c]),
-    popular: plan.popular,
-  }));
-
   return (
     <section className="px-5 py-20" style={{ backgroundColor: "var(--color-surface)" }}>
       <div className="mx-auto max-w-5xl">
@@ -479,54 +399,17 @@ function Plans({ t }: { t: T }) {
           </h2>
         </Reveal>
 
-        <div className="mt-12 grid grid-cols-1 gap-4 md:grid-cols-3">
-          {plans.map((plan, i) => (
-            <Reveal key={plan.name} delay={i * 80}>
-              <div
-                className="relative flex h-full flex-col gap-4 rounded-2xl p-6"
-                style={{
-                  backgroundColor: "var(--color-bg)",
-                  border: plan.popular
-                    ? "2px solid var(--color-coral)"
-                    : "1px solid var(--color-border)",
-                }}
-              >
-                {plan.popular && (
-                  <span
-                    className="absolute -top-3 left-6 rounded-full px-2.5 py-0.5 text-[11px] font-bold"
-                    style={{ backgroundColor: "var(--color-coral)", color: "var(--color-coral-ink)" }}
-                  >
-                    {t("plansBadgePopular")}
-                  </span>
-                )}
-                <div>
-                  <h3 className="font-[family-name:var(--font-display)] text-xl font-extrabold">
-                    {plan.name}
-                  </h3>
-                  <p className="mt-1 font-[family-name:var(--font-display)] text-lg font-extrabold">
-                    {plan.price}
-                  </p>
-                  <p className="text-sm text-[color:var(--color-ink-muted)]">{plan.tagline}</p>
-                </div>
-                <ul className="flex flex-col gap-2">
-                  {plan.features.map((feature) => (
-                    <li key={feature} className="flex items-start gap-2 text-sm">
-                      <IconCheck
-                        className="mt-0.5 h-4 w-4 shrink-0"
-                        style={{ color: "var(--color-success)" }}
-                      />
-                      <span>{feature}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </Reveal>
-          ))}
-        </div>
+        {/* Chaque carte n'affiche que ce que son palier **ajoute**. La
+            version précédente listait tout dans les trois colonnes : sur 21
+            lignes, 17 étaient des doublons, et la différence qu'on cherche
+            à vendre était noyée. Voir PlanCards. */}
+        <Reveal className="mt-12">
+          <PlanCards />
+        </Reveal>
 
         <div className="mt-8 text-center">
           <Link href="/tarifs" className="text-sm underline">
-            Comparer les offres en détail
+            Comparer les offres ligne par ligne
           </Link>
         </div>
       </div>

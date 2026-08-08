@@ -5,9 +5,9 @@ import {
   DEFAULT_SCORING_WEIGHTS,
   DEFAULT_VERDICT_THRESHOLDS,
 } from "@kairos/core";
+import { PublicNav } from "@/components/PublicNav";
 import { VerdictPlayground } from "@/components/VerdictPlayground";
 import { PHASE_LABELS, type Phase } from "@kairos/shared";
-import { SITE_NAME } from "@/lib/seo/site";
 
 // Page publique, et c'était le vrai trou de référencement : tout le reste
 // de l'app est derrière <RequireAuth>, donc Google n'avait strictement
@@ -77,11 +77,10 @@ function Section({
 
 export default function MethodePage() {
   return (
-    <main className="mx-auto flex min-h-dvh max-w-[720px] flex-col gap-8 px-5 py-10">
+    <main className="min-h-dvh">
+      <PublicNav />
+      <div className="mx-auto flex max-w-[720px] flex-col gap-8 px-5 py-10">
       <header className="flex flex-col gap-3">
-        <Link href="/" className="text-sm underline">
-          ← {SITE_NAME}
-        </Link>
         <h1 className="font-[family-name:var(--font-display)] text-3xl font-extrabold leading-tight">
           Comment on sait si un produit TikTok Shop vaut encore le coup
         </h1>
@@ -263,6 +262,7 @@ export default function MethodePage() {
         <p className="text-xs text-[color:var(--color-ink-muted)]">
           Sans carte bancaire, sans engagement.
         </p>
+      </div>
       </div>
     </main>
   );

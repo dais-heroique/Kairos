@@ -4,12 +4,12 @@ import {
   CAPABILITIES,
   CAPABILITY_INFO,
   CAPABILITIES_BY_PLAN,
-  FOUNDING_PRICE_LOCK,
-  formatPlanPrice,
-  newCapabilitiesOf,
   PLANS,
   TYPICAL_WINDOW_DAYS,
 } from "@kairos/shared";
+import { PaywallDemo } from "@/components/PaywallDemo";
+import { PlanCards } from "@/components/PlanCards";
+import { PublicNav } from "@/components/PublicNav";
 import { SITE_NAME } from "@/lib/seo/site";
 
 // Page publique — donc indexable, et c'est aussi la destination de tous
@@ -36,11 +36,10 @@ export const metadata: Metadata = {
 
 export default function TarifsPage() {
   return (
-    <main className="mx-auto flex min-h-dvh max-w-[900px] flex-col gap-10 px-5 py-10">
+    <main className="min-h-dvh">
+      <PublicNav />
+      <div className="mx-auto flex max-w-[900px] flex-col gap-10 px-5 py-10">
       <header className="flex flex-col gap-3">
-        <Link href="/" className="text-sm underline">
-          ← {SITE_NAME}
-        </Link>
         <h1 className="font-[family-name:var(--font-display)] text-3xl font-extrabold leading-tight">
           Un produit reste jouable {TYPICAL_WINDOW_DAYS.min} à{" "}
           {TYPICAL_WINDOW_DAYS.max} jours. Après, c&apos;est trop tard.
@@ -75,168 +74,37 @@ export default function TarifsPage() {
         </div>
       </header>
 
-      {/* grid-cols-1 explicite : sans lui les trois colonnes se tassaient
-          sur un écran de téléphone, avec des libellés coupés mot à mot. */}
-      <section className="grid grid-cols-1 gap-4 md:grid-cols-3">
-        {PLANS.map((plan, index) => {
-          // Seul le premier plan liste tout : les suivants n'affichent que
-          // ce qu'ils ajoutent. Répéter huit lignes identiques dans trois
-          // colonnes noie précisément la différence qu'on cherche à vendre.
-          const capabilities =
-            index === 0 ? CAPABILITIES_BY_PLAN[plan.slug] : newCapabilitiesOf(plan.slug);
-          const inherits = index > 0 ? PLANS[index - 1]!.name : null;
-          return (
-            <div
-              key={plan.slug}
-              className="kai-card flex flex-col gap-3"
-              style={
-                plan.popular
-                  ? { borderColor: "var(--color-coral)", borderWidth: 2 }
-                  : undefined
-              }
-            >
-              {plan.popular && (
-                <span
-                  className="w-fit rounded-full px-2 py-0.5 text-[10px] font-bold"
-                  style={{
-                    backgroundColor: "var(--color-coral-soft)",
-                    color: "var(--color-coral)",
-                  }}
-                >
-                  Le plus choisi
-                </span>
-              )}
-              <h2 className="font-[family-name:var(--font-display)] text-lg font-extrabold">
-                {plan.name}
-              </h2>
+      {/* Les trois offres viennent du même composant que l'accueil, donc
+          les deux pages ne peuvent plus diverger. Chaque carte n'affiche
+          que son différentiel, plus un total — sans ce total, Pro
+          n'ajoutant qu'une ligne, la carte la plus chère paraissait la
+          plus vide. */}
+      <PlanCards />
 
-              <p className="font-[family-name:var(--font-display)] text-2xl font-extrabold">
-                {formatPlanPrice(plan)}
-              </p>
-              <p className="text-sm text-[color:var(--color-ink-muted)]">{plan.tagline}</p>
+      <PaywallDemo />
 
-              {inherits && (
-                <p className="text-sm font-semibold">Tout {inherits}, plus :</p>
-              )}
-              <ul className="flex flex-1 flex-col gap-1.5">
-                {capabilities.map((c) => (
-                  <li key={c} className="flex gap-2 text-sm">
-                    <span style={{ color: "var(--color-success)" }}>✓</span>
-                    <span className="text-[color:var(--color-ink-muted)]">
-                      {CAPABILITY_INFO[c].label}
-                      {/* Marquer ce qui n'est pas encore là, à l'endroit
-                          exact où c'est annoncé — pas dans une note de bas
-                          de page que personne ne lit. */}
-                      {CAPABILITY_INFO[c].status === "soon" && (
-                        <span
-                          className="ml-1.5 rounded-full px-1.5 py-0.5 text-[10px] font-bold"
-                          style={{
-                            backgroundColor: "var(--color-warning-soft)",
-                            color: "var(--color-warning)",
-                          }}
-                        >
-                          pas encore là
-                        </span>
-                      )}
-                    </span>
-                  </li>
-                ))}
-              </ul>
+      {/* Tableau comparatif. Il était `hidden md:flex` : sur téléphone on
+          ne le voyait donc jamais, alors que c'est la seule vue qui répond
+          à « qu'est-ce que je perds si je ne paie pas ». Le défilement
+          horizontal d'origine était bien le problème — pas le tableau —
+          donc sur petit écran il devient un dépliant fermé par défaut, et
+          les colonnes de plan y tiennent en abrégé. */}
+      <section className="flex flex-col gap-3">
+        <details className="md:hidden" >
+          <summary className="cursor-pointer list-none rounded-xl px-4 py-3 font-[family-name:var(--font-display)] font-bold"
+            style={{ backgroundColor: "var(--color-surface)", border: "1px solid var(--color-border)" }}>
+            Le détail, ligne par ligne <span aria-hidden style={{ color: "var(--color-coral)" }}>+</span>
+          </summary>
+          <div className="pt-3">
+            <ComparisonTable compact />
+          </div>
+        </details>
 
-              {plan.priceCents === 0 ? (
-                <Link href="/connexion" className="kai-btn-primary text-center">
-                  Créer mon compte — 30 secondes
-                </Link>
-              ) : plan.priceCents === null ? (
-                // Aucun paiement n'est branché : un bouton « Payer » qui ne
-                // mène nulle part serait pire que de dire la vérité. Mais
-                // laisser un pavé mort ne sert personne — on renvoie vers
-                // la seule action qui existe aujourd'hui, et qui est aussi
-                // celle qu'on veut.
-                <div className="flex flex-col gap-1.5">
-                  <Link href="/connexion" className="kai-btn-outline text-center">
-                    Commencer gratuitement en attendant
-                  </Link>
-                  {FOUNDING_PRICE_LOCK && (
-                    <p className="text-center text-[11px] font-semibold" style={{ color: "var(--color-coral)" }}>
-                      Les inscrits d&apos;aujourd&apos;hui garderont le tarif de
-                      lancement.
-                    </p>
-                  )}
-                </div>
-              ) : (
-                <Link href="/compte" className="kai-btn-primary text-center">
-                  Passer en {plan.name}
-                </Link>
-              )}
-            </div>
-          );
-        })}
-      </section>
-
-      {/* Tableau comparatif, écran large uniquement. Sur un téléphone il
-          demandait un défilement horizontal, et on ne voyait donc que la
-          colonne des libellés : une liste de fonctionnalités sans aucune
-          indication de plan, c'est-à-dire pire que rien. Les trois cartes
-          empilées au-dessus portent déjà la même information. */}
-      <section className="hidden flex-col gap-3 md:flex">
-        <h2 className="font-[family-name:var(--font-display)] text-xl font-extrabold">
-          Le détail, ligne par ligne
-        </h2>
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[520px] border-collapse text-sm">
-            <thead>
-              <tr>
-                <th className="p-2 text-left font-semibold">Fonctionnalité</th>
-                {PLANS.map((plan) => (
-                  <th key={plan.slug} className="p-2 text-center font-semibold">
-                    {plan.name}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {CAPABILITIES.map((capability) => (
-                <tr
-                  key={capability}
-                  className="border-t"
-                  style={{ borderColor: "var(--color-border)" }}
-                >
-                  <td className="p-2 text-[color:var(--color-ink-muted)]">
-                    {CAPABILITY_INFO[capability].label}
-                    {CAPABILITY_INFO[capability].status === "soon" && (
-                      <span
-                        className="ml-1.5 rounded-full px-1.5 py-0.5 text-[10px] font-bold whitespace-nowrap"
-                        style={{
-                          backgroundColor: "var(--color-warning-soft)",
-                          color: "var(--color-warning)",
-                        }}
-                      >
-                        pas encore là
-                      </span>
-                    )}
-                  </td>
-                  {PLANS.map((plan) => {
-                    const included = CAPABILITIES_BY_PLAN[plan.slug].includes(capability);
-                    return (
-                      <td key={plan.slug} className="p-2 text-center">
-                        <span
-                          style={{
-                            color: included
-                              ? "var(--color-success)"
-                              : "var(--color-border)",
-                          }}
-                          aria-label={included ? "inclus" : "non inclus"}
-                        >
-                          {included ? "✓" : "—"}
-                        </span>
-                      </td>
-                    );
-                  })}
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        <div className="hidden flex-col gap-3 md:flex">
+          <h2 className="font-[family-name:var(--font-display)] text-xl font-extrabold">
+            Le détail, ligne par ligne
+          </h2>
+          <ComparisonTable />
         </div>
       </section>
 
@@ -285,6 +153,71 @@ export default function TarifsPage() {
           s&apos;afficheront ici avant d&apos;être facturés à qui que ce soit.
         </p>
       </section>
+      </div>
     </main>
+  );
+}
+
+/**
+ * Le tableau des capacités par plan. `compact` sert la version téléphone :
+ * les en-têtes de colonne passent en initiale et la première colonne
+ * rétrécit, de sorte que les trois plans tiennent sans défilement
+ * horizontal — c'était le vrai défaut, pas le tableau lui-même.
+ */
+function ComparisonTable({ compact = false }: { compact?: boolean }) {
+  return (
+    <div className={compact ? "" : "overflow-x-auto"}>
+      <table
+        className={`w-full border-collapse ${compact ? "text-[13px]" : "min-w-[520px] text-sm"}`}
+      >
+        <thead>
+          <tr>
+            <th className="p-2 text-left font-semibold">Fonctionnalité</th>
+            {PLANS.map((plan) => (
+              <th key={plan.slug} className="p-2 text-center font-semibold">
+                <abbr title={plan.name} className="no-underline">
+                  {compact ? plan.name.charAt(0) : plan.name}
+                </abbr>
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {CAPABILITIES.map((capability) => (
+            <tr key={capability} className="border-t" style={{ borderColor: "var(--color-border)" }}>
+              <td className="p-2 text-[color:var(--color-ink-muted)]">
+                {CAPABILITY_INFO[capability].label}
+                {CAPABILITY_INFO[capability].status === "soon" && (
+                  <span
+                    className="ml-1.5 rounded-full px-1.5 py-0.5 text-[10px] font-bold whitespace-nowrap"
+                    style={{
+                      backgroundColor: "var(--color-warning-soft)",
+                      color: "var(--color-warning)",
+                    }}
+                  >
+                    pas encore là
+                  </span>
+                )}
+              </td>
+              {PLANS.map((plan) => {
+                const included = CAPABILITIES_BY_PLAN[plan.slug].includes(capability);
+                return (
+                  <td key={plan.slug} className="p-2 text-center">
+                    <span
+                      style={{
+                        color: included ? "var(--color-success)" : "var(--color-border)",
+                      }}
+                      aria-label={included ? "inclus" : "non inclus"}
+                    >
+                      {included ? "✓" : "—"}
+                    </span>
+                  </td>
+                );
+              })}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
   );
 }
