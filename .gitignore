@@ -30,3 +30,12 @@ pubsub-debug.log
 .claude-flow/
 .vscode/*
 !.vscode/extensions.json
+
+# Clés de compte de service Firebase / Google — ne doivent JAMAIS être
+# committées. Elles donnent un accès complet à la base et contournent
+# toutes les règles de sécurité. Elles vivent hors du dépôt, et dans les
+# secrets Cloudflare pour le Worker.
+*firebase-adminsdk*.json
+*serviceaccount*.json
+*service-account*.json
+service-account*.json
