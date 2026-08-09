@@ -17,7 +17,7 @@ Source de vérité du projet. Lu en premier à chaque session, mis à jour en de
 - `pnpm typecheck` et `pnpm lint` verts sur les 12 packages. Tests
   (2026-08-08, émulateur compris) : **106 web, 65 core, 48 collector,
   40 règles, 37 affiliate, 30 shared, 18 jobs, 18 payments, 15 créa DNA,
-  12 ai-gateway**.
+  12 ai-gateway, 4 stripe-worker**.
 - ⚠️ **Les classements de production sont périmés** : ils datent d'avant les
   décisions #52 à #55. Il faut **relancer le pipeline depuis `/admin`** pour
   que la production en bénéficie — sans ça, « Opportunités » garde son
@@ -197,6 +197,14 @@ le simulateur. Reste un ordre de grandeur à calibrer, pas un placeholder à
 
 64. **Ce qui bloque la vente n'est pas du code** (2026-08-08) — audit fait avant d'écrire une ligne de Stripe. Par ordre de blocage : (a) il faut une **entité légale** (SIRET + IBAN) pour ouvrir un compte Stripe ; (b) **`/mentions-legales` contient encore `[Nom légal de la société]`, `[SIREN/SIRET]`, `[adresse complète]`** — publier un site marchand avec ces crochets est une infraction à la LCEN, pas une coquetterie ; (c) la **TVA** sur un service numérique vendu à des particuliers de l'UE (`automatic_tax` est activé dans le code, mais Stripe Tax doit être activé côté tableau de bord) ; (d) un **moyen de résilier**, obligation légale — le portail client hébergé de Stripe est le plus rapide, son lien reste à poser dans `/compte` ; (e) **les deux montants**, seule chose qui reste à décider dans `plans.ts`. Tant que `priceCents` vaut `null`, aucun bouton de paiement n'apparaît : c'est la décision #42 qui tient toute seule.
 
+65. **Encaissement automatique à 0 € : Cloudflare Workers** (2026-08-08) — le fait décisif n'est pas technique : **le plan Hobby de Vercel interdit l'usage commercial**, donc y héberger un produit qui vend coûterait 20 $/mois. Cloud Functions resterait à 0 € en pratique mais exige le plan Blaze, donc une carte. **Cloudflare Workers** est le seul palier gratuit qui autorise explicitement le commercial : 100 000 requêtes/jour, sans carte. `apps/stripe-worker` porte les deux seuls points du produit qui ont besoin d'un serveur ; le site reste statique sur Firebase Hosting et Firestore ne bouge pas.
+
+    Trois pièges de l'environnement Workers, qui ne sont pas Node : (a) `firebase-admin` n'y tourne pas (gRPC, modules natifs, `Buffer`) — d'où un **client Firestore REST** minimal, avec `updateMask.fieldPaths=plan` qui est ce qui rend l'écriture sûre : sans lui un PATCH remplace le document entier et un paiement effacerait le profil et la watchlist du client ; (b) le SDK Stripe a besoin de `Stripe.createFetchHttpClient()` et de **`constructEventAsync`**, la version synchrone échouant parce que WebCrypto est asynchrone ; (c) la vérification du jeton Firebase est refaite à la main via JWKS — et elle doit contrôler `aud`, sinon un jeton émis pour **un autre projet Firebase** passerait, c'est-à-dire que n'importe qui créant un projet pourrait se faire passer pour un utilisateur de KAIROS.
+
+66. **Le bouton de paiement ne peut pas être mort** (2026-08-08) — `SubscribeButton` ne s'affiche que si l'adresse du Worker **et** l'identifiant de prix sont configurés ; sinon il retombe sur « Commencer gratuitement en attendant ». Double sécurité avec `priceCents` : poser un tarif dans `plans.ts` ne suffit pas à faire apparaître un bouton qui renverrait une erreur. Un bouton en panne fait croire à un bug ; « pas encore ouvert » dit la vérité (décision #42, appliquée au paiement réel).
+
+    L'idempotence est portée par Firestore plutôt que par le code : `claimEvent` crée `stripeEvents/{id}` avec `currentDocument.exists=false`, donc deux livraisons simultanées du même événement — Stripe réémet tant qu'il n'a pas reçu de 2xx — n'en laissent passer qu'une. Un `unresolved` répond quand même 200 : un 5xx ferait réessayer en boucle un événement qu'on ne saura pas mieux interpréter, et `pnpm grant:plan` permet de trancher à la main.
+
 ## Questions ouvertes (posées le 2026-08-03, aucune action prise)
 
 - ~~**La lecture publique du catalogue (décision #10) ne sert à rien.**~~ **Traité le 2026-08-05** (décision #39) : `/classements/*` est enveloppé dans `<RequireAuth>` : aucun visiteur anonyme n'atteint jamais ces pages — vérifié en naviguant réellement, on est redirigé vers `/connexion`. La justification d'origine (« rendues sans utilisateur connecté ») valait pour un rendu statique au build ; les pages sont depuis passées en `"use client"` + `useEffect`, ce qui l'a rendue caduque, mais la règle n'a jamais été refermée. **Repasser `products`/`shops`/`rankings`/`snapshots` en `isSignedIn()` ne coûterait aucune fonctionnalité** et fermerait le trou « n'importe qui vide la base ».
@@ -235,7 +243,9 @@ Ces points sont des arbitrages, pas des bugs : ils ne sont pas corrigés unilat�
 | Rédaction | ✅ **refondue** — plus aucun jargon sur les pages publiques (vérifié à l'écran) ; libellés centralisés dans `labels.ts` ; `reasoning[]` du moteur réécrit en français courant ; statut `live`/`soon` affiché par fonctionnalité (décisions #43-47) |
 | Offres & paywall | ✅ **refondu** — catalogue unique (`plans.ts`) dont dérivent les droits, la page `/tarifs` et l'accueil ; `PaywallGate` montre l'aperçu flouté + tout ce que le palier débloque ; `productHistory` réellement appliqué dans `firestore.rules` (décisions #37-42) |
 | Interactivité | ✅ **étendue au site public** — `/methode` fait tourner le vrai moteur (préréglages + 5 curseurs) ; curseur de gains dans le hero ; `VerdictShowcase` et `ProductTour` sur l'accueil ; `PaywallDemo` sur `/tarifs`. Tout tourne dans le navigateur, sur les moteurs de production (décisions #34-35, #57-60) |
-| Paiement (`packages/payments`) | ✅ **cœur écrit et testé** (18 tests) — table prix→plan, événement→droits, refus de deviner. ⚠️ L'encaissement demande un serveur : trois options dans `docs/STRIPE.md`, aucune choisie unilatéralement (décisions #61-63) |
+| Paiement (`packages/payments`) | ✅ **cœur écrit et testé** (18 tests) — table prix→plan, événement→droits, refus de deviner (décision #61) |
+| Encaissement (`apps/stripe-worker`) | ✅ **Worker Cloudflare prêt à déployer** — session de paiement + webhook, client Firestore REST, vérification du jeton Firebase par JWKS (4 tests). 0 €, usage commercial autorisé, sans carte bancaire. ⚠️ Jamais exécuté contre l'API Stripe réelle (décisions #65-66) |
+| Bouton d'abonnement | ✅ `SubscribeButton` — n'apparaît que si Worker **et** prix sont configurés, sinon retombe sur l'inscription gratuite. Aucun bouton mort possible (décision #66) |
 | Activation manuelle | ✅ `pnpm grant:plan` — attribue un plan par email via l'Admin SDK depuis le Mac. Rend viable l'encaissement par lien de paiement sans casser Spark, et rattrape les webhooks non résolus (décision #62) |
 | Site public | ✅ **refondu** — `PublicNav` relie enfin accueil / méthode / tarifs ; l'accueil montre les écrans au lieu de les décrire ; le paywall est démontré, plus seulement listé (décisions #57-60) |
 | Référencement | ✅ **nouveau** — `/methode` publique (le seul contenu indexable au-delà de l'accueil), métadonnées complètes + Open Graph, `robots.txt`, `sitemap.xml`, JSON-LD Organization/SoftwareApplication/FAQPage (décisions #29-30) |
@@ -295,7 +305,7 @@ L'utilisateur affirme pouvoir obtenir un accès API TikTok Shop pour la France e
 - Créer le document Firestore `config/costGuards` (`{ dailyCapCents: <valeur> }`) — sans lui, le plafond par défaut (50€/jour) s'applique silencieusement.
 - **Décider les deux montants** (Creator, Pro) et les reporter dans `packages/shared/src/plans.ts` **et** dans Stripe. Tant que `priceCents` vaut `null`, la page affiche « Bientôt » et aucun bouton de paiement n'apparaît — voir `docs/STRIPE.md` § 2.4.
 - **Remplir `/mentions-legales`** : `[Nom légal de la société]`, `[SIREN/SIRET]`, `[adresse complète]` sont encore des crochets. Bloquant pour vendre.
-- **Choisir l'option d'encaissement** (`docs/STRIPE.md` § 0) : lien de paiement + `grant:plan` (0 €, Spark préservé), Cloud Functions (automatique, plan Blaze), ou les deux fonctions chez un tiers gratuit.
+- **Déployer le Worker Cloudflare** (`docs/STRIPE.md` § 4) : `wrangler login`, trois secrets, `wrangler deploy`. Gratuit, sans carte bancaire, usage commercial autorisé. C'est le chemin retenu ; Cloud Functions reste écrit dans `functions/src/stripe.ts` pour le jour où Blaze serait souscrit.
 - **Lot 7** : `apps/web/src/server/stripe/connect.ts` (création de compte Connect + webhooks) n'a pas été écrit — la logique de déclenchement (`shouldCreateStripeConnectAccount`, testée) est prête, mais le paquet `stripe` n'est pas installé et il n'y a pas de clé de test pour vérifier un vrai appel API ; écrire ce wrapper une fois une clé Stripe test disponible plutôt que deviner l'intégration. Ajouter aussi `stripe`, `STRIPE_CONNECT_WEBHOOK_SECRET` déjà dans `.env.example`.
 - Fournir des templates de design pour les 3 visuels 1080×1920 du kit de partage (Lot 7) — seuls le QR code et les légendes texte sont générés (`packages/affiliate/src/share-kit.ts`), la composition d'image via `sharp` dépend d'assets non fournis dans cet environnement.
 - Peupler `config/complianceRules` (Lot 8) — le document n'existe pas encore, `evaluateCompliance` reçoit un tableau de règles vide tant que personne ne l'a rempli via `/admin/compliance`.
@@ -574,7 +584,7 @@ Toute modification de la navigation se fait dans `BottomNav`, jamais dans
 
 ## Point de reprise pour la prochaine session
 
-0. **Encaissement** — `docs/STRIPE.md` va de zéro au premier euro. La seule décision à prendre est celle du § 0 ; tout le reste est écrit.
+0. **Encaissement** — tout est écrit et prêt : `docs/STRIPE.md` va de zéro au premier euro encaissé automatiquement, à 0 €, via Cloudflare Workers. Il ne reste que les actions qui demandent tes identifiants : compte Stripe, produits, prix, secrets, déploiement.
 1. **Commissions d'affiliation** — c'est le maillon manquant, pas le
    catalogue. Sans elles, le simulateur de gains (cœur de la promesse
    produit) ne peut rien afficher de vrai. Options : API Affiliate TikTok
@@ -629,7 +639,7 @@ pnpm test                            # les suites émulateur échouent ici, c'es
 pnpm test:rules                      # 40/40 contre l'émulateur Firestore
 pnpm test:jobs-integration           # 18/18
 pnpm test:web-integration            # 98/98 (démarre firestore + auth)
-# Total vérifié le 2026-08-08 : 389 tests, tous verts.
+# Total vérifié le 2026-08-08 : 393 tests, tous verts.
 # Build vérifié : 0 route « ƒ » — 100 % statique, plan Spark préservé.
 ```
 

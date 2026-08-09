@@ -7,6 +7,7 @@ import {
   newCapabilitiesOf,
   PLANS,
 } from "@kairos/shared";
+import { SubscribeButton } from "@/components/SubscribeButton";
 
 // Les trois offres, une seule fois, dérivées de `packages/shared/plans.ts`.
 //
@@ -184,9 +185,9 @@ function PlanCta({ plan }: { plan: (typeof PLANS)[number] }) {
     );
   }
 
-  // Aucun encaissement n'est branché : un bouton « Payer » qui ne mène
-  // nulle part serait pire que de dire la vérité. Mais laisser un pavé mort
-  // ne sert personne — on renvoie vers la seule action qui existe.
+  // Aucun tarif décidé : un bouton « Payer » qui ne mène nulle part serait
+  // pire que de dire la vérité. Mais laisser un pavé mort ne sert personne
+  // — on renvoie vers la seule action qui existe.
   if (plan.priceCents === null) {
     return (
       <div className="flex flex-col gap-1.5">
@@ -205,9 +206,14 @@ function PlanCta({ plan }: { plan: (typeof PLANS)[number] }) {
     );
   }
 
+  // Un tarif est posé : le bouton démarre le paiement. `SubscribeButton`
+  // vérifie lui-même que l'encaissement est branché (Worker + identifiant
+  // de prix) et retombe sur l'inscription gratuite sinon — poser un prix
+  // dans `plans.ts` ne suffit donc pas à faire apparaître un bouton mort.
   return (
-    <Link href="/compte" className="kai-btn-primary text-center">
-      Passer en {plan.name}
-    </Link>
+    <SubscribeButton
+      plan={plan.slug as "creator" | "pro"}
+      label={`Passer en ${plan.name}`}
+    />
   );
 }

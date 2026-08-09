@@ -1,8 +1,21 @@
 // @vitest-environment jsdom
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { cleanup, render, screen } from "@testing-library/react";
 import { CAPABILITIES_BY_PLAN, CAPABILITY_INFO, PLANS } from "@kairos/shared";
-import { PlanCards } from "./PlanCards";
+
+// PlanCards importe SubscribeButton, qui remonte jusqu'au SDK Firebase et
+// à sa validation d'environnement. Rien de tout ça n'est utile ici : ce
+// qu'on teste, c'est la composition des offres.
+vi.mock("@/lib/firebase/auth-context", () => ({
+  useAuth: () => ({ firebaseUser: null, userDoc: null }),
+}));
+vi.mock("@/lib/stripe/checkout", () => ({
+  isCheckoutConfigured: () => false,
+  startCheckout: vi.fn(),
+  CheckoutError: class extends Error {},
+}));
+
+const { PlanCards } = await import("./PlanCards");
 
 afterEach(cleanup);
 

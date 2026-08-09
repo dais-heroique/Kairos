@@ -1,0 +1,28 @@
+# Worker Cloudflare — les deux points d'entrée Stripe.
+#
+# Le palier gratuit (100 000 requêtes/jour) autorise l'usage commercial,
+# contrairement au plan Hobby de Vercel. Voir docs/STRIPE.md.
+name = "kairos-stripe"
+main = "src/index.ts"
+compatibility_date = "2025-01-15"
+
+# `nodejs_compat` est nécessaire au SDK Stripe, qui importe encore quelques
+# primitives Node même en mode fetch.
+compatibility_flags = ["nodejs_compat"]
+
+[vars]
+FIREBASE_PROJECT_ID = "kairos-on"
+ALLOWED_ORIGINS = "https://kairos-on.web.app,https://kairos-on.firebaseapp.com"
+
+# Les quatre identifiants de prix ne sont pas des secrets (ils sont visibles
+# côté client de toute façon) : ils se posent avec `wrangler secret put` ou
+# ici une fois créés dans Stripe.
+# STRIPE_PRICE_CREATOR_MONTHLY = "price_..."
+# STRIPE_PRICE_CREATOR_YEARLY  = "price_..."
+# STRIPE_PRICE_PRO_MONTHLY     = "price_..."
+# STRIPE_PRICE_PRO_YEARLY      = "price_..."
+
+# Secrets, à poser avec `wrangler secret put <NOM>` — jamais dans ce fichier :
+#   STRIPE_SECRET_KEY
+#   STRIPE_WEBHOOK_SECRET
+#   FIREBASE_SERVICE_ACCOUNT
