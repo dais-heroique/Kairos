@@ -1,4 +1,4 @@
-# Encaisser avec Stripe — guide pas à pas sur Mac
+# Encaisser avec Stripe — guide pas à pas (Mac ou téléphone)
 
 De zéro au premier euro encaissé, **automatiquement, à 0 €**.
 
@@ -208,6 +208,78 @@ Stripe affiche alors le secret `whsec_…` :
 wrangler secret put STRIPE_WEBHOOK_SECRET
 wrangler deploy
 ```
+
+---
+
+## 4 bis. Tout faire depuis un téléphone
+
+`wrangler` est une commande : elle a besoin de Node sur une machine, donc
+elle ne tourne pas sur un téléphone. Mais Cloudflare sait construire et
+déployer **directement depuis GitHub**, et ça se configure au navigateur.
+
+### a. Connecter le dépôt
+
+<https://dash.cloudflare.com> → **Workers & Pages** → **Create** →
+**Workers** → **Import a repository** → autorise GitHub, choisis
+`dais-heroique/Kairos`.
+
+Renseigne ensuite, exactement :
+
+| Champ | Valeur |
+|---|---|
+| Project name | `kairos-stripe` |
+| Root directory | `apps/stripe-worker` |
+| Build command | `pnpm cf:build` |
+| Deploy command | `npx wrangler deploy` |
+
+`cf:build` remonte à la racine du dépôt et construit les deux paquets dont
+le Worker dépend. Sans lui, le déploiement échoue sur un import manquant.
+
+### b. Poser les trois secrets
+
+Dans le projet créé → **Settings** → **Variables and Secrets** →
+**Add** → type **Secret** :
+
+| Nom | Valeur |
+|---|---|
+| `STRIPE_SECRET_KEY` | `sk_test_…` |
+| `STRIPE_WEBHOOK_SECRET` | à l'étape suivante |
+| `FIREBASE_SERVICE_ACCOUNT` | tout le contenu du `.json` |
+
+Pour le JSON : ouvre-le depuis ton téléphone (Fichiers → Téléchargements),
+sélectionne tout, colle. C'est le seul moment un peu pénible au doigt.
+
+⚠️ **Secret**, pas « Variable de texte » : `wrangler deploy` remplace les
+variables de texte du tableau de bord par celles de `wrangler.toml`, donc
+elles seraient effacées au déploiement suivant. Les secrets, eux, survivent.
+
+### c. Poser les identifiants de prix
+
+Ceux-là vont dans le dépôt, pas dans le tableau de bord — pour la raison
+ci-dessus. Depuis GitHub sur ton téléphone :
+
+`dais-heroique/Kairos` → `apps/stripe-worker/wrangler.toml` → l'icône
+**crayon** → décommente les lignes que tu as et colle tes `price_…` →
+**Commit changes**.
+
+Cloudflare reconstruit tout seul à chaque commit.
+
+> Tu n'as pas encore créé Pro ? Laisse ses deux lignes commentées. L'offre
+> sera simplement invendable — le bouton ne s'affiche pas et `/health` te
+> le dira. Tu les ajouteras plus tard, sans rien casser.
+
+### d. Le webhook
+
+Une fois le premier déploiement passé, Cloudflare affiche l'adresse du
+Worker. Ouvre `https://<adresse>/health` dans le navigateur du téléphone :
+
+```json
+{"ok":true,"prixManquants":["STRIPE_PRICE_PRO_MONTHLY","STRIPE_PRICE_PRO_YEARLY"]}
+```
+
+Puis Stripe → **Développeurs → Webhooks → Ajouter un point de terminaison**,
+URL `https://<adresse>/stripe/webhook`, les quatre événements du § 4.4.
+Récupère le `whsec_…` et pose-le en secret (étape b).
 
 ---
 

@@ -14,9 +14,16 @@ compatibility_flags = ["nodejs_compat"]
 FIREBASE_PROJECT_ID = "kairos-on"
 ALLOWED_ORIGINS = "https://kairos-on.web.app,https://kairos-on.firebaseapp.com"
 
-# Les quatre identifiants de prix ne sont pas des secrets (ils sont visibles
-# côté client de toute façon) : ils se posent avec `wrangler secret put` ou
-# ici une fois créés dans Stripe.
+# Identifiants de prix Stripe. Ce ne sont **pas** des secrets : ils
+# apparaissent de toute façon dans l'URL de paiement. Les mettre ici plutôt
+# que dans le tableau de bord Cloudflare est délibéré — `wrangler deploy`
+# remplace les variables du tableau de bord par celles de ce fichier, donc
+# une valeur saisie là-bas serait effacée au déploiement suivant. Les
+# *secrets*, eux, survivent : c'est pour ça qu'ils ne sont pas ici.
+#
+# Décommente au fur et à mesure. Une offre sans prix est simplement
+# invendable — le bouton correspondant ne s'affiche pas, et `/health` liste
+# ce qui manque. Lancer avec Creator seul est un cas prévu.
 # STRIPE_PRICE_CREATOR_MONTHLY = "price_..."
 # STRIPE_PRICE_CREATOR_YEARLY  = "price_..."
 # STRIPE_PRICE_PRO_MONTHLY     = "price_..."

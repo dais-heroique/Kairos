@@ -7,7 +7,8 @@
     "dev": "wrangler dev",
     "deploy": "wrangler deploy",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run"
+    "test": "vitest run",
+    "cf:build": "cd ../.. && pnpm install --frozen-lockfile && pnpm --filter @kairos/shared build && pnpm --filter @kairos/payments build"
   },
   "dependencies": {
     "@kairos/payments": "workspace:*",
