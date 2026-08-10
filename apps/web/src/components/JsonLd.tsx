@@ -1,3 +1,4 @@
+import { PLANS } from "@kairos/shared";
 import { SITE_DESCRIPTION, SITE_NAME, SITE_TAGLINE, SITE_URL } from "@/lib/seo/site";
 
 // Données structurées schema.org. Ce n'est pas de la décoration : la FAQ
@@ -57,17 +58,18 @@ export function SoftwareApplicationJsonLd() {
         description: SITE_DESCRIPTION,
         slogan: SITE_TAGLINE,
         inLanguage: "fr-FR",
-        // Un seul prix déclaré : celui du plan gratuit, le seul qui existe
-        // réellement aujourd'hui. Annoncer un tarif Creator/Pro que
-        // personne ne peut encore payer serait une donnée structurée
-        // fausse — Google sanctionne, et c'est mérité.
-        offers: {
+        // Les offres sont **dérivées du catalogue**, jamais recopiées : un
+        // tarif annoncé à Google et différent de celui facturé est une
+        // donnée structurée fausse, sanctionnée — et à raison. Un plan sans
+        // `priceCents` n'apparaît pas du tout, plutôt que d'apparaître à un
+        // prix inventé.
+        offers: PLANS.filter((plan) => plan.priceCents !== null).map((plan) => ({
           "@type": "Offer",
-          price: "0",
+          price: (plan.priceCents! / 100).toFixed(2),
           priceCurrency: "EUR",
-          name: "Radar",
-          description: "Classement complet, gains sur le top 10, watchlist illimitée.",
-        },
+          name: plan.name,
+          description: plan.highlight,
+        })),
       }}
     />
   );

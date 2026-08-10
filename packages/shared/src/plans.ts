@@ -260,8 +260,13 @@ export const PLANS: PlanDefinition[] = [
   {
     slug: "creator",
     name: "Creator",
-    priceCents: null,
-    yearlyPriceCents: null,
+    // Ces deux montants doivent correspondre **au centime** aux prix
+    // Stripe `price_1U2Zjw…` (mensuel) et `price_1U2ZmQ…` (annuel).
+    // Ils ne sont pas la source de vérité de la facturation — Stripe l'est
+    // — mais ils sont ce que le client lit avant de payer. Un écart entre
+    // les deux est une publicité mensongère, pas un bug d'affichage.
+    priceCents: 1900,
+    yearlyPriceCents: 19000,
     tagline: "Pour qui poste chaque semaine",
     highlight: "Tes gains sur tous les produits, les courbes, et le texte à dire",
     popular: true,

@@ -93,14 +93,48 @@ describe("formatYearlyAsMonthly", () => {
 });
 
 describe("le catalogue livré", () => {
-  it("n'affiche aucun tarif tant qu'il n'est pas arrêté dans Stripe", () => {
-    // Ce test tombera le jour où les montants seront renseignés : c'est
-    // voulu. Il force à relire ce fichier à ce moment-là, quand les vrais
-    // chiffres arrivent, plutôt que de les laisser passer sans regard.
-    for (const p of PLANS.filter((p) => p.slug !== "radar")) {
-      expect(p.priceCents, `${p.slug} mensuel`).toBeNull();
-      expect(p.yearlyPriceCents, `${p.slug} annuel`).toBeNull();
+  // Ce bloc gardait auparavant l'absence de tarif. Les prix Creator ayant
+  // été créés dans Stripe le 2026-08-10 (19 € / 190 €), il garde désormais
+  // ce qui reste vrai : la cohérence entre ce qui est affiché et ce qui est
+  // facturable.
+
+  it("un tarif annuel ne va jamais sans son mensuel", () => {
+    // Sinon l'onglet « Mensuel » afficherait « Bientôt » à côté d'un
+    // annuel achetable, et `yearlySavingsPct` n'aurait aucune référence
+    // pour calculer l'économie : le badge disparaîtrait sans raison
+    // visible.
+    for (const p of PLANS) {
+      if (p.yearlyPriceCents !== null) {
+        expect(p.priceCents, `${p.slug} : annuel posé sans mensuel`).not.toBeNull();
+      }
     }
+  });
+
+  it("aucun montant absurde n'a pu se glisser dans le catalogue", () => {
+    for (const p of PLANS) {
+      for (const cents of [p.priceCents, p.yearlyPriceCents]) {
+        if (cents === null) continue;
+        // Des centimes, donc un entier : `19.9` viendrait d'une saisie en
+        // euros, et facturerait 0,199 € au lieu de 19,90 €.
+        expect(Number.isInteger(cents), `${p.slug} : ${cents} n'est pas un entier`).toBe(true);
+        expect(cents, `${p.slug} : montant négatif`).toBeGreaterThanOrEqual(0);
+      }
+    }
+  });
+
+  it("Creator est vendable et son annuel est réellement avantageux", () => {
+    const creator = PLANS.find((p) => p.slug === "creator")!;
+    expect(formatPlanPrice(creator)).toBe("19,00 € / mois");
+    expect(formatPlanPrice(creator, "yearly")).toBe("190,00 € / an");
+    expect(formatYearlyAsMonthly(creator)).toBe("15,83 € / mois");
+    expect(yearlySavingsPct(creator)).toBe(16);
+  });
+
+  it("Pro n'affiche pas de prix tant qu'il n'existe pas dans Stripe", () => {
+    const pro = PLANS.find((p) => p.slug === "pro")!;
+    expect(pro.priceCents).toBeNull();
+    expect(pro.yearlyPriceCents).toBeNull();
+    expect(formatPlanPrice(pro)).toBe("Bientôt");
   });
 
   it("le plan gratuit reste gratuit dans les deux périodicités", () => {

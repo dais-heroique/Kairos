@@ -4,12 +4,19 @@ import { cleanup, render, screen } from "@testing-library/react";
 import {
   CAPABILITY_INFO,
   entitlementsOf,
+  formatPlanPrice,
   newCapabilitiesOf,
+  planUnlocking,
   type User,
 } from "@kairos/shared";
 import { PaywallGate } from "./PaywallGate";
 
 afterEach(cleanup);
+
+/** « 19,00 € / mois » contient des caractères que RegExp interprète. */
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
 
 function user(slug: "radar" | "creator" | "pro"): User {
   return {
@@ -106,12 +113,35 @@ describe("PaywallGate", () => {
 
   // Le catalogue n'a pas encore de tarif : annoncer un montant inventé
   // serait pire que d'assumer que ce n'est pas ouvert.
-  it("n'invente pas de prix tant qu'il n'est pas arrêté", () => {
+  // L'invariant n'est pas « aucun prix n'est affiché » — Creator est tarifé
+  // depuis le 2026-08-10 — mais « le prix affiché est celui du catalogue ».
+  // Un montant écrit en dur ici finirait par diverger de `plans.ts`, donc
+  // de Stripe, donc de ce qui est réellement prélevé.
+  it("affiche le tarif du catalogue, jamais un montant à lui", () => {
+    const plan = planUnlocking("brief");
     render(
       <PaywallGate
         capability="brief"
         entitlements={entitlementsOf(user("radar"))}
         title="Débloque le brief"
+      >
+        <p>contenu</p>
+      </PaywallGate>,
+    );
+    expect(screen.getByText(new RegExp(escapeRegExp(formatPlanPrice(plan))))).toBeTruthy();
+  });
+
+  it("dit « Bientôt » pour un palier dont le tarif n'est pas arrêté", () => {
+    // `rankingArchive` est propre à Pro, qui n'a pas encore de prix Stripe.
+    // Le jour où il en aura un, ce test tombera — et c'est le bon moment
+    // pour vérifier que le montant affiché est celui qu'on facture.
+    const plan = planUnlocking("rankingArchive");
+    expect(plan.priceCents).toBeNull();
+    render(
+      <PaywallGate
+        capability="rankingArchive"
+        entitlements={entitlementsOf(user("creator"))}
+        title="Débloque l'archive"
       >
         <p>contenu</p>
       </PaywallGate>,
