@@ -24,6 +24,15 @@ ALLOWED_ORIGINS = "https://kairos-on.web.app,https://kairos-on.firebaseapp.com"
 # Décommente au fur et à mesure. Une offre sans prix est simplement
 # invendable — le bouton correspondant ne s'affiche pas, et `/health` liste
 # ce qui manque. Lancer avec Creator seul est un cas prévu.
+#
+# ⚠️ Les deux prix Creator sont actuellement posés en **secrets** dans le
+# tableau de bord Cloudflare (le déploiement se fait depuis un téléphone,
+# où éditer ce fichier coûte plus cher qu'ouvrir un formulaire). Le code
+# lit `env.STRIPE_PRICE_*` sans savoir d'où ça vient, donc les deux
+# emplacements marchent — mais **jamais les deux à la fois** : un secret et
+# une variable du même nom entrent en conflit au déploiement. Ne décommente
+# les lignes Creator ci-dessous qu'après avoir supprimé les secrets
+# correspondants.
 # STRIPE_PRICE_CREATOR_MONTHLY = "price_..."
 # STRIPE_PRICE_CREATOR_YEARLY  = "price_..."
 # STRIPE_PRICE_PRO_MONTHLY     = "price_..."
