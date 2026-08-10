@@ -15,9 +15,9 @@ Source de vérité du projet. Lu en premier à chaque session, mis à jour en de
 - **90 vrais produits TikTok Shop en base de production**, collectés via
   Apify, avec photos, prix, notes, avis et unités vendues.
 - `pnpm typecheck` et `pnpm lint` verts sur les 12 packages. Tests
-  (2026-08-08, émulateur compris) : **106 web, 65 core, 48 collector,
-  40 règles, 37 affiliate, 30 shared, 18 jobs, 18 payments, 15 créa DNA,
-  12 ai-gateway, 4 stripe-worker**.
+  (2026-08-09, émulateur compris) : **116 web, 82 core, 48 collector,
+  46 règles, 37 affiliate, 30 shared, 18 jobs, 18 payments, 15 créa DNA,
+  12 ai-gateway, 4 stripe-worker**. `core` passe à 82 (archive), `web` à 116.
 - ⚠️ **Les classements de production sont périmés** : ils datent d'avant les
   décisions #52 à #55. Il faut **relancer le pipeline depuis `/admin`** pour
   que la production en bénéficie — sans ça, « Opportunités » garde son
@@ -205,6 +205,19 @@ le simulateur. Reste un ordre de grandeur à calibrer, pas un placeholder à
 
     L'idempotence est portée par Firestore plutôt que par le code : `claimEvent` crée `stripeEvents/{id}` avec `currentDocument.exists=false`, donc deux livraisons simultanées du même événement — Stripe réémet tant qu'il n'a pas reçu de 2xx — n'en laissent passer qu'une. Un `unresolved` répond quand même 200 : un 5xx ferait réessayer en boucle un événement qu'on ne saura pas mieux interpréter, et `pnpm grant:plan` permet de trancher à la main.
 
+67. **Le plan Pro se serait vendu sur du vide** (2026-08-09) — constaté en préparant les produits Stripe : Pro n'ajoutait à Creator qu'**une seule capacité**, `rankingArchive`, marquée « pas encore là ». Le vendre plus cher que Creator revenait à facturer zéro fonctionnalité supplémentaire. Quatre capacités ont donc été **construites**, pas déclarées :
+
+    - **`rankingArchive`** — `rankings/*` porte un identifiant fixe, réécrit à chaque passage : il n'existait aucune trace du passé, et « suivre un produit dans la durée » ne reposait sur rien. Fenêtre glissante de 30 jours dans **un seul document** (`rankingArchive/FR_7d`) : le budget de ≤5 opérations par page interdit un document par jour, une trajectoire en ferait trente. Les libellés y sont stockés une fois, pas trente, et un produit sorti du classement garde le sien — sinon les journées passées où il figurait deviendraient illisibles, ce qu'on vient précisément chercher dans une archive.
+    - **`rankTrend`** — la fiche produit montrait la courbe de *ses* ventes, jamais sa place **par rapport aux autres**. Un produit dont les ventes montent pendant que dix concurrents montent plus vite est en train de perdre, et rien ne le disait. Axe inversé (rang 1 en haut) pour qu'un tracé qui monte se lise « je gagne des places », et tracé **coupé** les jours sans classement : relier ferait passer une absence pour une position intermédiaire.
+    - **`productCompare`** — le classement répond « lequel est le mieux placé », pas « lequel je tourne entre ces trois-là ». Jusqu'à quatre produits sur les mêmes lignes. Zéro lecture Firestore de plus : tout est déjà dénormalisé dans les items.
+    - **`dataExport`** — CSV séparé par point-virgule avec BOM, sans quoi Excel en français met tout dans la première colonne et affiche « SÃ©rum ». Une donnée absente reste **vide** et non zéro : dans un tableur un 0 se moyenne et se somme, et transformerait « on ne sait pas » en « ça ne rapporte rien ».
+
+    `alerts` passe aussi en `live`, côté Creator : envoyer une vraie notification demanderait un serveur et un service d'envoi, donc de l'argent. Le même service à 0 € est un **résumé calculé à l'ouverture** à partir de l'archive — « 15ᵉ → 1ʳᵉ, 14 places gagnées », « la concurrence a pris 35 points ». Le libellé du catalogue dit exactement ça et ne promet aucune notification push.
+
+68. **La règle Firestore supposait le mauvais pipeline** (2026-08-09) — première version de `rankingArchive` : `allow write: if false`, commentée « écrite par l'Admin SDK qui ignore les règles ». Or le pipeline qui la remplit tourne dans le **navigateur** (décision #9, plan Spark), pas dans un job serveur. Le `Promise.all` du pipeline échouait donc entièrement, et le seed avec lui. Corrigé en `isAdmin()`, comme `rankings/*`. Un test vérifie maintenant les deux côtés : un abonné Pro ne peut pas réécrire l'archive, l'administrateur qui fait tourner le pipeline le peut.
+
+69. **Des tests qui punissaient le travail** (2026-08-09) — trois tests codaient en dur que `alerts` et `rankingArchive` étaient « à venir », et un quatrième recopiait le libellé exact d'une capacité. Ils échouaient donc le jour où on les livrait, ou dès qu'on reformulait une phrase. Réécrits autour de l'invariant plutôt que de l'état : *toute capacité annoncée sans être livrée porte sa mention*, et — nouveau garde-fou né de ce défaut — **aucun palier payant ne se vend sur du vide** : chaque plan facturé doit ajouter au moins une capacité `live`.
+
 ## Questions ouvertes (posées le 2026-08-03, aucune action prise)
 
 - ~~**La lecture publique du catalogue (décision #10) ne sert à rien.**~~ **Traité le 2026-08-05** (décision #39) : `/classements/*` est enveloppé dans `<RequireAuth>` : aucun visiteur anonyme n'atteint jamais ces pages — vérifié en naviguant réellement, on est redirigé vers `/connexion`. La justification d'origine (« rendues sans utilisateur connecté ») valait pour un rendu statique au build ; les pages sont depuis passées en `"use client"` + `useEffect`, ce qui l'a rendue caduque, mais la règle n'a jamais été refermée. **Repasser `products`/`shops`/`rankings`/`snapshots` en `isSignedIn()` ne coûterait aucune fonctionnalité** et fermerait le trou « n'importe qui vide la base ».
@@ -244,6 +257,7 @@ Ces points sont des arbitrages, pas des bugs : ils ne sont pas corrigés unilat�
 | Offres & paywall | ✅ **refondu** — catalogue unique (`plans.ts`) dont dérivent les droits, la page `/tarifs` et l'accueil ; `PaywallGate` montre l'aperçu flouté + tout ce que le palier débloque ; `productHistory` réellement appliqué dans `firestore.rules` (décisions #37-42) |
 | Interactivité | ✅ **étendue au site public** — `/methode` fait tourner le vrai moteur (préréglages + 5 curseurs) ; curseur de gains dans le hero ; `VerdictShowcase` et `ProductTour` sur l'accueil ; `PaywallDemo` sur `/tarifs`. Tout tourne dans le navigateur, sur les moteurs de production (décisions #34-35, #57-60) |
 | Paiement (`packages/payments`) | ✅ **cœur écrit et testé** (18 tests) — table prix→plan, événement→droits, refus de deviner (décision #61) |
+| Plan Pro | ✅ **quatre capacités construites** — archive des classements (30 jours, un document, 1 lecture), trajectoire d'un produit, comparateur jusqu'à 4, export CSV. Plus `alerts` enfin réelle côté Creator. Un test interdit qu'un palier payant n'ajoute que du « pas encore là » (décisions #67-69) |
 | Encaissement (`apps/stripe-worker`) | ✅ **Worker Cloudflare prêt à déployer** — session de paiement + webhook, client Firestore REST, vérification du jeton Firebase par JWKS (4 tests). 0 €, usage commercial autorisé, sans carte bancaire. ⚠️ Jamais exécuté contre l'API Stripe réelle (décisions #65-66) |
 | Installation du Worker | ✅ `apps/stripe-worker/setup.sh` — installation guidée : connexion, déploiement, les trois secrets, redéploiement, vérification. Chaque étape est contrôlée, y compris le piège de `wrangler whoami` qui sort en code 0 même sans authentification |
 | Bouton d'abonnement | ✅ `SubscribeButton` — n'apparaît que si Worker **et** prix sont configurés, sinon retombe sur l'inscription gratuite. Aucun bouton mort possible (décision #66) |
@@ -304,7 +318,7 @@ L'utilisateur affirme pouvoir obtenir un accès API TikTok Shop pour la France e
   `gcloud billing budgets create --billing-account=<ID> --display-name="Kairos IA" --budget-amount=<montant>EUR --threshold-rule=percent=0.5 --threshold-rule=percent=0.8 --threshold-rule=percent=1.0`
 - Vérifier/ajuster `DEFAULT_MODEL_PRICING` dans `packages/ai-gateway/src/spend-guard.ts` contre les tarifs réels de Gemini/Claude au moment du déploiement (valeurs actuelles provisoires).
 - Créer le document Firestore `config/costGuards` (`{ dailyCapCents: <valeur> }`) — sans lui, le plafond par défaut (50€/jour) s'applique silencieusement.
-- **Décider les deux montants** (Creator, Pro) et les reporter dans `packages/shared/src/plans.ts` **et** dans Stripe. Tant que `priceCents` vaut `null`, la page affiche « Bientôt » et aucun bouton de paiement n'apparaît — voir `docs/STRIPE.md` § 2.4.
+- **Décider les deux montants** (Creator, Pro) — Pro apporte désormais quatre fonctionnalités livrées (décision #67), son prix se défend. Les reporter dans `packages/shared/src/plans.ts` **et** dans Stripe. Tant que `priceCents` vaut `null`, la page affiche « Bientôt » et aucun bouton de paiement n'apparaît — voir `docs/STRIPE.md` § 2.4.
 - **Remplir `/mentions-legales`** : `[Nom légal de la société]`, `[SIREN/SIRET]`, `[adresse complète]` sont encore des crochets. Bloquant pour vendre.
 - **Déployer le Worker Cloudflare** (`docs/STRIPE.md` § 4) : `wrangler login`, trois secrets, `wrangler deploy`. Gratuit, sans carte bancaire, usage commercial autorisé. C'est le chemin retenu ; Cloud Functions reste écrit dans `functions/src/stripe.ts` pour le jour où Blaze serait souscrit.
 - **Lot 7** : `apps/web/src/server/stripe/connect.ts` (création de compte Connect + webhooks) n'a pas été écrit — la logique de déclenchement (`shouldCreateStripeConnectAccount`, testée) est prête, mais le paquet `stripe` n'est pas installé et il n'y a pas de clé de test pour vérifier un vrai appel API ; écrire ce wrapper une fois une clé Stripe test disponible plutôt que deviner l'intégration. Ajouter aussi `stripe`, `STRIPE_CONNECT_WEBHOOK_SECRET` déjà dans `.env.example`.
@@ -637,10 +651,10 @@ sur la base actuelle.
 ```bash
 pnpm typecheck && pnpm lint          # 12 packages, doit être 100 % vert
 pnpm test                            # les suites émulateur échouent ici, c'est normal
-pnpm test:rules                      # 40/40 contre l'émulateur Firestore
+pnpm test:rules                      # 46/46 contre l'émulateur Firestore
 pnpm test:jobs-integration           # 18/18
 pnpm test:web-integration            # 98/98 (démarre firestore + auth)
-# Total vérifié le 2026-08-08 : 393 tests, tous verts.
+# Total vérifié le 2026-08-09 : 436 tests, tous verts.
 # Build vérifié : 0 route « ƒ » — 100 % statique, plan Spark préservé.
 ```
 

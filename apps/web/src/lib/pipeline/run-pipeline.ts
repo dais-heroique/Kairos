@@ -1,9 +1,13 @@
 "use client";
 
-import { doc, setDoc } from "firebase/firestore";
+import { doc, getDoc, setDoc } from "firebase/firestore";
 import {
   aggregateCategories,
   aggregateShops,
+  appendArchiveDay,
+  EMPTY_ARCHIVE,
+  type ArchiveLabel,
+  type RankingArchive,
   compareOpportunityOf,
   computeOpportunityScore,
   computeVerdict,
@@ -17,6 +21,7 @@ import { firestore } from "@/lib/firebase/client";
 import {
   getProductSnapshots,
   listStoredProducts,
+  todayIso,
   UNMEASURED_SELLER_TRUST,
   type StoredProduct,
 } from "@/lib/firestore/product-entry";
@@ -44,6 +49,8 @@ export interface PipelineResult {
   productsSkippedNoHistory: number;
   /** Produits classés mais dont le verdict reste prudent faute d'historique. */
   productsNeedingMoreHistory: number;
+  /** Jours conservés dans l'archive des classements (plan Pro). */
+  archivedDays: number;
   /** Agrégations dérivées des mêmes produits, sans source supplémentaire. */
   shopsRanked: number;
   categoriesRanked: number;
@@ -209,6 +216,34 @@ export async function runPipeline(): Promise<PipelineResult> {
   );
   const newcomers = byVolume.filter((s) => newcomerIds.has(s.product.id));
 
+  // Archive : la fenêtre glissante de 30 jours qui rend le plan Pro réel.
+  // Un seul document, relu puis réécrit — le budget de lecture des pages
+  // (≤5 opérations) interdit un document par jour.
+  const archiveRef = doc(firestore, "rankingArchive", "FR_7d");
+  const existing = await getDoc(archiveRef);
+  const previous = (existing.data() as RankingArchive | undefined) ?? EMPTY_ARCHIVE;
+
+  const labels: Record<string, ArchiveLabel> = {};
+  for (const s of scored) {
+    labels[s.product.id] = {
+      title: s.product.title,
+      ...(s.product.emoji ? { emoji: s.product.emoji } : {}),
+    };
+  }
+
+  const archive = appendArchiveDay(
+    previous,
+    {
+      date: todayIso(),
+      products: byVolume.map((s) => s.product.id),
+      opportunities: byOpportunity.map((s) => s.product.id),
+      saturation: Object.fromEntries(
+        scored.map((s) => [s.product.id, s.verdict.saturationScore]),
+      ),
+    },
+    labels,
+  );
+
   const rankingDoc = (type: string, items: unknown[]) => ({
     generatedAt,
     isDemo,
@@ -240,6 +275,7 @@ export async function runPipeline(): Promise<PipelineResult> {
       doc(firestore, "rankings", "newcomers_FR_7d_all"),
       rankingDoc("newcomers", newcomers.map((s, i) => rankingItem(s, i + 1))),
     ),
+    setDoc(archiveRef, archive),
   ]);
 
   return {
@@ -247,6 +283,7 @@ export async function runPipeline(): Promise<PipelineResult> {
     productsRanked: scored.length,
     productsSkippedNoHistory: skipped,
     productsNeedingMoreHistory: needMoreHistory,
+    archivedDays: archive.days.length,
     shopsRanked: aggregateShops(aggregables).length,
     categoriesRanked: aggregateCategories(aggregables).length,
     newcomersRanked: newcomers.length,

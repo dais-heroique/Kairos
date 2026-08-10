@@ -239,6 +239,26 @@ service cloud.firestore {
       allow write: if false;
     }
 
+    // Archive des classements — fenêtre glissante de 30 jours, un seul
+    // document par marché/période. C'est l'actif que le plan Pro vend :
+    // il ne se reconstitue pas rétroactivement, donc il doit être protégé
+    // côté serveur et pas seulement masqué à l'écran.
+    //
+    // `paidPlan()` et non un contrôle « pro » : les alertes de Creator se
+    // calculent à partir des mêmes mouvements de rang. Ce que Pro débloque,
+    // ce sont les *outils* (parcourir les journées passées, la trajectoire,
+    // la comparaison, l'export), pas l'octet brut.
+    //
+    // Écriture réservée à `isAdmin()`, comme `rankings/*` : le pipeline qui
+    // la remplit tourne dans le **navigateur** de l'administrateur (décision
+    // #9, plan Spark), pas dans un job serveur. Un `write: if false` la
+    // rendrait donc impossible à écrire — c'est ce que la première version
+    // faisait, et le pipeline entier échouait.
+    match /rankingArchive/{docId} {
+      allow read: if paidPlan() || isAdmin();
+      allow write: if isAdmin();
+    }
+
     match /stripeEvents/{eventId} {
       allow read, write: if false;
     }

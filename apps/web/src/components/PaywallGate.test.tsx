@@ -1,7 +1,12 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it } from "vitest";
 import { cleanup, render, screen } from "@testing-library/react";
-import { entitlementsOf, type User } from "@kairos/shared";
+import {
+  CAPABILITY_INFO,
+  entitlementsOf,
+  newCapabilitiesOf,
+  type User,
+} from "@kairos/shared";
 import { PaywallGate } from "./PaywallGate";
 
 afterEach(cleanup);
@@ -76,8 +81,12 @@ describe("PaywallGate", () => {
         <p>contenu</p>
       </PaywallGate>,
     );
-    expect(screen.getByText(/La courbe d'un produit jour après jour/)).toBeTruthy();
-    expect(screen.getByText(/commence à être fait par trop de monde/)).toBeTruthy();
+    // Dérivé du catalogue plutôt que recopié : ce test échouait dès qu'on
+    // reformulait un libellé, alors que ce qu'il vérifie est qu'elles sont
+    // *toutes* listées — pas leur rédaction.
+    for (const capability of newCapabilitiesOf("creator")) {
+      expect(screen.getByText(CAPABILITY_INFO[capability].label)).toBeTruthy();
+    }
   });
 
   it("affiche l'aperçu flouté quand il est fourni", () => {
@@ -110,9 +119,11 @@ describe("PaywallGate", () => {
     expect(screen.getByText(/Bientôt/)).toBeTruthy();
   });
 
-  // Les alertes et l'archive n'existent pas encore : les annoncer sans le
-  // dire reviendrait à vendre du vide.
-  it("signale ce qui n'est pas encore disponible", () => {
+  // Annoncer une fonctionnalité qui n'existe pas encore sans le dire
+  // reviendrait à vendre du vide. L'invariant n'est pas « il en existe
+  // une » — elles sont toutes livrées aujourd'hui — mais « s'il en existe
+  // une, elle est signalée à l'endroit où elle est annoncée ».
+  it("signale ce qui n'est pas encore disponible, et rien d'autre", () => {
     render(
       <PaywallGate
         capability="brief"
@@ -122,7 +133,11 @@ describe("PaywallGate", () => {
         <p>contenu</p>
       </PaywallGate>,
     );
-    expect(screen.getByText("pas encore là")).toBeTruthy();
+
+    const aVenir = newCapabilitiesOf("creator").filter(
+      (c) => CAPABILITY_INFO[c].status === "soon",
+    );
+    expect(screen.queryAllByText("pas encore là")).toHaveLength(aVenir.length);
   });
 
   it("un compte Pro n'est jamais bloqué", () => {

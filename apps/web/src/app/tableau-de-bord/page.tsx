@@ -12,6 +12,7 @@ import {
 import { BottomNav } from "@/components/BottomNav";
 import { EstimatedValue } from "@/components/EstimatedValue";
 import { RankingMeta } from "@/components/RankingMeta";
+import { WatchlistDigest } from "@/components/WatchlistDigest";
 import { RequireAuth } from "@/components/RequireAuth";
 import { VerdictBadge } from "@/components/VerdictBadge";
 import { useAuth } from "@/lib/firebase/auth-context";
@@ -191,6 +192,11 @@ function DashboardContent() {
 
       <div className="flex flex-1 flex-col gap-4 kai-shell py-3">
         <RankingMeta generatedAt={generatedAt} isDemo={isDemo} />
+
+        {/* Ce qui a bougé sur les produits suivis, en tête de page : c'est
+            l'information qu'une notification aurait portée, au moment où
+            l'utilisateur peut en faire quelque chose. Capacité `alerts`. */}
+        <WatchlistDigest />
 
         {profileIncomplete && (
           <div className="kai-card text-sm">

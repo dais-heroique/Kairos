@@ -14,6 +14,7 @@ import { BottomNav } from "@/components/BottomNav";
 import { EstimatedValue } from "@/components/EstimatedValue";
 import { RequireAuth } from "@/components/RequireAuth";
 import { PaywallGate } from "@/components/PaywallGate";
+import { RankTrend } from "@/components/RankTrend";
 import { SnapshotChart } from "@/components/SnapshotChart";
 import { VerdictBadge } from "@/components/VerdictBadge";
 import { useAuth } from "@/lib/firebase/auth-context";
@@ -231,6 +232,19 @@ function ProduitContent() {
             )}
           </div>
         </PaywallGate>
+      </section>
+
+      {/* La courbe ci-dessus dit comment ce produit évolue. Celle-ci dit
+          comment il évolue **par rapport aux autres** — un produit dont les
+          ventes montent pendant que dix concurrents montent plus vite est
+          en train de perdre, et rien ne le disait. Capacité Pro. */}
+      <section className="flex flex-col gap-2">
+        <h2 className="font-[family-name:var(--font-display)] text-lg font-bold">
+          Sa place dans le classement
+        </h2>
+        <div className="kai-card">
+          <RankTrend productId={item.id} />
+        </div>
       </section>
 
       <div className="flex gap-2 pb-4">

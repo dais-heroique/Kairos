@@ -148,14 +148,30 @@ describe("cohérence du catalogue d'offres", () => {
 // (le document est écrasé à chaque calcul). Vendre ça, c'est vendre du
 // vide — d'où le statut, et ces tests pour qu'il ne se perde pas.
 describe("statut réel des fonctionnalités", () => {
-  it("marque comme « à venir » ce qui n'est pas implémenté", () => {
-    expect(CAPABILITY_INFO.alerts.status).toBe("soon");
-    expect(CAPABILITY_INFO.rankingArchive.status).toBe("soon");
+  // Cette liste était codée en dur sur les deux capacités qui n'existaient
+  // pas encore (`alerts`, `rankingArchive`). Elle échouait donc le jour où
+  // on les implémentait — un test qui punit le travail. Ce qu'il faut
+  // garder, c'est l'invariant : rien ne s'annonce sans exister.
+  it("chaque capacité déclare un statut connu", () => {
+    for (const c of CAPABILITIES) {
+      expect(["live", "soon"]).toContain(CAPABILITY_INFO[c].status);
+    }
   });
 
-  it("ne marque pas « à venir » ce qui marche déjà", () => {
-    for (const c of ["rankings", "earningsAll", "watchlist", "simulator", "productHistory", "brief"] as const) {
-      expect(CAPABILITY_INFO[c].status).toBe("live");
+  // Le vrai garde-fou commercial, et il vient d'un défaut constaté : le
+  // plan Pro n'ajoutait qu'une seule capacité, marquée « pas encore là ».
+  // Il se serait donc vendu plus cher que Creator sans rien apporter de
+  // fonctionnel. Un palier payant doit apporter au moins une chose qui
+  // marche le jour où on l'encaisse.
+  it("aucun palier payant ne se vend sur du vide", () => {
+    for (const plan of PLANS.filter((p) => p.priceCents !== 0)) {
+      const livrees = newCapabilitiesOf(plan.slug).filter(
+        (c) => CAPABILITY_INFO[c].status === "live",
+      );
+      expect(
+        livrees.length,
+        `${plan.name} n'ajoute aucune fonctionnalité livrée`,
+      ).toBeGreaterThan(0);
     }
   });
 

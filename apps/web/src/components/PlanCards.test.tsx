@@ -49,12 +49,19 @@ describe("PlanCards", () => {
     }
   });
 
-  it("marque « pas encore là » partout où une capacité non livrée est annoncée", () => {
+  // Ce test disait « il doit exister au moins une capacité à venir », ce qui
+  // échouait le jour où on les livrait toutes. L'invariant utile est
+  // l'inverse : toute capacité annoncée sans être livrée doit porter sa
+  // mention, à l'endroit exact où elle est annoncée.
+  it("marque « pas encore là » sur chaque capacité non livrée, et sur aucune autre", () => {
     render(<PlanCards />);
 
     const soon = Object.values(CAPABILITY_INFO).filter((c) => c.status === "soon");
-    expect(soon.length).toBeGreaterThan(0);
-    expect(screen.getAllByText("pas encore là").length).toBeGreaterThanOrEqual(soon.length);
+    expect(screen.queryAllByText("pas encore là")).toHaveLength(
+      // Une capacité à venir apparaît une fois en tête de la carte qui
+      // l'ajoute ; l'hérité replié ne la répète pas.
+      soon.length,
+    );
   });
 
   it("propose au plan gratuit la seule action qui existe aujourd'hui", () => {

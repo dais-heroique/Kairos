@@ -89,7 +89,8 @@ export default function AdminDashboardPage() {
         `${seeded.products} produits, ${seeded.snapshots} relevés simulés — ` +
           `${result.productsRanked} classés, ${result.productsNeedingMoreHistory} en attente d'historique. ` +
           `Agrégats : ${result.shopsRanked} boutiques, ${result.categoriesRanked} catégories, ` +
-          `${result.newcomersRanked} nouveautés.`,
+          `${result.newcomersRanked} nouveautés. ` +
+          `Archive : ${result.archivedDays} jour${result.archivedDays > 1 ? "s" : ""}.`,
       );
       setSeedDone(true);
     } catch {

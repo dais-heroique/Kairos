@@ -58,3 +58,17 @@ export function crowdingWording(score: number): string {
   if (score <= 75) return "Déjà beaucoup de monde";
   return "Saturé, tout le monde en fait";
 }
+
+/**
+ * Suffixe ordinal français : « 1ʳᵉ place », mais « 2ᵉ place ».
+ *
+ * Le rang 1 est le seul cas particulier, et c'est celui qui s'affiche le
+ * plus — en tête de classement, sur la trajectoire d'un produit et dans le
+ * résumé hebdomadaire. « 1e place » se lit comme une faute, parce que c'en
+ * est une.
+ *
+ * Accord au féminin : partout dans KAIROS l'ordinal qualifie une *place*.
+ */
+export function ordinalSuffix(rank: number): string {
+  return rank === 1 ? "re" : "e";
+}

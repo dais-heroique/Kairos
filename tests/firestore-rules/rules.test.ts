@@ -688,3 +688,99 @@ describe("inviteCodes", () => {
     );
   });
 });
+
+// L'archive des classements est l'actif que le plan Pro vend : une fenêtre
+// de 30 jours qui ne se reconstitue pas rétroactivement. Comme l'historique
+// des relevés, elle est protégée côté serveur — pas seulement masquée à
+// l'écran, ce qui serait contournable avec la config Firebase publique.
+describe("archive des classements — capacité payante", () => {
+  async function seedArchive() {
+    await testEnv.withSecurityRulesDisabled((ctx) =>
+      ctx
+        .firestore()
+        .collection("rankingArchive")
+        .doc("FR_7d")
+        .set({ updatedAt: "2026-08-08T00:00:00.000Z", labels: {}, days: [] }),
+    );
+  }
+
+  const archive = (uid?: string) =>
+    (uid
+      ? testEnv.authenticatedContext(uid).firestore()
+      : testEnv.unauthenticatedContext().firestore()
+    )
+      .collection("rankingArchive")
+      .doc("FR_7d");
+
+  async function seedUser(uid: string, plan?: Record<string, unknown>) {
+    await testEnv.withSecurityRulesDisabled((ctx) =>
+      ctx
+        .firestore()
+        .collection("users")
+        .doc(uid)
+        .set(validUser(uid, plan ? { plan } : {})),
+    );
+  }
+
+  it("refuse un anonyme", async () => {
+    await seedArchive();
+    await assertFails(archive().get());
+  });
+
+  it("refuse un compte gratuit, même connecté", async () => {
+    await seedArchive();
+    await seedUser("archive-free");
+    await assertFails(archive("archive-free").get());
+  });
+
+  it("autorise un abonnement payant actif", async () => {
+    await seedArchive();
+    await seedUser("archive-pro", {
+      slug: "pro",
+      status: "active",
+      currentPeriodEnd: null,
+      stripeCustomerId: null,
+    });
+    await assertSucceeds(archive("archive-pro").get());
+  });
+
+  it("refuse un abonnement résilié malgré son slug", async () => {
+    await seedArchive();
+    await seedUser("archive-canceled", {
+      slug: "pro",
+      status: "canceled",
+      currentPeriodEnd: null,
+      stripeCustomerId: null,
+    });
+    await assertFails(archive("archive-canceled").get());
+  });
+
+  // Elle porte l'historique de tout le monde : un abonné, même Pro, ne doit
+  // pas pouvoir la réécrire. Seul l'administrateur qui fait tourner le
+  // pipeline le peut — et ce pipeline tourne dans son navigateur (décision
+  // #9), pas dans un job serveur, donc la règle doit bien l'autoriser.
+  it("refuse l'écriture à un abonné, même Pro", async () => {
+    await seedArchive();
+    await seedUser("archive-writer", {
+      slug: "pro",
+      status: "active",
+      currentPeriodEnd: null,
+      stripeCustomerId: null,
+    });
+    await assertFails(archive("archive-writer").set({ days: [] }));
+  });
+
+  it("autorise l'administrateur qui fait tourner le pipeline", async () => {
+    await seedArchive();
+    await testEnv.withSecurityRulesDisabled((ctx) =>
+      ctx
+        .firestore()
+        .collection("users")
+        .doc("archive-admin")
+        .set(validUser("archive-admin", { role: "admin" })),
+    );
+    await assertSucceeds(
+      archive("archive-admin").set({ updatedAt: "x", labels: {}, days: [] }),
+    );
+  });
+});

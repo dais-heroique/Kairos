@@ -8,6 +8,8 @@ import {
   type RankingFilters,
 } from "@/components/RankingControls";
 import { RankingList } from "@/components/RankingList";
+import { ExportButton } from "@/components/ExportButton";
+import { ProductCompare } from "@/components/ProductCompare";
 import { RankingMeta } from "@/components/RankingMeta";
 import { getRankingPageData, type RankingPageData } from "@/server/firestore/rankings";
 
@@ -48,9 +50,12 @@ export default function ProduitsPage() {
 
   return (
     <div className="flex flex-col gap-3">
-      <p className="text-sm text-[color:var(--color-ink-muted)]">
-        Trié par ventes estimées sur 7 jours.
-      </p>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <p className="text-sm text-[color:var(--color-ink-muted)]">
+          Trié par ventes estimées sur 7 jours.
+        </p>
+        <ExportButton items={visible} nom="produits" />
+      </div>
       {data && <RankingMeta generatedAt={data.generatedAt} isDemo={data.isDemo} />}
 
       <RankingControls
@@ -74,7 +79,22 @@ export default function ProduitsPage() {
           prix ou retire un verdict.
         </p>
       ) : (
-        <RankingList items={visible} />
+        <>
+          <RankingList items={visible} />
+
+          {/* Le classement répond « lequel est le mieux placé ». Le
+              comparateur répond « lequel je tourne, entre ces trois-là ».
+              Aucune lecture Firestore de plus : tout est déjà dans les
+              items. Capacité Pro. */}
+          <section className="mt-6 flex flex-col gap-3">
+            <h2 className="font-[family-name:var(--font-display)] text-lg font-bold">
+              Comparer face à face
+            </h2>
+            <div className="kai-card">
+              <ProductCompare items={visible} />
+            </div>
+          </section>
+        </>
       )}
     </div>
   );

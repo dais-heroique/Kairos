@@ -27,6 +27,9 @@ export const CAPABILITIES = [
   "brief",
   "alerts",
   "rankingArchive",
+  "rankTrend",
+  "productCompare",
+  "dataExport",
 ] as const;
 export type Capability = (typeof CAPABILITIES)[number];
 
@@ -87,12 +90,33 @@ export const CAPABILITY_INFO: Record<Capability, CapabilityInfo> = {
     status: "live",
   },
   alerts: {
-    label: "Un message quand un produit que tu suis commence à être fait par trop de monde",
-    status: "soon",
+    label:
+      "Ce qui a bougé sur tes produits suivis depuis ta dernière visite : ceux qui montent, et ceux où la place se remplit",
+    status: "live",
   },
+  // ---- Ce qui distingue Pro -----------------------------------------------
+  // Creator répond à « quel produit je tourne cette semaine ». Pro répond à
+  // « comment je pilote ça dans la durée » : l'historique des classements,
+  // la trajectoire d'un produit, la comparaison côte à côte, et la sortie
+  // des données. Ce sont les besoins de quelqu'un qui en fait un revenu,
+  // pas de quelqu'un qui teste.
   rankingArchive: {
-    label: "Revoir les listes des semaines passées, pour suivre un produit dans la durée",
-    status: "soon",
+    label: "Revoir les classements des semaines passées, jour par jour",
+    status: "live",
+  },
+  rankTrend: {
+    label:
+      "La trajectoire d'un produit dans le classement : 34e il y a deux semaines, 6e aujourd'hui",
+    status: "live",
+  },
+  productCompare: {
+    label:
+      "Comparer jusqu'à quatre produits côte à côte : verdict, concurrence, fenêtre et gain",
+    status: "live",
+  },
+  dataExport: {
+    label: "Sortir tes classements et ta liste de suivi en tableau (CSV)",
+    status: "live",
   },
 };
 
