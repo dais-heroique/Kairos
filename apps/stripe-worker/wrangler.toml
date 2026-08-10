@@ -25,16 +25,15 @@ ALLOWED_ORIGINS = "https://kairos-on.web.app,https://kairos-on.firebaseapp.com"
 # invendable — le bouton correspondant ne s'affiche pas, et `/health` liste
 # ce qui manque. Lancer avec Creator seul est un cas prévu.
 #
-# ⚠️ Les deux prix Creator sont actuellement posés en **secrets** dans le
-# tableau de bord Cloudflare (le déploiement se fait depuis un téléphone,
-# où éditer ce fichier coûte plus cher qu'ouvrir un formulaire). Le code
-# lit `env.STRIPE_PRICE_*` sans savoir d'où ça vient, donc les deux
-# emplacements marchent — mais **jamais les deux à la fois** : un secret et
-# une variable du même nom entrent en conflit au déploiement. Ne décommente
-# les lignes Creator ci-dessous qu'après avoir supprimé les secrets
-# correspondants.
-# STRIPE_PRICE_CREATOR_MONTHLY = "price_..."
-# STRIPE_PRICE_CREATOR_YEARLY  = "price_..."
+# ⚠️ Ces valeurs vivent **ici et nulle part ailleurs**. Posées en secrets
+# dans le tableau de bord, elles ne sont pas remontées jusqu'au Worker
+# (constaté le 2026-08-10 : `/health` listait Creator comme manquant alors
+# que les deux secrets existaient). Le fichier, lui, est déployé tel quel à
+# chaque commit — c'est vérifiable en relisant le dépôt. Si un secret du
+# même nom est recréé plus tard, il entrera en conflit avec la variable
+# ci-dessous : n'en garder qu'un seul emplacement, celui-ci.
+STRIPE_PRICE_CREATOR_MONTHLY = "price_1U2Zjw4Do0A9o9JDl0l0oZkU"
+STRIPE_PRICE_CREATOR_YEARLY  = "price_1U2ZmQ4Do0A9o9JDMmG04oUW"
 # STRIPE_PRICE_PRO_MONTHLY     = "price_..."
 # STRIPE_PRICE_PRO_YEARLY      = "price_..."
 
