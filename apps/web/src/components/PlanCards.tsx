@@ -1,12 +1,19 @@
+"use client";
+
 import Link from "next/link";
+import { useState } from "react";
 import {
+  type BillingPeriod,
   CAPABILITIES_BY_PLAN,
   CAPABILITY_INFO,
   FOUNDING_PRICE_LOCK,
   FREE_PLAN_NOTES,
   formatPlanPrice,
+  formatYearlyAsMonthly,
   newCapabilitiesOf,
+  planPriceCents,
   PLANS,
+  yearlySavingsPct,
 } from "@kairos/shared";
 import { SubscribeButton } from "@/components/SubscribeButton";
 
@@ -29,6 +36,75 @@ import { SubscribeButton } from "@/components/SubscribeButton";
 // ça ajoute, total hérité — pour qu'aucune ne paraisse creuse.
 
 export function PlanCards({ compact = false }: { compact?: boolean }) {
+  const [period, setPeriod] = useState<BillingPeriod>("monthly");
+
+  // Le sélecteur n'apparaît que si un tarif annuel existe réellement.
+  // Proposer un choix dont une branche affiche « Bientôt » partout ferait
+  // cliquer pour rien.
+  const hasYearly = PLANS.some((p) => p.yearlyPriceCents !== null && p.yearlyPriceCents > 0);
+
+  return (
+    <div className="flex flex-col gap-4">
+      {hasYearly && <PeriodToggle period={period} onChange={setPeriod} />}
+      <PlanGrid compact={compact} period={period} />
+    </div>
+  );
+}
+
+function PeriodToggle({
+  period,
+  onChange,
+}: {
+  period: BillingPeriod;
+  onChange: (next: BillingPeriod) => void;
+}) {
+  // L'économie annoncée est celle du plan mis en avant, calculée à partir
+  // des deux montants réels (`yearlySavingsPct`) : jamais un « -20 % »
+  // décoratif qui ne correspondrait pas à la facture.
+  const featured = PLANS.find((p) => p.popular) ?? PLANS[1]!;
+  const savings = yearlySavingsPct(featured);
+
+  return (
+    <div className="flex justify-center">
+      <div
+        role="radiogroup"
+        aria-label="Périodicité de facturation"
+        className="inline-flex items-center gap-1 rounded-full p-1"
+        style={{ backgroundColor: "var(--color-surface)", border: "1px solid var(--color-border)" }}
+      >
+        {(
+          [
+            ["monthly", "Mensuel"],
+            ["yearly", "Annuel"],
+          ] as const
+        ).map(([value, label]) => {
+          const active = period === value;
+          return (
+            <button
+              key={value}
+              type="button"
+              role="radio"
+              aria-checked={active}
+              onClick={() => onChange(value)}
+              className="rounded-full px-4 py-1.5 text-sm font-bold transition-colors"
+              style={{
+                backgroundColor: active ? "var(--color-coral)" : "transparent",
+                color: active ? "var(--color-coral-ink)" : "var(--color-ink-muted)",
+              }}
+            >
+              {label}
+              {value === "yearly" && savings !== null && (
+                <span className="ml-1.5 text-[11px] font-bold opacity-90">−{savings} %</span>
+              )}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function PlanGrid({ compact, period }: { compact: boolean; period: BillingPeriod }) {
   return (
     <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
       {PLANS.map((plan, index) => {
@@ -65,8 +141,16 @@ export function PlanCards({ compact = false }: { compact?: boolean }) {
                 {plan.name}
               </h3>
               <p className="mt-0.5 font-[family-name:var(--font-display)] text-2xl font-extrabold">
-                {formatPlanPrice(plan)}
+                {formatPlanPrice(plan, period)}
               </p>
+              {/* Le prix annuel ramené au mois : sans lui, comparer 19 €/mois
+                  à 190 €/an demande de sortir une calculette. Calculé à
+                  partir du montant réel, jamais saisi à part. */}
+              {period === "yearly" && formatYearlyAsMonthly(plan) && (
+                <p className="text-xs font-semibold text-[color:var(--color-ink-muted)]">
+                  soit {formatYearlyAsMonthly(plan)}, facturé en une fois
+                </p>
+              )}
               <p className="text-sm text-[color:var(--color-ink-muted)]">{plan.tagline}</p>
             </div>
 
@@ -188,7 +272,7 @@ export function PlanCards({ compact = false }: { compact?: boolean }) {
               {total} fonctionnalité{total > 1 ? "s" : ""} au total
             </p>
 
-            {!compact && <PlanCta plan={plan} />}
+            {!compact && <PlanCta plan={plan} period={period} />}
           </div>
         );
       })}
@@ -196,7 +280,13 @@ export function PlanCards({ compact = false }: { compact?: boolean }) {
   );
 }
 
-function PlanCta({ plan }: { plan: (typeof PLANS)[number] }) {
+function PlanCta({
+  plan,
+  period,
+}: {
+  plan: (typeof PLANS)[number];
+  period: BillingPeriod;
+}) {
   if (plan.priceCents === 0) {
     return (
       <Link href="/connexion" className="kai-btn-primary text-center">
@@ -208,7 +298,7 @@ function PlanCta({ plan }: { plan: (typeof PLANS)[number] }) {
   // Aucun tarif décidé : un bouton « Payer » qui ne mène nulle part serait
   // pire que de dire la vérité. Mais laisser un pavé mort ne sert personne
   // — on renvoie vers la seule action qui existe.
-  if (plan.priceCents === null) {
+  if (planPriceCents(plan, period) === null) {
     return (
       <div className="flex flex-col gap-1.5">
         <Link href="/connexion" className="kai-btn-outline text-center">
@@ -233,6 +323,7 @@ function PlanCta({ plan }: { plan: (typeof PLANS)[number] }) {
   return (
     <SubscribeButton
       plan={plan.slug as "creator" | "pro"}
+      period={period}
       label={`Passer en ${plan.name}`}
     />
   );

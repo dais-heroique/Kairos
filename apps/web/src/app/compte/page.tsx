@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { type FormEvent, useState } from "react";
 import { AppShell } from "@/components/AppShell";
 import { RequireAuth } from "@/components/RequireAuth";
+import { SubscriptionCard } from "@/components/SubscriptionCard";
 import { deleteCurrentUserAccount, signOutUser } from "@/lib/firebase/auth";
 import { useAuth } from "@/lib/firebase/auth-context";
 import { deleteOwnUserData, exportOwnData } from "@/lib/firestore/user";
@@ -137,6 +138,8 @@ function AccountContent() {
           </a>
         )}
       </div>
+
+      {userDoc && <SubscriptionCard plan={userDoc.plan} />}
 
       <button type="button" onClick={handleSignOut} className="kai-btn-outline">
         {t("signOutButton")}

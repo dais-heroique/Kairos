@@ -211,6 +211,18 @@ export const FREE_PLAN_NOTES: readonly string[] = [
   `Les gains chiffrés sur les ${FREE_LIMITS.earningsTop} premiers produits de la liste`,
 ];
 
+/**
+ * Les deux périodicités facturables.
+ *
+ * Défini ici plutôt que dans `@kairos/payments` parce que `plans.ts` est en
+ * dessous dans le graphe de dépendances — `payments` importe `shared`, pas
+ * l'inverse. `payments` réexporte ce type, de sorte que le catalogue Stripe
+ * et les prix affichés parlent littéralement du même ensemble de valeurs :
+ * ajouter une périodicité d'un côté sans l'autre ne compilerait pas.
+ */
+export const BILLING_PERIODS = ["monthly", "yearly"] as const;
+export type BillingPeriod = (typeof BILLING_PERIODS)[number];
+
 export interface PlanDefinition {
   slug: PlanSlug;
   name: string;
@@ -221,6 +233,13 @@ export interface PlanDefinition {
    * rien annoncer.
    */
   priceCents: number | null;
+  /**
+   * Prix annuel en centimes, même règle. Séparé du mensuel et non calculé
+   * à partir de lui : appliquer une remise de tête (« × 10 mois ») ici
+   * afficherait un montant que Stripe ne facturerait pas. Les deux nombres
+   * viennent du tableau de bord Stripe, chacun saisi une fois.
+   */
+  yearlyPriceCents: number | null;
   tagline: string;
   /** Ce que ce plan apporte *en plus* du précédent. */
   highlight: string;
@@ -232,6 +251,7 @@ export const PLANS: PlanDefinition[] = [
     slug: "radar",
     name: "Radar",
     priceCents: 0,
+    yearlyPriceCents: 0,
     tagline: "Pour voir si l'outil te parle",
     highlight:
       "Toute la liste des produits, la recommandation pour chacun, et un texte de tournage offert",
@@ -241,6 +261,7 @@ export const PLANS: PlanDefinition[] = [
     slug: "creator",
     name: "Creator",
     priceCents: null,
+    yearlyPriceCents: null,
     tagline: "Pour qui poste chaque semaine",
     highlight: "Tes gains sur tous les produits, les courbes, et le texte à dire",
     popular: true,
@@ -249,6 +270,7 @@ export const PLANS: PlanDefinition[] = [
     slug: "pro",
     name: "Pro",
     priceCents: null,
+    yearlyPriceCents: null,
     tagline: "Pour en faire un vrai revenu",
     highlight: "Suivre un produit sur plusieurs semaines",
     popular: false,
@@ -299,8 +321,50 @@ export const TYPICAL_WINDOW_DAYS = { min: 15, max: 40 } as const;
  */
 export const FOUNDING_PRICE_LOCK = true;
 
-export function formatPlanPrice(plan: PlanDefinition): string {
-  if (plan.priceCents === 0) return "Gratuit";
-  if (plan.priceCents === null) return "Bientôt";
-  return `${(plan.priceCents / 100).toFixed(2).replace(".", ",")} € / mois`;
+/** Le montant d'un plan pour une périodicité, `null` s'il n'est pas arrêté. */
+export function planPriceCents(
+  plan: PlanDefinition,
+  period: BillingPeriod = "monthly",
+): number | null {
+  return period === "yearly" ? plan.yearlyPriceCents : plan.priceCents;
+}
+
+function formatEuros(cents: number): string {
+  return `${(cents / 100).toFixed(2).replace(".", ",")} €`;
+}
+
+export function formatPlanPrice(
+  plan: PlanDefinition,
+  period: BillingPeriod = "monthly",
+): string {
+  const cents = planPriceCents(plan, period);
+  if (cents === 0) return "Gratuit";
+  if (cents === null) return "Bientôt";
+  return `${formatEuros(cents)} / ${period === "yearly" ? "an" : "mois"}`;
+}
+
+/**
+ * Ce que l'annuel revient par mois — le seul chiffre qui permet de comparer
+ * les deux périodicités d'un coup d'œil. Calculé, jamais saisi : un montant
+ * mensuel affiché à côté d'un annuel qui ne s'y ramène pas serait une
+ * publicité mensongère au sens strict.
+ */
+export function formatYearlyAsMonthly(plan: PlanDefinition): string | null {
+  if (plan.yearlyPriceCents === null || plan.yearlyPriceCents === 0) return null;
+  return `${formatEuros(Math.round(plan.yearlyPriceCents / 12))} / mois`;
+}
+
+/**
+ * L'économie réelle de l'annuel, en pourcentage entier arrondi **vers le
+ * bas** — annoncer « 20 % » pour 19,6 % serait promettre plus que ce qu'on
+ * facture. `null` dès qu'un des deux montants manque, ou que l'annuel
+ * n'est pas avantageux : on n'affiche pas un badge « économisez 0 % ».
+ */
+export function yearlySavingsPct(plan: PlanDefinition): number | null {
+  const { priceCents, yearlyPriceCents } = plan;
+  if (priceCents === null || yearlyPriceCents === null) return null;
+  if (priceCents === 0 || yearlyPriceCents === 0) return null;
+  const fullYear = priceCents * 12;
+  if (yearlyPriceCents >= fullYear) return null;
+  return Math.floor(((fullYear - yearlyPriceCents) / fullYear) * 100);
 }

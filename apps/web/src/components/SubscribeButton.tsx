@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import type { PlanSlug } from "@kairos/shared";
+import type { BillingPeriod, PlanSlug } from "@kairos/shared";
 import { useAuth } from "@/lib/firebase/auth-context";
 import { CheckoutError, isCheckoutConfigured, startCheckout } from "@/lib/stripe/checkout";
 
@@ -17,12 +17,20 @@ type PaidPlan = Extract<PlanSlug, "creator" | "pro">;
  * existe alors. Un bouton « Payer » qui renvoie une erreur ferait croire à
  * une panne ; dire « pas encore ouvert » dit la vérité.
  */
-export function SubscribeButton({ plan, label }: { plan: PaidPlan; label: string }) {
+export function SubscribeButton({
+  plan,
+  label,
+  period = "monthly",
+}: {
+  plan: PaidPlan;
+  label: string;
+  period?: BillingPeriod;
+}) {
   const { firebaseUser } = useAuth();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  if (!isCheckoutConfigured(plan)) {
+  if (!isCheckoutConfigured(plan, period)) {
     return (
       <Link href="/connexion" className="kai-btn-outline text-center">
         Commencer gratuitement en attendant
@@ -44,7 +52,7 @@ export function SubscribeButton({ plan, label }: { plan: PaidPlan; label: string
     setBusy(true);
     setError(null);
     try {
-      await startCheckout(plan);
+      await startCheckout(plan, period);
     } catch (err) {
       setError(
         err instanceof CheckoutError

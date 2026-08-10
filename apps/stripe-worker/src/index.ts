@@ -113,6 +113,49 @@ async function handleCheckout(request: Request, env: WorkerEnv, origin: string |
 }
 
 /**
+ * Ouvre le portail client Stripe — c'est là que le client change de moyen
+ * de paiement, télécharge ses factures et **résilie**.
+ *
+ * Pouvoir résilier aussi facilement qu'on s'est abonné est une obligation
+ * légale (article L. 215-1 du code de la consommation, « bouton
+ * résiliation »), pas un confort. Le portail hébergé de Stripe la remplit
+ * sans qu'on ait à écrire d'écran de gestion d'abonnement.
+ *
+ * L'identifiant client vient du document Firestore, jamais de la requête :
+ * accepter un `customerId` envoyé par le navigateur ouvrirait le portail —
+ * donc les factures et les cartes — de n'importe quel client.
+ */
+async function handlePortal(request: Request, env: WorkerEnv, origin: string | null) {
+  const token = bearerToken(request.headers.get("authorization"));
+  if (!token) return json({ error: "Connexion requise." }, 401, origin);
+
+  let user;
+  try {
+    user = await verifyFirebaseToken(token, env.FIREBASE_PROJECT_ID);
+  } catch (error) {
+    if (error instanceof TokenError) return json({ error: error.message }, 401, origin);
+    throw error;
+  }
+
+  const snapshot = await readUser(env, user.uid);
+  if (!snapshot?.stripeCustomerId) {
+    // Cas réel et non exceptionnel : compte fondateur, plan accordé à la
+    // main via `pnpm grant:plan`, ou simple utilisateur gratuit. Aucun
+    // client Stripe n'existe, donc aucun portail. On le dit.
+    return json({ error: "Aucun abonnement payant n'est rattaché à ce compte." }, 404, origin);
+  }
+
+  const site = origin ?? env.ALLOWED_ORIGINS.split(",")[0]!.trim();
+  const session = await stripeClient(env).billingPortal.sessions.create({
+    customer: snapshot.stripeCustomerId,
+    return_url: `${site}/compte`,
+    locale: "fr",
+  });
+
+  return json({ url: session.url }, 200, origin);
+}
+
+/**
  * Reçoit les événements Stripe et applique le plan.
  *
  * La signature est vérifiée sur le **texte brut** du corps : le relire après
@@ -198,6 +241,11 @@ export default {
       if (url.pathname === "/stripe/checkout" && request.method === "POST") {
         if (!origin) return json({ error: "Origine non autorisée." }, 403, null);
         return await handleCheckout(request, env, origin);
+      }
+
+      if (url.pathname === "/stripe/portal" && request.method === "POST") {
+        if (!origin) return json({ error: "Origine non autorisée." }, 403, null);
+        return await handlePortal(request, env, origin);
       }
 
       if (url.pathname === "/health") {

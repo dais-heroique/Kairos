@@ -1,4 +1,4 @@
-import type { PlanSlug } from "@kairos/shared";
+import { BILLING_PERIODS, type BillingPeriod, type PlanSlug } from "@kairos/shared";
 
 // Correspondance entre les prix Stripe et les plans KAIROS.
 //
@@ -12,8 +12,10 @@ import type { PlanSlug } from "@kairos/shared";
 // prix. Ils arrivent par variables d'environnement, côté serveur
 // uniquement.
 
-export const BILLING_PERIODS = ["monthly", "yearly"] as const;
-export type BillingPeriod = (typeof BILLING_PERIODS)[number];
+// Réexportés depuis `@kairos/shared`, où ils sont définis. Le catalogue
+// Stripe et les prix affichés désignent ainsi le même ensemble de valeurs :
+// ajouter une périodicité d'un côté sans l'autre ne compilerait pas.
+export { BILLING_PERIODS, type BillingPeriod };
 
 /** Un prix vendable : un plan × une périodicité. */
 export interface PriceRef {
