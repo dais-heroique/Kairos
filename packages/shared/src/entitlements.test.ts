@@ -5,6 +5,8 @@ import {
   CAPABILITIES,
   CAPABILITIES_BY_PLAN,
   CAPABILITY_INFO,
+  FREE_LIMITS,
+  freeBriefsRemaining,
   newCapabilitiesOf,
   planUnlocking,
   PLANS,
@@ -196,5 +198,42 @@ describe("statut réel des fonctionnalités", () => {
     for (const c of CAPABILITIES_BY_PLAN.radar) {
       expect(CAPABILITY_INFO[c].status).toBe("live");
     }
+  });
+});
+
+// Le plan gratuit doit rester attirant sans donner l'outil entier : un
+// gratuit inutile ne convertit personne, un gratuit complet ne se
+// transforme jamais en abonnement.
+describe("limites du plan gratuit", () => {
+  it("plafonne les produits suivis pour le gratuit, pas pour les payants", () => {
+    expect(entitlementsOf(makeUser()).watchlistLimit).toBe(FREE_LIMITS.watchlist);
+    expect(entitlementsOf(makeUser({ slug: "creator" })).watchlistLimit).toBeUndefined();
+    expect(entitlementsOf(makeUser({ slug: "pro" })).watchlistLimit).toBeUndefined();
+  });
+
+  it("ne plafonne pas l'accès fondateur", () => {
+    const fondateur = makeUser({ email: "contact.conforva@gmail.com" });
+    expect(entitlementsOf(fondateur).watchlistLimit).toBeUndefined();
+  });
+
+  // Un abonnement impayé redescend au gratuit : le plafond doit revenir
+  // avec, sinon il suffirait de ne pas payer pour garder l'illimité.
+  it("replafonne un abonnement impayé", () => {
+    const impaye = makeUser({ slug: "creator", status: "past_due" });
+    expect(entitlementsOf(impaye).watchlistLimit).toBe(FREE_LIMITS.watchlist);
+  });
+
+  it("décompte les briefs gratuits sans jamais passer sous zéro", () => {
+    expect(freeBriefsRemaining(0)).toBe(FREE_LIMITS.briefs);
+    expect(freeBriefsRemaining(FREE_LIMITS.briefs)).toBe(0);
+    expect(freeBriefsRemaining(FREE_LIMITS.briefs + 5)).toBe(0);
+  });
+
+  // Le gratuit doit permettre d'aller au bout de la boucle une fois :
+  // trouver un produit, voir le gain, le suivre, obtenir le texte à dire.
+  // Sans le brief, il ne reste qu'une liste à regarder.
+  it("laisse le gratuit produire au moins une vidéo", () => {
+    expect(FREE_LIMITS.briefs).toBeGreaterThan(0);
+    expect(FREE_LIMITS.watchlist).toBeGreaterThan(0);
   });
 });

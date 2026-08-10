@@ -784,3 +784,97 @@ describe("archive des classements — capacité payante", () => {
     );
   });
 });
+
+// Le quota de briefs du plan gratuit est le **seul** verrou du gratuit qui
+// soit réellement appliqué côté serveur. Le reste (top 10 des gains, taille
+// de la watchlist) est du rendu client, assumé : ce sont des limites de
+// confort sur des données que l'utilisateur voit déjà. Ici c'est différent —
+// pouvoir supprimer un brief débloqué reviendrait à s'en offrir une infinité.
+describe("quota de briefs du plan gratuit", () => {
+  const brief = (uid: string, productId = "p1") =>
+    testEnv
+      .authenticatedContext(uid)
+      .firestore()
+      .collection("users")
+      .doc(uid)
+      .collection("briefs")
+      .doc(productId);
+
+  async function seedUser(uid: string) {
+    await testEnv.withSecurityRulesDisabled((ctx) =>
+      ctx.firestore().collection("users").doc(uid).set(validUser(uid)),
+    );
+  }
+
+  it("laisse débloquer un brief", async () => {
+    await seedUser("brief-uid");
+    await assertSucceeds(brief("brief-uid").set({ unlockedAt: "2026-08-09T00:00:00.000Z" }));
+  });
+
+  it("laisse relire ses propres briefs débloqués", async () => {
+    await seedUser("brief-read");
+    await testEnv.withSecurityRulesDisabled((ctx) =>
+      ctx
+        .firestore()
+        .collection("users")
+        .doc("brief-read")
+        .collection("briefs")
+        .doc("p1")
+        .set({ unlockedAt: "2026-08-09T00:00:00.000Z" }),
+    );
+    await assertSucceeds(brief("brief-read").get());
+  });
+
+  // Le point entier de la règle : sans ça, le quota ne serait qu'un
+  // affichage, et un compte gratuit s'offrirait autant de briefs qu'il veut.
+  it("interdit de supprimer un brief débloqué — sinon le compteur se remet à zéro", async () => {
+    await seedUser("brief-cheat");
+    await testEnv.withSecurityRulesDisabled((ctx) =>
+      ctx
+        .firestore()
+        .collection("users")
+        .doc("brief-cheat")
+        .collection("briefs")
+        .doc("p1")
+        .set({ unlockedAt: "2026-08-09T00:00:00.000Z" }),
+    );
+    await assertFails(brief("brief-cheat").delete());
+  });
+
+  it("interdit de réécrire un brief débloqué", async () => {
+    await seedUser("brief-update");
+    await testEnv.withSecurityRulesDisabled((ctx) =>
+      ctx
+        .firestore()
+        .collection("users")
+        .doc("brief-update")
+        .collection("briefs")
+        .doc("p1")
+        .set({ unlockedAt: "2026-08-09T00:00:00.000Z" }),
+    );
+    await assertFails(brief("brief-update").set({ unlockedAt: "2020-01-01T00:00:00.000Z" }));
+  });
+
+  it("interdit de lire les briefs de quelqu'un d'autre", async () => {
+    await seedUser("brief-a");
+    await testEnv.withSecurityRulesDisabled((ctx) =>
+      ctx
+        .firestore()
+        .collection("users")
+        .doc("brief-a")
+        .collection("briefs")
+        .doc("p1")
+        .set({ unlockedAt: "2026-08-09T00:00:00.000Z" }),
+    );
+    await assertFails(
+      testEnv
+        .authenticatedContext("brief-b")
+        .firestore()
+        .collection("users")
+        .doc("brief-a")
+        .collection("briefs")
+        .doc("p1")
+        .get(),
+    );
+  });
+});

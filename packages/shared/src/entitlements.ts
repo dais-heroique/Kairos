@@ -1,4 +1,6 @@
-import { CAPABILITIES, CAPABILITIES_BY_PLAN, type Capability } from "./plans";
+import { CAPABILITIES, CAPABILITIES_BY_PLAN, type Capability,
+  FREE_LIMITS,
+} from "./plans";
 import type { PlanSlug, User } from "./user";
 
 // Un seul endroit décide de ce à quoi un compte a droit, et il lit le
@@ -32,6 +34,15 @@ export interface Entitlements {
   can: (capability: Capability) => boolean;
   /** Générations de brief IA par mois (voir packages/ai-gateway). */
   monthlyBriefs: number;
+  /**
+   * Nombre de produits suivis simultanément, ou `undefined` si illimité.
+   *
+   * Dérivé du plan effectif plutôt que recopié dans chaque écran : les
+   * trois endroits qui ajoutent à la watchlist (classement, fiche produit,
+   * tableau de bord) doivent appliquer exactement la même règle, sinon la
+   * limite se contourne en changeant de page.
+   */
+  watchlistLimit: number | undefined;
 }
 
 const MONTHLY_BRIEFS: Record<PlanSlug, number> = { radar: 3, creator: 60, pro: 200 };
@@ -52,6 +63,9 @@ function build(plan: PlanSlug, founder: boolean): Entitlements {
     isFounderAccess: founder,
     can: (capability) => granted.has(capability),
     monthlyBriefs: founder ? MONTHLY_BRIEFS.pro : MONTHLY_BRIEFS[plan],
+    // Seul le plan gratuit est plafonné. Un compte payant, ou un accès
+    // fondateur, suit autant de produits qu'il veut.
+    watchlistLimit: founder || plan !== "radar" ? undefined : FREE_LIMITS.watchlist,
   };
 }
 

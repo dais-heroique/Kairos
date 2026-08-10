@@ -11,12 +11,18 @@ import {
 } from "@kairos/core";
 import {
   entitlementsOf,
+  freeBriefsRemaining,
   type Brief,
   type ComplianceRule,
   type ProductVerdict,
 } from "@kairos/shared";
 import { BottomNav } from "@/components/BottomNav";
 import { PaywallGate } from "@/components/PaywallGate";
+import {
+  hasUnlockedBrief,
+  listUnlockedBriefs,
+  unlockBrief,
+} from "@/lib/firestore/unlocked-briefs";
 import { RequireAuth } from "@/components/RequireAuth";
 import { Teleprompter } from "@/components/Teleprompter";
 import { useAuth } from "@/lib/firebase/auth-context";
@@ -52,12 +58,17 @@ function BriefPreview() {
 
 function BriefContent() {
   const productId = useSearchParams().get("id") ?? "";
-  const { userDoc } = useAuth();
+  const { firebaseUser, userDoc } = useAuth();
 
   const [item, setItem] = useState<ProductRankItem | null | undefined>(undefined);
   const [rules, setRules] = useState<ComplianceRule[] | null>(null);
   const [teleprompter, setTeleprompter] = useState(false);
   const [copied, setCopied] = useState(false);
+  // `null` = on ne sait pas encore. Afficher un mur avant d'avoir compté
+  // ferait clignoter le paywall sous les yeux de quelqu'un qui y a droit.
+  const [freeAccess, setFreeAccess] = useState<
+    { granted: boolean; remaining: number } | null
+  >(null);
 
   useEffect(() => {
     if (!productId) return;
@@ -71,6 +82,42 @@ function BriefContent() {
   }, [productId]);
 
   const entitlements = entitlementsOf(userDoc);
+  const paidBrief = entitlements.can("brief");
+
+  // Quota du plan gratuit : la boucle complète est jouable une fois, texte
+  // à dire compris. Quelqu'un qui a tourné une vidéo avec sait exactement
+  // ce qu'il achète ensuite — c'est plus convaincant qu'une démonstration.
+  useEffect(() => {
+    if (paidBrief || !firebaseUser || !productId) return;
+    let cancelled = false;
+
+    (async () => {
+      const [dejaOuvert, ouverts] = await Promise.all([
+        hasUnlockedBrief(firebaseUser.uid, productId),
+        listUnlockedBriefs(firebaseUser.uid),
+      ]);
+      if (cancelled) return;
+
+      if (dejaOuvert) {
+        // Revoir un brief déjà ouvert ne consomme rien : un quota qui se
+        // viderait à chaque rechargement serait perçu comme une arnaque.
+        setFreeAccess({ granted: true, remaining: freeBriefsRemaining(ouverts.length) });
+        return;
+      }
+
+      const restants = freeBriefsRemaining(ouverts.length);
+      if (restants > 0) {
+        await unlockBrief(firebaseUser.uid, productId);
+        if (!cancelled) setFreeAccess({ granted: true, remaining: restants - 1 });
+      } else if (!cancelled) {
+        setFreeAccess({ granted: false, remaining: 0 });
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [paidBrief, firebaseUser, productId]);
 
   const brief: Brief | null = useMemo(() => {
     if (!item || !rules || !userDoc) return null;
@@ -124,7 +171,11 @@ function BriefContent() {
     );
   }
 
-  if (!entitlements.can("brief")) {
+  if (!paidBrief && freeAccess === null) {
+    return <p className="p-5 text-sm text-[color:var(--color-ink-muted)]">Préparation du brief…</p>;
+  }
+
+  if (!paidBrief && !freeAccess?.granted) {
     return (
       <div className="m-5">
         <PaywallGate
@@ -159,6 +210,30 @@ function BriefContent() {
       <Link href={`/produit?id=${encodeURIComponent(item.id)}`} className="text-sm underline">
         ← {item.title}
       </Link>
+
+      {/* Un quota muet vaut un quota absent : celui qui vient de consommer
+          son brief gratuit doit savoir qu'il l'a consommé, et pourquoi le
+          suivant ne sera pas gratuit. Le dire ici, une fois le brief
+          affiché, plutôt qu'en travers de son chemin. */}
+      {!paidBrief && freeAccess?.granted && (
+        <div
+          className="flex flex-col gap-1.5 rounded-xl p-3 text-sm"
+          style={{ backgroundColor: "var(--color-coral-soft)" }}
+        >
+          <p className="font-bold" style={{ color: "var(--color-coral)" }}>
+            {freeAccess.remaining > 0
+              ? `Brief offert — il t'en reste ${freeAccess.remaining}`
+              : "C'était ton brief offert"}
+          </p>
+          <p className="text-[color:var(--color-ink-muted)]">
+            Tu peux revenir sur celui-ci autant de fois que tu veux. Pour en
+            obtenir sur d&apos;autres produits, il faut passer en Creator.{" "}
+            <Link href="/tarifs" className="underline">
+              Voir ce que ça débloque
+            </Link>
+          </p>
+        </div>
+      )}
 
       <div>
         <h1 className="font-[family-name:var(--font-display)] text-xl font-extrabold">

@@ -3,6 +3,7 @@ import {
   CAPABILITIES_BY_PLAN,
   CAPABILITY_INFO,
   FOUNDING_PRICE_LOCK,
+  FREE_PLAN_NOTES,
   formatPlanPrice,
   newCapabilitiesOf,
   PLANS,
@@ -119,6 +120,25 @@ export function PlanCards({ compact = false }: { compact?: boolean }) {
                 );
               })}
             </ul>
+
+            {/* Les limites du gratuit, annoncées ici et pas découvertes à
+                l'usage : un plafond qu'on rencontre après coup donne le
+                sentiment d'avoir été attiré sous un faux prétexte. */}
+            {isFirst && (
+              <ul className="flex flex-col gap-1.5">
+                {FREE_PLAN_NOTES.map((note) => (
+                  <li
+                    key={note}
+                    className="flex items-start gap-2 text-xs text-[color:var(--color-ink-muted)]"
+                  >
+                    <span aria-hidden className="mt-0.5 shrink-0">
+                      •
+                    </span>
+                    <span>{note}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
 
             {/* L'hérité, replié. Pro n'ajoute qu'une ligne : sans ceci, sa
                 carte est aux deux tiers vide et le plan le plus cher se lit

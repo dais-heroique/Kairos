@@ -126,7 +126,24 @@ service cloud.firestore {
 
       match /{subcollection}/{docId} {
         allow read, write: if isOwner(uid) && subcollection in
-          ["watchlist", "portfolio", "briefs", "notifications"];
+          ["watchlist", "portfolio", "notifications"];
+      }
+
+      // Briefs débloqués — c'est ce qui compte le quota du plan gratuit
+      // (FREE_LIMITS.briefs). Un document par produit, créé au premier
+      // affichage : revoir le même brief ne consomme donc rien.
+      //
+      // Création seule, jamais de suppression ni de modification. Pouvoir
+      // les supprimer reviendrait à remettre son propre compteur à zéro,
+      // et le quota ne serait qu'un affichage. C'est le seul endroit du
+      // plan gratuit qui est réellement appliqué côté serveur — le reste
+      // (top 10 des gains, taille de la watchlist) est du rendu client,
+      // assumé comme tel : ce sont des limites de confort, pas des
+      // secrets. L'inverse serait de la sécurité de façade.
+      match /briefs/{productId} {
+        allow read: if isOwner(uid);
+        allow create: if isOwner(uid);
+        allow update, delete: if false;
       }
 
       // Sous-collection à document unique (§5) — {docId=**} pour couvrir le

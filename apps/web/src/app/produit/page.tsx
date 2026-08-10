@@ -252,7 +252,7 @@ function ProduitContent() {
           type="button"
           onClick={async () => {
             if (!firebaseUser) return;
-            await addToWatchlist(firebaseUser.uid, item.id);
+            await addToWatchlist(firebaseUser.uid, item.id, entitlements.watchlistLimit);
             setSaved(true);
           }}
           disabled={saved}

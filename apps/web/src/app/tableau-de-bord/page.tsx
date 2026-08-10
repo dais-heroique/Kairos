@@ -150,7 +150,7 @@ function DashboardContent() {
 
   async function handleAdd(productId: string) {
     if (!firebaseUser) return;
-    await addToWatchlist(firebaseUser.uid, productId);
+    await addToWatchlist(firebaseUser.uid, productId, entitlements.watchlistLimit);
     setAdded((prev) => new Set(prev).add(productId));
     setWatchlist((prev) => [
       ...prev,

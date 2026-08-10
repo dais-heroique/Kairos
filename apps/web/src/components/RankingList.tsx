@@ -3,19 +3,21 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { computeEarnings, DEFAULT_EARNINGS_CONFIG } from "@kairos/core";
-import { entitlementsOf, type EstimatedRange } from "@kairos/shared";
+import { entitlementsOf, FREE_LIMITS, type EstimatedRange } from "@kairos/shared";
 import type { ProductRankItem } from "@/types/product-rank-item";
 import { useAuth } from "@/lib/firebase/auth-context";
 import {
   addToWatchlist,
   getWatchlistIds,
   removeFromWatchlist,
+  WatchlistFullError,
 } from "@/lib/firestore/watchlist";
 import { ProductRankCard } from "./ProductRankCard";
 
-// Radar (gratuit) voit le top 10, le reste est verrouillé — §6.5. Creator
-// et Pro voient tout.
-const FREE_PLAN_LIMIT = 10;
+// Radar (gratuit) voit les gains sur le top N, le reste est verrouillé.
+// La valeur vient du catalogue : la page de tarifs l'annonce, l'application
+// l'applique, et les deux ne peuvent pas diverger.
+const FREE_PLAN_LIMIT = FREE_LIMITS.earningsTop;
 
 interface RankingListProps {
   items: ProductRankItem[];
@@ -40,6 +42,7 @@ export function RankingList({
 }: RankingListProps) {
   const { firebaseUser, userDoc } = useAuth();
   const [saved, setSaved] = useState<Set<string>>(new Set());
+  const [watchlistError, setWatchlistError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!firebaseUser) return;
@@ -48,6 +51,7 @@ export function RankingList({
 
   async function handleToggleSave(item: ProductRankItem) {
     if (!firebaseUser) return;
+    setWatchlistError(null);
     if (saved.has(item.id)) {
       await removeFromWatchlist(firebaseUser.uid, item.id);
       setSaved((prev) => {
@@ -56,8 +60,18 @@ export function RankingList({
         return next;
       });
     } else {
-      await addToWatchlist(firebaseUser.uid, item.id);
-      setSaved((prev) => new Set(prev).add(item.id));
+      try {
+        await addToWatchlist(firebaseUser.uid, item.id, entitlements.watchlistLimit);
+        setSaved((prev) => new Set(prev).add(item.id));
+      } catch (error) {
+        // Le plafond du plan gratuit. On le dit à l'endroit où le geste a
+        // échoué, plutôt que de laisser l'étoile ne rien faire.
+        if (error instanceof WatchlistFullError) {
+          setWatchlistError(
+            `Le plan gratuit suit ${error.limit} produits à la fois. Retire-en un, ou passe en Creator pour en suivre autant que tu veux.`,
+          );
+        }
+      }
     }
   }
 
@@ -122,6 +136,15 @@ export function RankingList({
             </Link>
           </p>
         </div>
+      )}
+      {watchlistError && (
+        <p
+          className="kai-card text-sm font-semibold"
+          style={{ color: "var(--color-coral)" }}
+          role="status"
+        >
+          {watchlistError}
+        </p>
       )}
       {items.map((item, index) => (
         <ProductRankCard

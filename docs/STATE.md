@@ -16,7 +16,7 @@ Source de vérité du projet. Lu en premier à chaque session, mis à jour en de
   Apify, avec photos, prix, notes, avis et unités vendues.
 - `pnpm typecheck` et `pnpm lint` verts sur les 12 packages. Tests
   (2026-08-09, émulateur compris) : **116 web, 82 core, 48 collector,
-  46 règles, 37 affiliate, 30 shared, 18 jobs, 18 payments, 15 créa DNA,
+  51 règles, 37 affiliate, 35 shared, 18 jobs, 18 payments, 15 créa DNA,
   12 ai-gateway, 4 stripe-worker**. `core` passe à 82 (archive), `web` à 116.
 - ⚠️ **Les classements de production sont périmés** : ils datent d'avant les
   décisions #52 à #55. Il faut **relancer le pipeline depuis `/admin`** pour
@@ -218,6 +218,16 @@ le simulateur. Reste un ordre de grandeur à calibrer, pas un placeholder à
 
 69. **Des tests qui punissaient le travail** (2026-08-09) — trois tests codaient en dur que `alerts` et `rankingArchive` étaient « à venir », et un quatrième recopiait le libellé exact d'une capacité. Ils échouaient donc le jour où on les livrait, ou dès qu'on reformulait une phrase. Réécrits autour de l'invariant plutôt que de l'état : *toute capacité annoncée sans être livrée porte sa mention*, et — nouveau garde-fou né de ce défaut — **aucun palier payant ne se vend sur du vide** : chaque plan facturé doit ajouter au moins une capacité `live`.
 
+70. **Le plan gratuit va au bout de la boucle, une fois** (2026-08-09) — un plan gratuit qui ne sert à rien ne convertit personne, un plan gratuit qui donne tout ne se transforme jamais en abonnement. La ligne retenue : **le gratuit donne l'information et une production, le payant donne la production au rythme voulu.** Concrètement, un compte gratuit peut trouver un produit, voir ce qu'il rapporterait, le suivre, **et obtenir le texte à dire face caméra** — une fois. Quelqu'un qui a tourné une vidéo avec sait exactement ce qu'il achète ensuite ; c'est plus convaincant qu'une démonstration, et plus honnête.
+
+    `FREE_LIMITS` réunit les trois plafonds : **1 brief**, **5 produits suivis**, **gains chiffrés sur les 10 premiers**. Le dernier vivait en dur dans `RankingList.tsx` — la page de tarifs et l'application pouvaient donc annoncer deux chiffres différents. `FREE_PLAN_NOTES` en est **dérivé**, jamais recopié : un plafond annoncé qui ne correspond plus au plafond appliqué est exactement la promesse non tenue que ce fichier existe pour empêcher. Et il est affiché **sur la carte d'offre**, pas découvert à l'usage — rencontrer un plafond après coup donne le sentiment d'avoir été attiré sous un faux prétexte.
+
+71. **Le seul verrou du gratuit réellement appliqué côté serveur** (2026-08-09) — le quota de briefs se compte par l'existence des documents `users/{uid}/briefs/{productId}`, créés au premier affichage. Deux propriétés en découlent : **revoir un brief déjà ouvert ne consomme rien** (un quota qui se viderait à chaque rechargement serait perçu comme une arnaque, à juste titre), et **le compteur ne peut pas être remis à zéro** — la règle autorise `create` et interdit `update`/`delete`. Il a fallu **sortir `briefs` de la règle générique** `{subcollection}` : en Firestore, les règles ne se surchargent pas, elles s'additionnent, et une règle restrictive ajoutée à côté d'une permissive ne verrouille rien. 6 tests dédiés, dont celui qui compte : la suppression est refusée.
+
+    Le reste des limites du gratuit (top 10 des gains, taille de la watchlist) est du **rendu client, assumé comme tel** : une entrée de watchlist n'est qu'un pointeur vers un produit déjà visible gratuitement dans le classement. Ce qui est réellement protégé côté serveur, ce sont les données qui ne se reconstituent pas — l'historique des relevés et l'archive. Prétendre verrouiller le reste serait de la sécurité de façade.
+
+    `watchlistLimit` est porté par `entitlementsOf` et non recopié : les trois écrans qui ajoutent à la watchlist (classement, fiche produit, tableau de bord) appliquent la même règle, sinon la limite se contournerait en changeant de page. Un abonnement impayé **replafonne** — sinon il suffirait de ne pas payer pour garder l'illimité.
+
 ## Questions ouvertes (posées le 2026-08-03, aucune action prise)
 
 - ~~**La lecture publique du catalogue (décision #10) ne sert à rien.**~~ **Traité le 2026-08-05** (décision #39) : `/classements/*` est enveloppé dans `<RequireAuth>` : aucun visiteur anonyme n'atteint jamais ces pages — vérifié en naviguant réellement, on est redirigé vers `/connexion`. La justification d'origine (« rendues sans utilisateur connecté ») valait pour un rendu statique au build ; les pages sont depuis passées en `"use client"` + `useEffect`, ce qui l'a rendue caduque, mais la règle n'a jamais été refermée. **Repasser `products`/`shops`/`rankings`/`snapshots` en `isSignedIn()` ne coûterait aucune fonctionnalité** et fermerait le trou « n'importe qui vide la base ».
@@ -257,6 +267,7 @@ Ces points sont des arbitrages, pas des bugs : ils ne sont pas corrigés unilat�
 | Offres & paywall | ✅ **refondu** — catalogue unique (`plans.ts`) dont dérivent les droits, la page `/tarifs` et l'accueil ; `PaywallGate` montre l'aperçu flouté + tout ce que le palier débloque ; `productHistory` réellement appliqué dans `firestore.rules` (décisions #37-42) |
 | Interactivité | ✅ **étendue au site public** — `/methode` fait tourner le vrai moteur (préréglages + 5 curseurs) ; curseur de gains dans le hero ; `VerdictShowcase` et `ProductTour` sur l'accueil ; `PaywallDemo` sur `/tarifs`. Tout tourne dans le navigateur, sur les moteurs de production (décisions #34-35, #57-60) |
 | Paiement (`packages/payments`) | ✅ **cœur écrit et testé** (18 tests) — table prix→plan, événement→droits, refus de deviner (décision #61) |
+| Plan gratuit | ✅ **calibré** — `FREE_LIMITS` : 1 brief offert, 5 produits suivis, gains sur le top 10. La boucle complète est jouable une fois, texte à dire compris. Quota de briefs appliqué **côté serveur** (création seule, suppression interdite), le reste assumé côté client (décisions #70-71) |
 | Plan Pro | ✅ **quatre capacités construites** — archive des classements (30 jours, un document, 1 lecture), trajectoire d'un produit, comparateur jusqu'à 4, export CSV. Plus `alerts` enfin réelle côté Creator. Un test interdit qu'un palier payant n'ajoute que du « pas encore là » (décisions #67-69) |
 | Encaissement (`apps/stripe-worker`) | ✅ **Worker Cloudflare prêt à déployer** — session de paiement + webhook, client Firestore REST, vérification du jeton Firebase par JWKS (4 tests). 0 €, usage commercial autorisé, sans carte bancaire. ⚠️ Jamais exécuté contre l'API Stripe réelle (décisions #65-66) |
 | Installation du Worker | ✅ `apps/stripe-worker/setup.sh` — installation guidée : connexion, déploiement, les trois secrets, redéploiement, vérification. Chaque étape est contrôlée, y compris le piège de `wrangler whoami` qui sort en code 0 même sans authentification |
@@ -651,10 +662,10 @@ sur la base actuelle.
 ```bash
 pnpm typecheck && pnpm lint          # 12 packages, doit être 100 % vert
 pnpm test                            # les suites émulateur échouent ici, c'est normal
-pnpm test:rules                      # 46/46 contre l'émulateur Firestore
+pnpm test:rules                      # 51/51 contre l'émulateur Firestore
 pnpm test:jobs-integration           # 18/18
 pnpm test:web-integration            # 98/98 (démarre firestore + auth)
-# Total vérifié le 2026-08-09 : 436 tests, tous verts.
+# Total vérifié le 2026-08-09 : 446 tests, tous verts.
 # Build vérifié : 0 route « ƒ » — 100 % statique, plan Spark préservé.
 ```
 

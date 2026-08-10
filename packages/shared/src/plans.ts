@@ -150,6 +150,67 @@ export const CAPABILITIES_BY_PLAN: Record<PlanSlug, readonly Capability[]> = {
   pro: [...CAPABILITIES],
 };
 
+/**
+ * Ce que le plan gratuit permet quand même.
+ *
+ * Un plan gratuit qui ne sert à rien ne convertit personne : il fait juste
+ * partir les gens avant qu'ils aient compris l'outil. Mais un plan gratuit
+ * qui donne tout ne se transforme jamais en abonnement. La ligne retenue :
+ * **le gratuit donne l'information et une production, le payant donne la
+ * production au rythme voulu.**
+ *
+ * Concrètement, un compte gratuit peut aller au bout de la boucle **une
+ * fois** : trouver un produit, voir ce qu'il rapporterait, le suivre, et
+ * obtenir le texte à dire face caméra. S'il tourne la vidéo et que ça
+ * marche, il sait exactement ce qu'il achète ensuite. C'est plus honnête
+ * qu'une démonstration, et plus convaincant.
+ */
+export const FREE_LIMITS = {
+  /**
+   * Produits suivis simultanément. Cinq suffit à suivre une semaine de
+   * tournage ; un portefeuille sérieux les dépasse tout de suite.
+   */
+  watchlist: 5,
+  /**
+   * Briefs de tournage, **au total** et non par mois. Un quota mensuel
+   * demanderait de savoir quel mois on est et de le remettre à zéro — donc
+   * un serveur, ou un compteur que le client peut fausser. Un quota à vie
+   * se compte par la simple existence des documents `users/{uid}/briefs/*`,
+   * que les règles Firestore interdisent de supprimer.
+   */
+  briefs: 1,
+  /**
+   * Produits dont le gain chiffré est affiché. Au-delà, la ligne reste
+   * visible et seul le montant est retenu — cacher la ligne entière ferait
+   * croire que le produit n'existe pas, alors que le classement complet est
+   * précisément ce que le gratuit offre.
+   *
+   * Cette valeur vivait en dur dans `RankingList.tsx` : elle est ici pour
+   * que la page de tarifs et l'application ne puissent pas annoncer deux
+   * chiffres différents.
+   */
+  earningsTop: 10,
+} as const;
+
+/** Briefs gratuits restants — jamais négatif. */
+export function freeBriefsRemaining(unlockedCount: number): number {
+  return Math.max(0, FREE_LIMITS.briefs - unlockedCount);
+}
+
+/**
+ * Ce que le plan gratuit annonce **en plus** de ses capacités : les limites
+ * qu'il faut connaître avant de créer un compte, pas après.
+ *
+ * Dérivées de `FREE_LIMITS` et non recopiées : un plafond annoncé qui ne
+ * correspond plus au plafond appliqué est exactement la promesse non tenue
+ * que ce fichier existe pour empêcher.
+ */
+export const FREE_PLAN_NOTES: readonly string[] = [
+  `${FREE_LIMITS.briefs === 1 ? "Un texte de tournage offert" : `${FREE_LIMITS.briefs} textes de tournage offerts`}, sur le produit de ton choix`,
+  `Jusqu'à ${FREE_LIMITS.watchlist} produits suivis en même temps`,
+  `Les gains chiffrés sur les ${FREE_LIMITS.earningsTop} premiers produits de la liste`,
+];
+
 export interface PlanDefinition {
   slug: PlanSlug;
   name: string;
@@ -172,7 +233,8 @@ export const PLANS: PlanDefinition[] = [
     name: "Radar",
     priceCents: 0,
     tagline: "Pour voir si l'outil te parle",
-    highlight: "Toute la liste des produits, avec la recommandation pour chacun",
+    highlight:
+      "Toute la liste des produits, la recommandation pour chacun, et un texte de tournage offert",
     popular: false,
   },
   {
