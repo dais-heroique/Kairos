@@ -27,6 +27,11 @@ export const NEUTRAL_COMMISSION: Commission = {
   ratePct: 0,
   isOpenCollab: false,
   isTargetedOnly: false,
+  // `false` et non `true` : ce n'est pas une estimation, c'est une absence.
+  // Une estimation porte un ordre de grandeur défendable (voir
+  // `estimatedCommissionFor`) ; ici on n'a rien du tout, et `ratePct: 0`
+  // est lu comme « inconnu » par l'affichage comme par le moteur de gains.
+  isEstimated: false,
 };
 
 export const NEUTRAL_SELLER_TRUST: SellerTrust = {

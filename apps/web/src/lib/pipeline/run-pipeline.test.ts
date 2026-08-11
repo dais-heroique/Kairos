@@ -37,6 +37,7 @@ const COMMISSION: Commission = {
   ratePct: 25,
   isOpenCollab: true,
   isTargetedOnly: false,
+  isEstimated: false,
 };
 
 const SELLER_TRUST: SellerTrust = {
@@ -118,7 +119,7 @@ describe("chaîne de calcul du pipeline de saisie manuelle", () => {
     const verdict = computeVerdict([snapshot("2026-07-01")]);
     const score = computeOpportunityScore(
       verdict,
-      { ratePct: 0, isOpenCollab: false, isTargetedOnly: false },
+      { ratePct: 0, isOpenCollab: false, isTargetedOnly: false, isEstimated: false },
       { ...SELLER_TRUST, score: 50, sampleCount: 0 },
       { hasMeasuredHistory: false },
     );

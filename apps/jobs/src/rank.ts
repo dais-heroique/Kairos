@@ -68,6 +68,9 @@ function buildDisplayItem(
     // (voir compute.ts). L'affichage doit distinguer les deux — montrer
     // « 0 % » ferait passer une donnée manquante pour une mesure.
     commissionRatePct: meta?.commission.ratePct ?? 0,
+    // Barème de catégorie (estimatedCommissionFor) ou taux saisi à la
+    // main : l'affichage et le calcul de gains doivent les distinguer.
+    commissionIsEstimated: meta?.commission.isEstimated ?? false,
     verdict: c.verdict.verdict,
     salesTrend: TREND_BY_PHASE[c.verdict.phase],
     // Ce que le tableau de bord doit pouvoir montrer sans relire un

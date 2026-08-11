@@ -14,15 +14,26 @@
  * entre « le vendeur ne reverse rien » et « la collecte n'a pas eu
  * l'information », la seconde lecture est la seule plausible.
  */
-export function commissionLabel(ratePct: number | null | undefined): string {
+export function commissionLabel(
+  ratePct: number | null | undefined,
+  isEstimated = false,
+): string {
   if (ratePct === null || ratePct === undefined || ratePct <= 0) return "commission inconnue";
+  // Le « ~ » n'est pas décoratif : la source de collecte n'expose pas les
+  // taux d'affiliation, et ce nombre est alors la médiane de la catégorie
+  // (COMMISSION_BENCHMARKS), pas le taux du vendeur. L'écrire sans nuance
+  // reviendrait à présenter une hypothèse comme un relevé.
+  if (isEstimated) return `~${ratePct} % de commission (moyenne de la catégorie)`;
   return `${ratePct} % de commission`;
 }
 
-/** Version courte, pour les lignes serrées : « 22 % » ou « — ». */
-export function commissionShort(ratePct: number | null | undefined): string {
+/** Version courte, pour les lignes serrées : « 22 % », « ~19 % » ou « — ». */
+export function commissionShort(
+  ratePct: number | null | undefined,
+  isEstimated = false,
+): string {
   if (ratePct === null || ratePct === undefined || ratePct <= 0) return "—";
-  return `${ratePct} %`;
+  return isEstimated ? `~${ratePct} %` : `${ratePct} %`;
 }
 
 /**

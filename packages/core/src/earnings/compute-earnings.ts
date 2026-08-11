@@ -13,9 +13,26 @@ export const earningsInputSchema = z.object({
   medianConversionRate: z.number().min(0).max(1),
   priceCents: z.number().int().nonnegative(),
   commissionRatePct: z.number().min(0).max(100),
+  /**
+   * Le taux de commission est-il un taux de marché de la catégorie plutôt
+   * que le taux réel du produit ? La source de collecte ne les expose pas
+   * (voir `COMMISSION_BENCHMARKS`). Quand c'est le cas, l'incertitude sur
+   * l'entrée doit se retrouver dans la sortie : un gain calculé sur une
+   * commission estimée ne peut pas s'afficher avec la même confiance qu'un
+   * gain calculé sur un taux relevé.
+   */
+  commissionIsEstimated: z.boolean().default(false),
   estimatedReturnRatePct: z.number().min(0).max(100),
 });
-export type EarningsInput = z.infer<typeof earningsInputSchema>;
+/**
+ * `z.input` et non `z.infer` : `commissionIsEstimated` porte un
+ * `.default(false)`, donc il est **facultatif à l'appel** et garanti à la
+ * sortie du parse. Avec `z.infer` (le type de sortie), les vingt appelants
+ * existants auraient dû ajouter le champ pour ne rien changer à leur
+ * comportement — ce qui aurait transformé une valeur par défaut en
+ * cérémonie.
+ */
+export type EarningsInput = z.input<typeof earningsInputSchema>;
 
 /**
  * Fonction pure — pas d'accès Firebase/BigQuery. `config` fournit le taux
@@ -67,15 +84,36 @@ export function computeEarnings(
   // faible, plus la fourchette est large (moins de données pour lisser le
   // taux de conversion "médian" vers une vraie moyenne).
   const viewsConfidenceFactor = clamp(Math.log10(Math.max(parsed.expectedViews, 10)) / 6, 0, 1);
-  const spread = clamp(
+  const baseSpread = clamp(
     config.maxSpread - viewsConfidenceFactor * (config.maxSpread - config.minSpread),
     config.minSpread,
     config.maxSpread,
   );
 
+  // Une commission estimée à partir de la catégorie porte une fourchette
+  // de marché de l'ordre de ±25 % autour de sa médiane (5–10 % en tech,
+  // 18–20 % en beauté). Cette incertitude-là est multiplicative sur le
+  // gain : on l'ajoute à celle des vues plutôt que de la passer sous
+  // silence. Sans ça, le simulateur afficherait une fourchette serrée
+  // autour d'un chiffre dont le principal facteur est une hypothèse.
+  const spread = clamp(
+    parsed.commissionIsEstimated ? baseSpread + 0.25 : baseSpread,
+    config.minSpread,
+    // Le plafond de configuration est délibérément dépassé ici : il borne
+    // l'incertitude *de mesure*, pas celle d'une entrée devinée.
+    parsed.commissionIsEstimated ? 0.8 : config.maxSpread,
+  );
+
   const low = Math.max(0, midEarnings * (1 - spread));
   const high = Math.max(low, midEarnings * (1 + spread));
-  const confidence = clamp(1 - spread, 0.4, 0.95);
+  // Le plancher de 0,4 correspond au palier « à confirmer » de
+  // <EstimatedValue>. Sur une commission estimée on descend plus bas :
+  // sinon le palier « peu fiable » serait inatteignable, alors que c'est
+  // précisément le cas qu'il décrit. La propriété qui compte est
+  // l'inverse : avec `commissionIsEstimated`, l'écart minimal est de 0,40
+  // (0,15 + 0,25), donc la confiance ne peut pas atteindre 0,75 — un gain
+  // calculé sur une hypothèse ne s'affichera jamais « fiable ».
+  const confidence = clamp(1 - spread, parsed.commissionIsEstimated ? 0.2 : 0.4, 0.95);
 
   return {
     low: Math.round(low * 100) / 100,

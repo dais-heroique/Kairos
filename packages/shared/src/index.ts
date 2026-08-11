@@ -16,5 +16,6 @@ export * from "./brief";
 export * from "./compliance";
 export * from "./entitlements";
 export * from "./compliance-defaults";
+export * from "./commission-benchmarks";
 export * from "./plans";
 export * from "./labels";

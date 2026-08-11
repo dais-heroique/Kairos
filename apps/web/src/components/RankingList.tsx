@@ -108,6 +108,7 @@ export function RankingList({
           medianConversionRate: DEFAULT_EARNINGS_CONFIG.defaultConversionRate,
           priceCents: item.priceCents,
           commissionRatePct: item.commissionRatePct,
+        commissionIsEstimated: item.commissionIsEstimated ?? false,
           estimatedReturnRatePct: DEFAULT_EARNINGS_CONFIG.defaultReturnRatePct,
         }),
       );

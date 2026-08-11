@@ -28,6 +28,8 @@ export interface ApifyRawProduct {
   rank?: number;
   query?: string;
   currencyName?: string;
+  /** ISO 8601 — moment réel de la collecte, ex. "2026-08-02T10:07:45Z". */
+  scrapedAt?: string;
 }
 
 /** `reviews` arrive en chaîne ("6096") — parser plutôt que caster. */
@@ -39,6 +41,14 @@ function toCount(value: string | number | undefined): number {
 }
 
 export interface ParseOptions {
+  /**
+   * Date de repli si l'item ne porte pas de `scrapedAt`. Le relevé est
+   * daté du jour du **scrape**, jamais du jour de l'import : réimporter
+   * un même dataset trois jours de suite créait sinon trois relevés
+   * identiques à trois dates, c'est-à-dire un historique inventé de
+   * produit parfaitement stagnant — et donc un verdict « risque » pour
+   * tout le catalogue.
+   */
   capturedDate: string;
   /** Taux de change appliqué au prix (l'actor ne sert que le marché US). */
   usdToEur: number;

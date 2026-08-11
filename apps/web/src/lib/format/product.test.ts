@@ -51,3 +51,22 @@ describe("shortTitle", () => {
     );
   });
 });
+
+describe("commission estimée", () => {
+  it("marque le taux de catégorie d'un « ~ » et le dit en toutes lettres", () => {
+    expect(commissionLabel(19, true)).toBe("~19 % de commission (moyenne de la catégorie)");
+    expect(commissionShort(19, true)).toBe("~19 %");
+  });
+
+  it("un taux relevé reste affirmé sans nuance", () => {
+    expect(commissionLabel(19, false)).toBe("19 % de commission");
+    expect(commissionShort(19)).toBe("19 %");
+  });
+
+  it("une absence reste une absence, estimée ou non", () => {
+    // `isEstimated` ne transforme pas un zéro en estimation : il n'y a
+    // aucun ordre de grandeur à annoncer.
+    expect(commissionLabel(0, true)).toBe("commission inconnue");
+    expect(commissionShort(0, true)).toBe("—");
+  });
+});

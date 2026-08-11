@@ -124,7 +124,7 @@ export function ProductRankCard({
             {TREND_ICON[item.salesTrend]}
           </span>
           <span className="text-xs text-[color:var(--color-ink-muted)]">
-            {commissionShort(item.commissionRatePct)} commission
+            {commissionShort(item.commissionRatePct, item.commissionIsEstimated)} commission
           </span>
         </div>
 

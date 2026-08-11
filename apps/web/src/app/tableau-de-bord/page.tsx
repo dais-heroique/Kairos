@@ -92,7 +92,8 @@ function ProductLine({
       <span className="min-w-0 flex-1">
         <span className="block truncate text-sm font-semibold">{item.title}</span>
         <span className="block text-xs text-[color:var(--color-ink-muted)]">
-          {note ?? `${item.shopName} · ${commissionShort(item.commissionRatePct)}`}
+          {note ??
+            `${item.shopName} · ${commissionShort(item.commissionRatePct, item.commissionIsEstimated)}`}
         </span>
       </span>
       <VerdictBadge verdict={item.verdict} />
@@ -137,6 +138,7 @@ function DashboardContent() {
         medianConversionRate: DEFAULT_EARNINGS_CONFIG.defaultConversionRate,
         priceCents: item.priceCents,
         commissionRatePct: item.commissionRatePct,
+        commissionIsEstimated: item.commissionIsEstimated ?? false,
         estimatedReturnRatePct: DEFAULT_EARNINGS_CONFIG.defaultReturnRatePct,
       });
     };
@@ -285,7 +287,10 @@ function DashboardContent() {
                     </p>
                     <p className="text-sm text-[color:var(--color-ink-muted)]">
                       {dashboard.topPick.item.shopName} ·{" "}
-                      {commissionLabel(dashboard.topPick.item.commissionRatePct)} ·{" "}
+                      {commissionLabel(
+                        dashboard.topPick.item.commissionRatePct,
+                        dashboard.topPick.item.commissionIsEstimated,
+                      )}{" · "}
                       {eur(dashboard.topPick.item.priceCents / 100)}
                     </p>
                   </div>
@@ -368,7 +373,7 @@ function DashboardContent() {
                       item={pick.item}
                       note={
                         pick.matchesNiche
-                          ? `${pick.item.shopName} · ${commissionShort(pick.item.commissionRatePct)} · ta niche`
+                          ? `${pick.item.shopName} · ${commissionShort(pick.item.commissionRatePct, pick.item.commissionIsEstimated)} · ta niche`
                           : undefined
                       }
                     />
