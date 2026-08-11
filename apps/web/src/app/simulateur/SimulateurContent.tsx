@@ -6,6 +6,7 @@ import { computeEarnings, DEFAULT_EARNINGS_CONFIG } from "@kairos/core";
 import { BottomNav } from "@/components/BottomNav";
 import { EstimatedValue } from "@/components/EstimatedValue";
 import { useAuth } from "@/lib/firebase/auth-context";
+import { commissionLabel, shortTitle } from "@/lib/format/product";
 import { getRankingPageData } from "@/server/firestore/rankings";
 import type { ProductRankItem } from "@/types/product-rank-item";
 
@@ -98,14 +99,21 @@ export function SimulateurContent() {
           <select
             value={productId}
             onChange={(e) => setProductId(e.target.value)}
-            className="kai-input"
+            className="kai-select"
           >
             {products.map((p) => (
+              // Le titre est raccourci **dans la valeur affichée**, pas
+              // seulement par CSS : le menu déroulant natif d'iOS et
+              // d'Android ignore `text-overflow`, et un titre TikTok Shop
+              // complet y occupe trois lignes.
               <option key={p.id} value={p.id}>
-                {p.title} — {(p.priceCents / 100).toFixed(2)}€
+                {(p.priceCents / 100).toFixed(2)} € · {shortTitle(p.title, 34)}
               </option>
             ))}
           </select>
+          {/* Le titre entier reste lisible ici, sous le sélecteur : le
+              raccourcir ne doit pas revenir à le cacher. */}
+          <span className="text-xs text-[color:var(--color-ink-muted)]">{product.title}</span>
         </label>
 
         <div className="kai-card flex flex-col items-center gap-1 py-8">
@@ -129,6 +137,16 @@ export function SimulateurContent() {
               />
             </p>
           )}
+          {/* Sans taux de commission, il n'y a pas de gain à simuler — et
+              les curseurs ne peuvent rien y changer. Le dire ici évite de
+              laisser croire à une panne devant un tiret immobile. */}
+          {product.commissionRatePct <= 0 && (
+            <p className="max-w-xs text-center text-xs text-[color:var(--color-ink-muted)]">
+              Le taux de commission de ce produit n&apos;a pas été collecté.
+              Sans lui, aucun gain n&apos;est calculable — choisis un autre
+              produit pour voir le simulateur réagir.
+            </p>
+          )}
         </div>
 
         <label className="flex flex-col gap-2 text-sm font-medium">
@@ -145,7 +163,7 @@ export function SimulateurContent() {
             step={1000}
             value={views}
             onChange={(e) => setViews(Number(e.target.value))}
-            className="w-full accent-[var(--color-coral)]"
+            className="kai-range"
           />
         </label>
 
@@ -168,13 +186,13 @@ export function SimulateurContent() {
             step={0.05}
             value={conversionPct}
             onChange={(e) => setConversionPct(Number(e.target.value))}
-            className="w-full accent-[var(--color-coral)]"
+            className="kai-range"
           />
         </label>
 
         <p className="text-xs text-[color:var(--color-ink-muted)]">
-          Commission {product.commissionRatePct}% · taux de retour estimé{" "}
-          {DEFAULT_EARNINGS_CONFIG.defaultReturnRatePct}% · calcul réel
+          {commissionLabel(product.commissionRatePct)} · taux de retour estimé{" "}
+          {DEFAULT_EARNINGS_CONFIG.defaultReturnRatePct} % · calcul réel
           (packages/core, pas une formule de démonstration).
         </p>
       </div>

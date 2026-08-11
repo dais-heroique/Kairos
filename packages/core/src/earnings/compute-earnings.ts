@@ -36,7 +36,23 @@ export function computeEarnings(
   // produit ne rapporte rien, alors que c'est son profil qui manque.
   // `insufficient_data` existe exactement pour ça, et <EstimatedValue>
   // affiche alors un tiret au lieu d'un montant.
-  if (parsed.expectedViews === 0 || parsed.medianConversionRate === 0) {
+  //
+  // Le prix et le taux de commission relèvent exactement du même cas, et
+  // c'est la source du bug « 0 € partout » constaté le 2026-08-11 sur des
+  // produits réels : la collecte ne renvoie pas toujours le taux de
+  // commission, et `toProductRankItem` le remplace par `?? 0`. Multiplié,
+  // ce zéro produisait une fourchette 0 €–0 € avec une confiance élevée —
+  // un chiffre inventé au sens strict, puisqu'il affirme « ce produit ne
+  // rapporte rien » là où la vérité est « on ne sait pas ce qu'il
+  // rapporte ». Un produit d'affiliation réellement à 0 % de commission
+  // n'existe pas dans un catalogue d'affiliation ; entre les deux
+  // lectures, on prend celle qui n'affirme rien.
+  if (
+    parsed.expectedViews === 0 ||
+    parsed.medianConversionRate === 0 ||
+    parsed.priceCents === 0 ||
+    parsed.commissionRatePct === 0
+  ) {
     return { low: 0, high: 0, confidence: 0, method: "insufficient_data" };
   }
 

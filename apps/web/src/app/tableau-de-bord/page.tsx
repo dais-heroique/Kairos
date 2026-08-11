@@ -18,6 +18,7 @@ import { VerdictBadge } from "@/components/VerdictBadge";
 import { useAuth } from "@/lib/firebase/auth-context";
 import { addToWatchlist, getWatchlistEntries } from "@/lib/firestore/watchlist";
 import { buildDashboard, windowRangeOf, type Dashboard } from "@/lib/dashboard/build-dashboard";
+import { commissionLabel, commissionShort, shortTitle } from "@/lib/format/product";
 import { getRankingPageData } from "@/server/firestore/rankings";
 import type { ProductRankItem } from "@/types/product-rank-item";
 
@@ -91,7 +92,7 @@ function ProductLine({
       <span className="min-w-0 flex-1">
         <span className="block truncate text-sm font-semibold">{item.title}</span>
         <span className="block text-xs text-[color:var(--color-ink-muted)]">
-          {note ?? `${item.shopName} · ${item.commissionRatePct}%`}
+          {note ?? `${item.shopName} · ${commissionShort(item.commissionRatePct)}`}
         </span>
       </span>
       <VerdictBadge verdict={item.verdict} />
@@ -276,12 +277,15 @@ function DashboardContent() {
                 <div className="flex items-start gap-3">
                   <span className="text-3xl">{dashboard.topPick.item.emoji ?? "📦"}</span>
                   <div className="min-w-0">
-                    <p className="font-[family-name:var(--font-display)] text-lg font-bold leading-tight">
-                      {dashboard.topPick.item.title}
+                    <p
+                      className="font-[family-name:var(--font-display)] text-lg font-bold leading-tight"
+                      title={dashboard.topPick.item.title}
+                    >
+                      {shortTitle(dashboard.topPick.item.title, 60)}
                     </p>
                     <p className="text-sm text-[color:var(--color-ink-muted)]">
                       {dashboard.topPick.item.shopName} ·{" "}
-                      {dashboard.topPick.item.commissionRatePct}% de commission ·{" "}
+                      {commissionLabel(dashboard.topPick.item.commissionRatePct)} ·{" "}
                       {eur(dashboard.topPick.item.priceCents / 100)}
                     </p>
                   </div>
@@ -364,7 +368,7 @@ function DashboardContent() {
                       item={pick.item}
                       note={
                         pick.matchesNiche
-                          ? `${pick.item.shopName} · ${pick.item.commissionRatePct}% · ta niche`
+                          ? `${pick.item.shopName} · ${commissionShort(pick.item.commissionRatePct)} · ta niche`
                           : undefined
                       }
                     />

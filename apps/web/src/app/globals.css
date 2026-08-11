@@ -173,6 +173,83 @@ body {
     color: var(--color-ink-muted);
   }
 
+  /* Sélecteur — le natif est laid et, surtout, illisible : sans
+     `appearance: none` Safari impose sa propre bordure et son chevron, et
+     un intitulé long dépasse au lieu d'être coupé. */
+  .kai-select {
+    appearance: none;
+    width: 100%;
+    border-radius: 0.5rem;
+    border: 1px solid var(--color-border);
+    background-color: var(--color-surface-raised);
+    padding: 0.6rem 2.25rem 0.6rem 0.85rem;
+    color: var(--color-ink);
+    font-weight: 600;
+    text-overflow: ellipsis;
+    /* Chevron dessiné en SVG inline : aucune requête réseau, et il suit la
+       couleur du texte au lieu du gris système. */
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='none' stroke='%236b7280' stroke-width='2' stroke-linecap='round'%3E%3Cpath d='M6 8l4 4 4-4'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 0.7rem center;
+    background-size: 1.1rem;
+  }
+  .kai-select:focus-visible {
+    outline: 2px solid var(--color-coral);
+    outline-offset: 1px;
+  }
+
+  /* Curseur. Le rendu par défaut est une ligne grise de 2 px avec une
+     pastille système : sur mobile la zone tactile est trop petite pour
+     être visée au pouce, ce qui est précisément l'usage du simulateur.
+     WebKit et Firefox n'exposent pas les mêmes pseudo-éléments — d'où la
+     duplication, qui n'est pas une redite mais deux moteurs à servir. */
+  .kai-range {
+    appearance: none;
+    width: 100%;
+    height: 2rem; /* zone tactile, pas épaisseur visible */
+    background: transparent;
+    cursor: pointer;
+  }
+  /* La piste est en `--color-border` et non en `--color-surface-raised` :
+     ce dernier est à peine distinct du fond blanc, et la barre paraissait
+     absente — on ne voyait qu'une pastille flottant dans le vide. */
+  .kai-range::-webkit-slider-runnable-track {
+    height: 0.4rem;
+    border-radius: 999px;
+    background-color: var(--color-border);
+  }
+  .kai-range::-moz-range-track {
+    height: 0.4rem;
+    border-radius: 999px;
+    background-color: var(--color-border);
+  }
+  .kai-range::-webkit-slider-thumb {
+    appearance: none;
+    width: 1.35rem;
+    height: 1.35rem;
+    margin-top: -0.47rem; /* recentre la pastille sur la piste */
+    border-radius: 999px;
+    background-color: var(--color-coral);
+    border: 2px solid var(--color-surface);
+    box-shadow: 0 1px 3px rgb(0 0 0 / 0.25);
+  }
+  .kai-range::-moz-range-thumb {
+    width: 1.35rem;
+    height: 1.35rem;
+    border: 2px solid var(--color-surface);
+    border-radius: 999px;
+    background-color: var(--color-coral);
+    box-shadow: 0 1px 3px rgb(0 0 0 / 0.25);
+  }
+  .kai-range:focus-visible::-webkit-slider-thumb {
+    outline: 2px solid var(--color-coral);
+    outline-offset: 2px;
+  }
+  .kai-range:focus-visible::-moz-range-thumb {
+    outline: 2px solid var(--color-coral);
+    outline-offset: 2px;
+  }
+
   .kai-card {
     border-radius: 0.75rem;
     border: 1px solid var(--color-border);

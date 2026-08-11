@@ -12,6 +12,7 @@ import {
 import {
   entitlementsOf,
   freeBriefsRemaining,
+  hookLabel,
   type Brief,
   type ComplianceRule,
   type ProductVerdict,
@@ -257,7 +258,7 @@ function BriefContent() {
           {brief.hooks.map((hook, i) => (
             <li key={hook.type} className="flex flex-col">
               <span className="text-[11px] uppercase tracking-wide text-[color:var(--color-ink-muted)]">
-                {i + 1} · {hook.type.replace(/_/g, " ")}
+                {i + 1} · {hookLabel(hook.type)}
               </span>
               <span className="text-sm font-medium">« {hook.spokenLine} »</span>
             </li>

@@ -10,6 +10,7 @@ import { getWatchlistEntries, updateWatchlistStatus } from "@/lib/firestore/watc
 import { getRankingPageData } from "@/server/firestore/rankings";
 import type { ProductRankItem } from "@/types/product-rank-item";
 import { VerdictBadge } from "@/components/VerdictBadge";
+import { commissionLabel } from "@/lib/format/product";
 
 // Le vrai pipeline (§ règle produit — "pas une liste de favoris") :
 // watching → sample_requested → sample_received → filmed → posted →
@@ -93,7 +94,7 @@ function WatchlistContent() {
               </div>
               {item && (
                 <p className="text-xs text-[color:var(--color-ink-muted)]">
-                  {item.shopName} · {item.commissionRatePct}% de commission
+                  {item.shopName} · {commissionLabel(item.commissionRatePct)}
                 </p>
               )}
               <select

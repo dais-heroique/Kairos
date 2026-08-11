@@ -24,6 +24,7 @@ import { windowRangeOf } from "@/lib/dashboard/build-dashboard";
 import { buildScenarioSnapshots, SCENARIO_PRESETS } from "@/lib/demo/scenario";
 import { getRankingPageData } from "@/server/firestore/rankings";
 import type { ProductRankItem } from "@/types/product-rank-item";
+import { commissionShort } from "@/lib/format/product";
 
 // Fiche produit — la page qui manquait complètement.
 //
@@ -135,7 +136,7 @@ function ProduitContent() {
             {item.title}
           </h1>
           <p className="text-sm text-[color:var(--color-ink-muted)]">
-            {item.shopName} · {eur(item.priceCents / 100)} · {item.commissionRatePct}% de
+            {item.shopName} · {eur(item.priceCents / 100)} · {commissionShort(item.commissionRatePct)} de
             commission
           </p>
         </div>

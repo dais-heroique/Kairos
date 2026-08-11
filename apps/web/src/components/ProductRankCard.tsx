@@ -9,6 +9,7 @@ import type { ProductRankItem } from "@/types/product-rank-item";
 import { LockedValue } from "./PaywallGate";
 import { EstimatedValue } from "./EstimatedValue";
 import { VerdictBadge } from "./VerdictBadge";
+import { commissionShort } from "@/lib/format/product";
 
 const TREND_ICON: Record<ProductRankItem["salesTrend"], string> = {
   up: "↗",
@@ -123,7 +124,7 @@ export function ProductRankCard({
             {TREND_ICON[item.salesTrend]}
           </span>
           <span className="text-xs text-[color:var(--color-ink-muted)]">
-            {item.commissionRatePct}% commission
+            {commissionShort(item.commissionRatePct)} commission
           </span>
         </div>
 
