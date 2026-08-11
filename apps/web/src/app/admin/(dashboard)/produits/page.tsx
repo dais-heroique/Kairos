@@ -404,7 +404,18 @@ export default function AdminProduitsPage() {
               </p>
               <p className="text-xs text-[color:var(--color-ink-muted)]">
                 {p.shopName} · {(p.priceCents / 100).toFixed(2)}€ ·{" "}
-                {p.commissionRatePct}%
+                {/* La collecte Apify ne renvoie pas les taux d'affiliation
+                    (recover-apify-data.ts). Ils se saisissent ici, produit
+                    par produit — donc cette table est le seul endroit d'où
+                    l'on voit ce qui reste à faire. « 0 % » le noyait dans
+                    les taux réels ; le signaler en corail le sort du lot. */}
+                {p.commissionRatePct > 0 ? (
+                  `${p.commissionRatePct} %`
+                ) : (
+                  <span style={{ color: "var(--color-coral)", fontWeight: 600 }}>
+                    commission à saisir
+                  </span>
+                )}
               </p>
             </div>
             <span
