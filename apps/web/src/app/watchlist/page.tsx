@@ -94,7 +94,7 @@ function WatchlistContent() {
               </div>
               {item && (
                 <p className="text-xs text-[color:var(--color-ink-muted)]">
-                  {item.shopName} · {commissionLabel(item.commissionRatePct)}
+                  {item.shopName} · {commissionLabel(item.commissionRatePct, item.commissionIsEstimated)}
                 </p>
               )}
               <select

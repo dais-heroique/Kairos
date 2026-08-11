@@ -95,6 +95,10 @@ function commissionOf(product: StoredProduct): Commission {
     ratePct: product.commissionRatePct,
     isOpenCollab: true,
     isTargetedOnly: false,
+    // Ce pipeline ne traite que les produits saisis dans /admin/produits,
+    // où le taux est renseigné à la main : c'est un relevé, pas le barème
+    // de catégorie.
+    isEstimated: false,
   };
 }
 
@@ -118,6 +122,8 @@ function rankingItem(scored: ScoredProduct, rank: number) {
     priceCents: scored.product.priceCents,
     shopId: scored.product.shopId,
     commissionRatePct: scored.product.commissionRatePct,
+    // Saisie manuelle dans /admin/produits : c'est donc un taux relevé.
+    commissionIsEstimated: false,
     verdict: scored.verdict.verdict,
     salesTrend: TREND_BY_PHASE[scored.verdict.phase],
     emoji: scored.product.emoji ?? null,

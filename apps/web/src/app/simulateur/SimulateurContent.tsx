@@ -51,6 +51,7 @@ export function SimulateurContent() {
       medianConversionRate: conversionPct / 100,
       priceCents: product.priceCents,
       commissionRatePct: product.commissionRatePct,
+      commissionIsEstimated: product.commissionIsEstimated ?? false,
       estimatedReturnRatePct: DEFAULT_EARNINGS_CONFIG.defaultReturnRatePct,
     });
   }, [views, conversionPct, product, userDoc]);
@@ -191,7 +192,7 @@ export function SimulateurContent() {
         </label>
 
         <p className="text-xs text-[color:var(--color-ink-muted)]">
-          {commissionLabel(product.commissionRatePct)} · taux de retour estimé{" "}
+          {commissionLabel(product.commissionRatePct, product.commissionIsEstimated)} · taux de retour estimé{" "}
           {DEFAULT_EARNINGS_CONFIG.defaultReturnRatePct} % · calcul réel
           (packages/core, pas une formule de démonstration).
         </p>

@@ -126,3 +126,56 @@ describe("les données manquantes ne valent pas zéro", () => {
     expect(result.low).toBeGreaterThan(0);
   });
 });
+
+// La collecte n'expose pas les taux d'affiliation : à défaut, on pose le
+// taux de marché de la catégorie (COMMISSION_BENCHMARKS) en le marquant
+// comme estimé. Ce marquage doit se voir dans le résultat, sinon on aurait
+// simplement remplacé un « 0 € » faux par un montant faux mieux habillé.
+describe("commission estimée — l'incertitude se propage", () => {
+  const base = {
+    expectedViews: 8000,
+    followerRange: "5k_20k" as const,
+    niche: "beaute",
+    medianConversionRate: 0.002,
+    priceCents: 7359,
+    commissionRatePct: 19,
+    estimatedReturnRatePct: 8,
+  };
+
+  it("élargit la fourchette par rapport à un taux relevé", () => {
+    const releve = computeEarnings({ ...base, commissionIsEstimated: false });
+    const estime = computeEarnings({ ...base, commissionIsEstimated: true });
+
+    // Même montant central, incertitude plus grande de part et d'autre.
+    expect(estime.low).toBeLessThan(releve.low);
+    expect(estime.high).toBeGreaterThan(releve.high);
+    expect(estime.confidence).toBeLessThan(releve.confidence);
+  });
+
+  it("ne peut jamais s'afficher « fiable »", () => {
+    // <EstimatedValue> écrit « fiable » au-delà de 0,75. Un gain dont le
+    // principal facteur est une hypothèse de catégorie ne doit pas pouvoir
+    // y prétendre, quel que soit le volume de vues.
+    for (const expectedViews of [1_000, 50_000, 500_000, 5_000_000]) {
+      const result = computeEarnings({ ...base, expectedViews, commissionIsEstimated: true });
+      expect(result.confidence, `à ${expectedViews} vues`).toBeLessThan(0.75);
+    }
+  });
+
+  it("reste absent quand il n'y a toujours pas de taux du tout", () => {
+    // `isEstimated` ne rattrape pas une absence : un `ratePct` à 0 reste
+    // une donnée manquante, pas une estimation.
+    const result = computeEarnings({
+      ...base,
+      commissionRatePct: 0,
+      commissionIsEstimated: true,
+    });
+    expect(result.method).toBe("insufficient_data");
+  });
+
+  it("le défaut est « taux relevé » — un appelant qui l'ignore ne dégrade rien", () => {
+    const implicite = computeEarnings(base);
+    const explicite = computeEarnings({ ...base, commissionIsEstimated: false });
+    expect(implicite).toEqual(explicite);
+  });
+});

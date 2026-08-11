@@ -15,6 +15,13 @@ export interface ProductRankItem {
   salesTrend: "up" | "down" | "flat";
   /** 0 = taux inconnu, pas un taux nul — voir apps/jobs/src/rank.ts. */
   commissionRatePct: number;
+  /**
+   * Le taux vient-il du barème de catégorie plutôt que du produit ?
+   * Optionnel : les documents écrits avant ce champ restent lisibles, et
+   * son absence signifie « taux relevé », qui est le cas le moins
+   * dégradé — on ne présume pas d'une estimation là où il n'y en a pas.
+   */
+  commissionIsEstimated?: boolean;
   // Optionnels : tous les producteurs d'items ne les fournissent pas (le
   // tableau de bord construit ses propres lignes), et la carte retombe sur
   // une icône quand le visuel manque.

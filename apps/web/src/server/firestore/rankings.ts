@@ -71,6 +71,7 @@ function toProductRankItem(
     priceCents?: number;
     shopId?: string | null;
     commissionRatePct?: number;
+    commissionIsEstimated?: boolean;
     soldTotal?: number | null;
     imageUrl?: string | null;
     verdict?: ProductRankItem["verdict"];
@@ -101,6 +102,7 @@ function toProductRankItem(
     priceCents: item.priceCents ?? 0,
     shopName: (item.shopId && shopNames.get(item.shopId)) || "Boutique",
     commissionRatePct: item.commissionRatePct ?? 0,
+    ...optional("commissionIsEstimated", item.commissionIsEstimated),
     soldTotal: item.soldTotal ?? null,
     imageUrl: item.imageUrl ?? null,
     verdict: item.verdict ?? "risque",

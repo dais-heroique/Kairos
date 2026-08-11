@@ -18,7 +18,7 @@ import type { BigQuery } from "@google-cloud/bigquery";
 import { ApifyClient } from "apify-client";
 import { applicationDefault, getApps, initializeApp } from "firebase-admin/app";
 import { getFirestore } from "firebase-admin/firestore";
-import type { ProductSnapshot } from "@kairos/shared";
+import { estimatedCommissionFor, type ProductSnapshot } from "@kairos/shared";
 import { NEUTRAL_COMMISSION, NEUTRAL_SELLER_TRUST } from "./compute.js";
 import {
   parseApifyProduct,
@@ -213,7 +213,13 @@ async function main(): Promise<void> {
         // remise produirait un montant en euros faux, ce que le produit
         // s'interdit explicitement. Un taux déjà saisi à la main est
         // préservé — sans quoi chaque collecte l'effacerait.
-        commission: knownCommission.get(snapshot.productId) ?? NEUTRAL_COMMISSION,
+        // Un taux saisi à la main prime toujours. Sinon on pose le taux
+        // de marché de la catégorie, marqué `isEstimated: true` — un ordre
+        // de grandeur annoncé comme tel vaut mieux qu'un « 0 % » qui se
+        // lit « ce produit ne rapporte rien ».
+        commission:
+          knownCommission.get(snapshot.productId) ??
+          estimatedCommissionFor(meta.title, meta.sourceQuery),
         sellerTrust: NEUTRAL_SELLER_TRUST,
         firstSeenAt: knownFirstSeen.get(snapshot.productId) ?? nowIso,
         lastSeenAt: nowIso,

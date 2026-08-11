@@ -136,7 +136,7 @@ function ProduitContent() {
             {item.title}
           </h1>
           <p className="text-sm text-[color:var(--color-ink-muted)]">
-            {item.shopName} · {eur(item.priceCents / 100)} · {commissionShort(item.commissionRatePct)} de
+            {item.shopName} · {eur(item.priceCents / 100)} · {commissionShort(item.commissionRatePct, item.commissionIsEstimated)} de
             commission
           </p>
         </div>
