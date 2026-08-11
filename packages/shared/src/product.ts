@@ -7,6 +7,14 @@ export const commissionSchema = z.object({
   ratePct: z.number().min(0).max(100),
   isOpenCollab: z.boolean(),
   isTargetedOnly: z.boolean(),
+  // true = taux de marché de la catégorie, pas le taux réel du produit.
+  // La source de collecte n'expose pas les taux d'affiliation (ils vivent
+  // dans le compte affilié), et afficher 0 % se lisait « ce produit ne
+  // rapporte rien » alors que la vérité est « on ne le connaît pas ».
+  // L'interface DOIT distinguer les deux : un gain calculé sur une
+  // estimation ne peut pas être présenté comme un montant certain.
+  // `.default(false)` pour que les documents antérieurs restent lisibles.
+  isEstimated: z.boolean().default(false),
 });
 export type Commission = z.infer<typeof commissionSchema>;
 
