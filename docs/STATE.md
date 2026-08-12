@@ -286,6 +286,12 @@ le simulateur. Reste un ordre de grandeur à calibrer, pas un placeholder à
 
     Quatre tests (`messages/fr.test.ts`) gardent l'invariant, sans juger la rédaction : aucune clé ne redécrit un plan, rien n'est promis « illimité », un « top N » cité correspond à `FREE_LIMITS.earningsTop`, et aucune capacité marquée `soon` n'est vendue sur la page publique. Ce sont des tests sur la **cohérence catalogue ↔ copie**, le seul aspect du texte qui soit vérifiable automatiquement.
 
+82. **`deploy.sh` construisait le site contre des paquets périmés** (2026-08-11) — quatrième piège d'environnement, et le plus coûteux parce qu'il désigne le mauvais fichier. `pnpm --filter @kairos/web build` appelle `next build` **directement** : il ne traverse pas le graphe de dépendances de Turbo, donc `packages/*/lib/` garde ce qu'il contenait au dernier `pnpm typecheck`. Après un `git pull` qui touche `packages/core`, le build compile le nouveau code d'`apps/web` contre les **anciennes** déclarations.
+
+    Le symptôme est trompeur : « `commissionIsEstimated` n'existe pas dans le type… » alors que la propriété est bien dans les sources. On cherche l'erreur dans le code qu'on vient d'écrire, elle est dans un `.d.ts` généré. Rencontré **deux fois en deux jours**, dans les deux sens (`isEstimated` côté `shared`, `commissionIsEstimated` côté `core`) — d'où le correctif dans le script plutôt qu'une note de plus.
+
+    `deploy.sh` construit désormais `shared`, `core`, `payments` et `ai-gateway` avant `apps/web`. Vérifié en supprimant tous les `packages/*/lib` puis en rejouant la séquence complète.
+
 ## Questions ouvertes (posées le 2026-08-03, aucune action prise)
 
 - ~~**La lecture publique du catalogue (décision #10) ne sert à rien.**~~ **Traité le 2026-08-05** (décision #39) : `/classements/*` est enveloppé dans `<RequireAuth>` : aucun visiteur anonyme n'atteint jamais ces pages — vérifié en naviguant réellement, on est redirigé vers `/connexion`. La justification d'origine (« rendues sans utilisateur connecté ») valait pour un rendu statique au build ; les pages sont depuis passées en `"use client"` + `useEffect`, ce qui l'a rendue caduque, mais la règle n'a jamais été refermée. **Repasser `products`/`shops`/`rankings`/`snapshots` en `isSignedIn()` ne coûterait aucune fonctionnalité** et fermerait le trou « n'importe qui vide la base ».

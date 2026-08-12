@@ -104,6 +104,26 @@ if [[ -f "$ENV_LOCAL" ]]; then
   echo "▸ $ENV_LOCAL mis de côté (il aurait écrasé .env.production)."
 fi
 
+# Les paquets internes d'abord, et c'est le piège que ce bloc existe pour
+# fermer. `pnpm --filter @kairos/web build` appelle `next build`
+# directement : il ne traverse **pas** le graphe de dépendances de Turbo,
+# donc `packages/*/lib/` garde ce qu'il contenait au dernier `pnpm
+# typecheck`. Après un `git pull` qui touche `packages/core`, le build
+# compile le nouveau code de `apps/web` contre les **anciennes**
+# déclarations — et échoue sur une propriété « qui n'existe pas » alors
+# qu'elle est bien dans les sources.
+#
+# Constaté le 2026-08-11 sur `commissionIsEstimated`, et déjà rencontré en
+# sens inverse sur `isEstimated`. Les deux fois, le symptôme désigne le
+# mauvais fichier : on cherche l'erreur dans le code qu'on vient d'écrire
+# alors qu'elle est dans un `.d.ts` généré.
+echo
+echo "▸ Construction des paquets internes…"
+if ! pnpm --filter "@kairos/shared" --filter "@kairos/core" --filter "@kairos/payments" --filter "@kairos/ai-gateway" build; then
+  echo "❌ La construction des paquets a échoué — rien n'a été déployé." >&2
+  exit 1
+fi
+
 echo
 echo "▸ Construction d'apps/web…"
 BUILD_LOG="$(mktemp)"
