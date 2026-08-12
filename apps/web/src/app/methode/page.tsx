@@ -85,10 +85,10 @@ export default function MethodePage() {
           Comment on sait si un produit TikTok Shop vaut encore le coup
         </h1>
         <p className="text-[color:var(--color-ink-muted)]">
-          Un produit qui cartonne aujourd&apos;hui peut être fait par trois
-          cents personnes dans cinq jours. La vraie question n&apos;est pas
-          combien il a vendu hier, mais s&apos;il te reste de la place. Voici
-          comment on répond, avec les chiffres qu&apos;on utilise vraiment.
+          La vraie question n&apos;est pas combien un produit a vendu hier,
+          mais s&apos;il te reste de la place dessus. Voici comment on y
+          répond, avec les chiffres qu&apos;on utilise vraiment — et en
+          disant lesquels sont mesurés et lesquels sont estimés.
         </p>
       </header>
 

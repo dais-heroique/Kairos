@@ -276,6 +276,16 @@ le simulateur. Reste un ordre de grandeur à calibrer, pas un placeholder à
 
 80. **Le paywall envoyait relire une grille tarifaire** (2026-08-11) — son bouton pointait sur `/tarifs`. Ce bloc s'affiche au moment précis où quelqu'un vient de buter sur une limite, c'est-à-dire au point d'intention le plus haut du parcours ; l'y renvoyer lui donne surtout l'occasion de refermer l'onglet. Le paiement démarre maintenant depuis le paywall (`SubscribeButton`, qui vérifie lui-même que l'encaissement est branché — aucun bouton mort possible), avec « comparer les offres d'abord » en lien secondaire. Ce n'était pas faisable avant que Creator ait un prix.
 
+81. **La règle « aucun chiffre inventé » ne s'appliquait pas à la page d'accueil** (2026-08-11) — signalé par l'utilisateur : « Un produit qui cartonne aujourd'hui peut être fait par **trois cents** personnes dans **cinq** jours. » Deux nombres, aucun mesuré, affichés à des visiteurs — la règle invariante n°2 avait été appliquée avec rigueur au moteur et jamais au texte marketing, alors que c'est le premier chiffre qu'un visiteur lit. Le problème décrit est réel ; il se dit sans nombre.
+
+    L'audit qui a suivi a trouvé plus grave que la formulation :
+
+    - **La page d'accueil portait sa propre description des offres**, en dur dans `fr.json` : « Watchlist illimitée » pour le plan gratuit, plafonné à 5 depuis la décision #70. Personne n'avait menti — la copie avait cessé d'être vraie et rien ne pouvait le signaler. Ces 15 clés n'étaient **même plus affichées** (la page rend `<PlanCards />`, dérivé du catalogue) : de la copie fausse qui dort est de la copie qu'on finit par réutiliser. Supprimées.
+    - **La FAQ décrivait une collecte qui n'est plus la seule** (« relevés faits chaque jour dans l'espace affilié officiel ») et passait sous silence le point qui compte pour quelqu'un qui paie 19 € : d'où vient le taux de commission. Réécrite pour distinguer les deux sources et annoncer explicitement la moyenne de catégorie (#76-77).
+    - **« Commission, retours produits, tout est déjà dedans »** laissait croire que le taux est relevé.
+
+    Quatre tests (`messages/fr.test.ts`) gardent l'invariant, sans juger la rédaction : aucune clé ne redécrit un plan, rien n'est promis « illimité », un « top N » cité correspond à `FREE_LIMITS.earningsTop`, et aucune capacité marquée `soon` n'est vendue sur la page publique. Ce sont des tests sur la **cohérence catalogue ↔ copie**, le seul aspect du texte qui soit vérifiable automatiquement.
+
 ## Questions ouvertes (posées le 2026-08-03, aucune action prise)
 
 - ~~**La lecture publique du catalogue (décision #10) ne sert à rien.**~~ **Traité le 2026-08-05** (décision #39) : `/classements/*` est enveloppé dans `<RequireAuth>` : aucun visiteur anonyme n'atteint jamais ces pages — vérifié en naviguant réellement, on est redirigé vers `/connexion`. La justification d'origine (« rendues sans utilisateur connecté ») valait pour un rendu statique au build ; les pages sont depuis passées en `"use client"` + `useEffect`, ce qui l'a rendue caduque, mais la règle n'a jamais été refermée. **Repasser `products`/`shops`/`rankings`/`snapshots` en `isSignedIn()` ne coûterait aucune fonctionnalité** et fermerait le trou « n'importe qui vide la base ».
