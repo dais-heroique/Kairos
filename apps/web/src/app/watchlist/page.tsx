@@ -102,7 +102,7 @@ function WatchlistContent() {
                 onChange={(e) =>
                   handleStatusChange(entry.productId, e.target.value as WatchlistStatus)
                 }
-                className="kai-input w-auto shrink-0"
+                className="kai-select w-auto shrink-0"
                 aria-label="Statut du pipeline"
               >
                 {STATUS_ORDER.map((status) => (

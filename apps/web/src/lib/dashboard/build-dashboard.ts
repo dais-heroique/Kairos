@@ -30,6 +30,27 @@ export interface PipelineStage {
   count: number;
 }
 
+/**
+ * Une famille de produits (catégorie ou mot-clé de collecte) et l'état du
+ * marché qu'elle représente cette semaine.
+ *
+ * L'intérêt n'est pas décoratif : un créateur choisit d'abord un terrain,
+ * ensuite un produit. Savoir que « beauté » compte 12 fenêtres ouvertes et
+ * « tech » 2 oriente une semaine de tournage bien plus qu'un classement
+ * de 90 lignes.
+ */
+export interface CategoryPulse {
+  label: string;
+  /** Produits analysables de la famille. */
+  total: number;
+  /** Ceux dont la fenêtre est encore ouverte. */
+  open: number;
+  /** Ceux à éviter — un terrain saturé se voit à ce rapport. */
+  avoid: number;
+  /** Le meilleur du lot, pour donner un point d'entrée cliquable. */
+  best: ProductRankItem | null;
+}
+
 export interface Dashboard {
   /** Le produit à tourner en priorité, ou rien si aucun ne s'y prête. */
   topPick: DashboardPick | null;
@@ -49,6 +70,15 @@ export interface Dashboard {
   awaitingSample: number;
   openWindowCount: number;
   totalAnalysed: number;
+  /** Les familles les mieux fournies, les plus actives d'abord. */
+  categories: CategoryPulse[];
+  /**
+   * Combien de produits analysables tombent dans les niches déclarées à
+   * l'inscription. Zéro est une information : il veut dire que le profil
+   * ne correspond à rien de ce qui est collecté, et c'est le profil qu'il
+   * faut alors changer, pas le classement.
+   */
+  nicheMatches: number;
 }
 
 const PIPELINE_ORDER: WatchlistStatus[] = [
@@ -130,6 +160,48 @@ export function windowRangeOf(item: ProductRankItem): EstimatedRange | null {
   };
 }
 
+/** Nombre de familles affichées : au-delà, la liste redevient un classement. */
+export const CATEGORY_PULSE_SIZE = 4;
+
+/**
+ * Regroupe les produits par famille.
+ *
+ * Seuls les produits ayant assez de recul sont comptés : une famille dont
+ * les dix produits sont trop récents afficherait « 10 produits, 0 fenêtre
+ * ouverte », ce qui se lit comme un terrain mort alors qu'il est
+ * seulement inconnu.
+ */
+export function buildCategoryPulse(
+  items: ProductRankItem[],
+  size = CATEGORY_PULSE_SIZE,
+): CategoryPulse[] {
+  const groups = new Map<string, ProductRankItem[]>();
+  for (const item of items) {
+    if (!hasEnoughHistory(item)) continue;
+    const label = item.category?.trim();
+    if (!label) continue;
+    const bucket = groups.get(label);
+    if (bucket) bucket.push(item);
+    else groups.set(label, [item]);
+  }
+
+  return [...groups.entries()]
+    .map(([label, group]) => ({
+      label,
+      total: group.length,
+      open: group.filter((i) => i.verdict === "entrer_maintenant").length,
+      avoid: group.filter((i) => i.verdict === "eviter").length,
+      best:
+        [...group].sort(
+          (a, b) => (b.opportunityScore ?? 0) - (a.opportunityScore ?? 0) || a.rank - b.rank,
+        )[0] ?? null,
+    }))
+    // Le nombre de fenêtres ouvertes prime sur la taille : une famille de
+    // 30 produits tous fermés est moins utile qu'une de 4 tous jouables.
+    .sort((a, b) => b.open - a.open || b.total - a.total)
+    .slice(0, size);
+}
+
 export interface BuildDashboardInput {
   opportunities: ProductRankItem[];
   products: ProductRankItem[];
@@ -200,5 +272,7 @@ export function buildDashboard({
       (i) => hasEnoughHistory(i) && i.verdict === "entrer_maintenant",
     ).length,
     totalAnalysed: opportunities.filter(hasEnoughHistory).length,
+    categories: buildCategoryPulse(opportunities),
+    nicheMatches: playable.filter((i) => matchesNiches(i, niches)).length,
   };
 }

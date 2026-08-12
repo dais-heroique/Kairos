@@ -7,7 +7,12 @@ import {
   query,
   where,
 } from "firebase/firestore";
-import type { Market, RankingDoc, RankingPeriod } from "@kairos/shared";
+import {
+  resolveCommission,
+  type Market,
+  type RankingDoc,
+  type RankingPeriod,
+} from "@kairos/shared";
 import { getPublicFirestore } from "../firebase-client";
 import type { ProductRankItem } from "../../types/product-rank-item";
 import type { ReadCounter } from "./read-counter";
@@ -90,6 +95,25 @@ function toProductRankItem(
     opportunityScore?: number | null;
     snapshotCount?: number;
   };
+  // Le barème de catégorie s'applique aussi ici, à la lecture. Les
+  // documents `rankings/*` déjà écrits portent `commissionRatePct: 0` :
+  // sans ce repli, ils continueraient d'afficher « inconnue » jusqu'au
+  // prochain passage du pipeline. La règle est dérivée du titre, donc le
+  // résultat est le même que si le pipeline l'avait posée — et un taux
+  // réellement écrit n'est jamais remplacé.
+  const commission = resolveCommission(
+    item.commissionRatePct && item.commissionRatePct > 0
+      ? {
+          ratePct: item.commissionRatePct,
+          isOpenCollab: true,
+          isTargetedOnly: false,
+          isEstimated: item.commissionIsEstimated ?? false,
+        }
+      : null,
+    item.title ?? "",
+    item.category,
+  );
+
   // `exactOptionalPropertyTypes` est actif : un champ optionnel se pose
   // seulement s'il existe, il ne se met pas à `undefined`.
   const optional = <T,>(key: string, value: T | null | undefined) =>
@@ -101,8 +125,8 @@ function toProductRankItem(
     title: item.title ?? "",
     priceCents: item.priceCents ?? 0,
     shopName: (item.shopId && shopNames.get(item.shopId)) || "Boutique",
-    commissionRatePct: item.commissionRatePct ?? 0,
-    ...optional("commissionIsEstimated", item.commissionIsEstimated),
+    commissionRatePct: commission.ratePct,
+    commissionIsEstimated: commission.isEstimated,
     soldTotal: item.soldTotal ?? null,
     imageUrl: item.imageUrl ?? null,
     verdict: item.verdict ?? "risque",

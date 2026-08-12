@@ -222,7 +222,7 @@ export default function AdminProduitsPage() {
             <select
               value={form.category}
               onChange={(e) => update("category", e.target.value)}
-              className="kai-input"
+              className="kai-select"
             >
               {CATEGORIES.map((c) => (
                 <option key={c} value={c}>

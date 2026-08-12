@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { cleanup, render, screen } from "@testing-library/react";
 import {
   CAPABILITY_INFO,
@@ -9,7 +9,25 @@ import {
   planUnlocking,
   type User,
 } from "@kairos/shared";
-import { PaywallGate } from "./PaywallGate";
+// `SubscribeButton` (le bouton de paiement du paywall) importe le client
+// Firebase, qui valide sa configuration dès l'import — absente ici. On
+// mocke donc le contexte d'authentification plutôt que le bouton lui-même,
+// pour que le vrai composant reste rendu et que les tests continuent de
+// vérifier ce qui est réellement affiché.
+vi.mock("@/lib/firebase/auth-context", () => ({
+  useAuth: () => ({ firebaseUser: null, userDoc: null }),
+}));
+
+vi.mock("@/lib/stripe/checkout", () => ({
+  CheckoutError: class extends Error {},
+  // Aucun identifiant de prix en environnement de test : le bouton
+  // retombe sur son repli, exactement comme en production tant que
+  // l'encaissement n'est pas branché.
+  isCheckoutConfigured: () => false,
+  startCheckout: vi.fn(),
+}));
+
+const { PaywallGate } = await import("./PaywallGate");
 
 afterEach(cleanup);
 

@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { SubscribeButton } from "@/components/SubscribeButton";
 import type { ReactNode } from "react";
 import {
   CAPABILITY_INFO,
@@ -124,9 +125,32 @@ export function PaywallGate({
             ))}
           </ul>
 
-          <Link href="/tarifs" className="kai-btn-primary text-center">
-            {plan.priceCents === null ? "Voir les offres" : `Passer en ${plan.name}`}
-          </Link>
+          {/* Le paiement démarre **ici**, pas après un détour par /tarifs.
+              Ce bloc s'affiche au moment précis où quelqu'un vient de
+              buter sur une limite : c'est le point d'intention le plus
+              haut du parcours, et l'envoyer relire une grille tarifaire
+              lui donne surtout l'occasion de refermer l'onglet.
+              `SubscribeButton` vérifie lui-même que l'encaissement est
+              branché et retombe sur l'inscription sinon — aucun bouton
+              mort n'est possible. */}
+          {plan.priceCents === null ? (
+            <Link href="/tarifs" className="kai-btn-primary text-center">
+              Voir les offres
+            </Link>
+          ) : (
+            <>
+              <SubscribeButton
+                plan={plan.slug as "creator" | "pro"}
+                label={`Passer en ${plan.name}`}
+              />
+              <Link
+                href="/tarifs"
+                className="text-center text-xs underline text-[color:var(--color-ink-muted)]"
+              >
+                Comparer les offres d&apos;abord
+              </Link>
+            </>
+          )}
           {FOUNDING_PRICE_LOCK && plan.priceCents === null && (
             <p className="text-center text-[11px] text-[color:var(--color-ink-muted)]">
               Les inscrits d&apos;aujourd&apos;hui gardent le tarif de lancement.

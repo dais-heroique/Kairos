@@ -1,7 +1,12 @@
 import { describe, expect, it } from "vitest";
 import type { EstimatedRange, WatchlistEntry } from "@kairos/shared";
 import type { ProductRankItem } from "@/types/product-rank-item";
-import { buildDashboard, FOCUS_SIZE, windowRangeOf } from "./build-dashboard";
+import {
+  buildCategoryPulse,
+  buildDashboard,
+  FOCUS_SIZE,
+  windowRangeOf,
+} from "./build-dashboard";
 
 function item(over: Partial<ProductRankItem> & { id: string }): ProductRankItem {
   return {
@@ -198,5 +203,69 @@ describe("windowRangeOf", () => {
     const bare = item({ id: "vieux" });
     delete (bare as { windowDaysHigh?: number }).windowDaysHigh;
     expect(windowRangeOf(bare)).toBeNull();
+  });
+});
+
+// Le tableau de bord répond à « qu'est-ce que je tourne cette semaine ? ».
+// Un créateur choisit d'abord un terrain, ensuite un produit — d'où le
+// regroupement par famille, qui n'existait pas.
+describe("buildCategoryPulse", () => {
+  const p = (
+    id: string,
+    category: string,
+    verdict: ProductRankItem["verdict"],
+    score = 50,
+  ): ProductRankItem => ({
+    ...item({ id, verdict }),
+    category,
+    opportunityScore: score,
+    snapshotCount: 10,
+    verdictConfidence: 0.8,
+  });
+
+  it("compte les fenêtres ouvertes et les produits à éviter par famille", () => {
+    const pulse = buildCategoryPulse([
+      p("a", "beaute", "entrer_maintenant"),
+      p("b", "beaute", "entrer_maintenant"),
+      p("c", "beaute", "eviter"),
+      p("d", "tech", "entrer_maintenant"),
+    ]);
+
+    const beaute = pulse.find((c) => c.label === "beaute")!;
+    expect(beaute.total).toBe(3);
+    expect(beaute.open).toBe(2);
+    expect(beaute.avoid).toBe(1);
+  });
+
+  it("classe par fenêtres ouvertes, pas par volume", () => {
+    // Une famille de 3 produits tous jouables est plus utile qu'une de 5
+    // dont aucun ne l'est.
+    const pulse = buildCategoryPulse([
+      ...["a", "b", "c", "d", "e"].map((id) => p(id, "maison", "risque")),
+      ...["f", "g", "h"].map((id) => p(id, "tech", "entrer_maintenant")),
+    ]);
+    expect(pulse[0]!.label).toBe("tech");
+  });
+
+  it("ignore les produits sans assez de recul", () => {
+    // Sinon une famille entièrement récente afficherait « 10 produits,
+    // 0 fenêtre ouverte » — un terrain lu comme mort alors qu'il est
+    // seulement inconnu.
+    const recent = { ...p("x", "beaute", "entrer_maintenant"), snapshotCount: 1 };
+    delete (recent as { verdictConfidence?: number }).verdictConfidence;
+    expect(buildCategoryPulse([recent])).toEqual([]);
+  });
+
+  it("ignore les produits sans catégorie plutôt que d'inventer un fourre-tout", () => {
+    const sans = { ...p("y", "", "entrer_maintenant") };
+    expect(buildCategoryPulse([sans])).toEqual([]);
+  });
+
+  it("désigne le meilleur produit de chaque famille", () => {
+    const pulse = buildCategoryPulse([
+      p("faible", "beaute", "entrer_maintenant", 30),
+      p("fort", "beaute", "entrer_maintenant", 90),
+    ]);
+    expect(pulse[0]!.best?.id).toBe("fort");
   });
 });

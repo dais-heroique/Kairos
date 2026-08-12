@@ -3,7 +3,9 @@
 import type { ExperienceLevel, FollowerRange } from "@kairos/shared";
 import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
-import { type FormEvent, useState } from "react";
+import { type FormEvent, useMemo, useState } from "react";
+import { computeEarnings, DEFAULT_EARNINGS_CONFIG } from "@kairos/core";
+import { EstimatedValue } from "@/components/EstimatedValue";
 import { OnboardingProgress } from "@/components/OnboardingProgress";
 import { useAuth } from "@/lib/firebase/auth-context";
 import { completeOnboarding } from "@/lib/firestore/user";
@@ -22,6 +24,13 @@ const EXPERIENCE_LEVELS: ExperienceLevel[] = [
   "confirme",
 ];
 
+// Produit d'exemple de l'aperçu. Volontairement au milieu de ce qu'on
+// observe — 25 € commissionnés 20 % — et annoncé comme un exemple à
+// l'écran : ce n'est pas une projection de gains, c'est une démonstration
+// de ce que le chiffre saisi produit.
+const PREVIEW_PRICE_EUR = 25;
+const PREVIEW_COMMISSION_PCT = 20;
+
 export default function OnboardingProfilPage() {
   const t = useTranslations("Onboarding");
   const router = useRouter();
@@ -36,6 +45,24 @@ export default function OnboardingProfilPage() {
     userDoc?.profile.experienceLevel ?? "debutant",
   );
   const [saving, setSaving] = useState(false);
+
+  // Le même moteur que le reste de l'application (`packages/core`), pas
+  // une formule d'affichage : ce que l'aperçu montre est exactement ce que
+  // le tableau de bord affichera ensuite. Une démonstration qui ne
+  // correspondrait pas au produit réel serait pire que pas de démonstration.
+  const previewEarnings = useMemo(() => {
+    const views = Number(avgViews);
+    if (!Number.isFinite(views) || views <= 0) return null;
+    return computeEarnings({
+      expectedViews: Math.floor(views),
+      followerRange,
+      niche: "",
+      medianConversionRate: DEFAULT_EARNINGS_CONFIG.defaultConversionRate,
+      priceCents: PREVIEW_PRICE_EUR * 100,
+      commissionRatePct: PREVIEW_COMMISSION_PCT,
+      estimatedReturnRatePct: DEFAULT_EARNINGS_CONFIG.defaultReturnRatePct,
+    });
+  }, [avgViews, followerRange]);
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
@@ -70,7 +97,7 @@ export default function OnboardingProfilPage() {
             onChange={(event) =>
               setFollowerRange(event.target.value as FollowerRange)
             }
-            className="kai-input"
+            className="kai-select"
           >
             {FOLLOWER_RANGES.map((range) => (
               <option key={range} value={range}>
@@ -100,7 +127,7 @@ export default function OnboardingProfilPage() {
             onChange={(event) =>
               setExperienceLevel(event.target.value as ExperienceLevel)
             }
-            className="kai-input"
+            className="kai-select"
           >
             {EXPERIENCE_LEVELS.map((level) => (
               <option key={level} value={level}>
@@ -109,6 +136,45 @@ export default function OnboardingProfilPage() {
             ))}
           </select>
         </label>
+
+        {/* Aperçu immédiat.
+            L'onboarding ne faisait que collecter : trois champs, un bouton,
+            et la valeur du produit n'apparaissait qu'après. Or `avgViews`
+            est le champ dont tout dépend — mal renseigné ou laissé à 0,
+            l'application entière n'affiche que des tirets. Montrer le
+            résultat pendant la saisie fait deux choses : ça explique
+            pourquoi on demande ce chiffre, et ça donne la première preuve
+            que l'outil calcule vraiment quelque chose. */}
+        {previewEarnings && (
+          <div
+            className="flex flex-col gap-1 rounded-xl p-3"
+            style={{ backgroundColor: "var(--color-success-soft)" }}
+          >
+            <span
+              className="text-xs font-semibold uppercase tracking-wide"
+              style={{ color: "var(--color-success)" }}
+            >
+              Ce que ça donne
+            </span>
+            <p className="font-[family-name:var(--font-display)] text-xl font-extrabold">
+              <EstimatedValue
+                range={previewEarnings}
+                format={(v) =>
+                  v.toLocaleString("fr-FR", {
+                    style: "currency",
+                    currency: "EUR",
+                    maximumFractionDigits: 0,
+                  })
+                }
+              />
+            </p>
+            <p className="text-xs text-[color:var(--color-ink-muted)]">
+              Pour une vidéo sur un produit à {PREVIEW_PRICE_EUR} € commissionné{" "}
+              {PREVIEW_COMMISSION_PCT} %. C&apos;est un exemple type, pas une
+              promesse — les vrais produits arrivent juste après.
+            </p>
+          </div>
+        )}
 
         <button type="submit" disabled={saving} className="kai-btn-primary mt-auto">
           {t("finish")}

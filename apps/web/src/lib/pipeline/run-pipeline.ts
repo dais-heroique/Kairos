@@ -16,7 +16,12 @@ import {
   selectNewcomers,
   type AggregableProduct,
 } from "@kairos/core";
-import type { Commission, ProductVerdict, SellerTrust } from "@kairos/shared";
+import {
+  resolveCommission,
+  type Commission,
+  type ProductVerdict,
+  type SellerTrust,
+} from "@kairos/shared";
 import { firestore } from "@/lib/firebase/client";
 import {
   getProductSnapshots,
@@ -91,15 +96,22 @@ function aggregable(scored: ScoredProduct): AggregableProduct {
 }
 
 function commissionOf(product: StoredProduct): Commission {
-  return {
-    ratePct: product.commissionRatePct,
-    isOpenCollab: true,
-    isTargetedOnly: false,
-    // Ce pipeline ne traite que les produits saisis dans /admin/produits,
-    // où le taux est renseigné à la main : c'est un relevé, pas le barème
-    // de catégorie.
-    isEstimated: false,
-  };
+  // Un taux saisi dans /admin/produits est un relevé. Laissé vide, on
+  // retombe sur le barème de catégorie plutôt que sur zéro — même règle
+  // que le pipeline de collecte, et elle n'est écrite qu'une fois
+  // (`resolveCommission`).
+  return resolveCommission(
+    product.commissionRatePct > 0
+      ? {
+          ratePct: product.commissionRatePct,
+          isOpenCollab: true,
+          isTargetedOnly: false,
+          isEstimated: false,
+        }
+      : null,
+    product.title,
+    product.sourceQuery ?? product.category,
+  );
 }
 
 function sellerTrustOf(product: StoredProduct): SellerTrust {
@@ -115,15 +127,15 @@ function sellerTrustOf(product: StoredProduct): SellerTrust {
 // Doit rester aligné sur buildDisplayItem() dans apps/jobs/src/rank.ts —
 // les deux pipelines écrivent le même document.
 function rankingItem(scored: ScoredProduct, rank: number) {
+  const commission = commissionOf(scored.product);
   return {
     id: scored.product.id,
     rank,
     title: scored.product.title,
     priceCents: scored.product.priceCents,
     shopId: scored.product.shopId,
-    commissionRatePct: scored.product.commissionRatePct,
-    // Saisie manuelle dans /admin/produits : c'est donc un taux relevé.
-    commissionIsEstimated: false,
+    commissionRatePct: commission.ratePct,
+    commissionIsEstimated: commission.isEstimated,
     verdict: scored.verdict.verdict,
     salesTrend: TREND_BY_PHASE[scored.verdict.phase],
     emoji: scored.product.emoji ?? null,

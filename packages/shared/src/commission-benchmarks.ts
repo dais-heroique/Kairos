@@ -127,11 +127,22 @@ export function findCommissionBenchmark(
   title: string,
   sourceQuery?: string | null,
 ): CommissionBenchmark {
-  const haystack = `${title} ${sourceQuery ?? ""}`.toLowerCase();
-  for (const bench of COMMISSION_BENCHMARKS) {
-    if (bench.keywords.some((k) => haystack.includes(k))) return bench;
-  }
-  return DEFAULT_COMMISSION_BENCHMARK;
+  // Deux passes, et non une seule chaîne concaténée. Avec un `${title}
+  // ${sourceQuery}` unique, l'ordre du tableau tranchait à la place du
+  // titre : un casque Bluetooth remonté par une requête « skincare »
+  // ressortait en « Beauté & soin » (19 %) au lieu de « Tech » (8 %),
+  // parce que la famille beauté est déclarée en premier. Soit un gain
+  // annoncé plus du double du réel, sur la seule foi du mot-clé de
+  // recherche.
+  const match = (haystack: string): CommissionBenchmark | null => {
+    const lower = haystack.toLowerCase();
+    for (const bench of COMMISSION_BENCHMARKS) {
+      if (bench.keywords.some((k) => lower.includes(k))) return bench;
+    }
+    return null;
+  };
+
+  return match(title) ?? (sourceQuery ? match(sourceQuery) : null) ?? DEFAULT_COMMISSION_BENCHMARK;
 }
 
 /** Commission estimée à partir du taux de marché de la famille détectée. */
@@ -148,4 +159,29 @@ export function estimatedCommissionFor(
     isTargetedOnly: false,
     isEstimated: true,
   };
+}
+
+/**
+ * La commission à utiliser pour un produit : celle qui est stockée si elle
+ * porte un taux, le barème de catégorie sinon.
+ *
+ * **À la lecture, et pas seulement à l'écriture.** Poser l'estimation
+ * uniquement au moment de la collecte ne corrige que les produits
+ * recollectés ensuite : tous les documents déjà en base gardent leur
+ * `ratePct: 0` et continuent d'afficher « inconnue » jusqu'à ce qu'ils
+ * repassent par le scrape. Comme la règle est purement dérivée du titre,
+ * l'appliquer à la lecture donne le même résultat sans réécrire la base —
+ * et reste juste le jour où un vrai taux est saisi, puisqu'un taux
+ * existant n'est jamais remplacé.
+ *
+ * C'est le seul endroit qui décide. Les trois appelants (les deux
+ * pipelines et la lecture des classements) ne dupliquent pas la règle.
+ */
+export function resolveCommission(
+  stored: Commission | null | undefined,
+  title: string,
+  sourceQuery?: string | null,
+): Commission {
+  if (stored && stored.ratePct > 0) return stored;
+  return estimatedCommissionFor(title, sourceQuery);
 }

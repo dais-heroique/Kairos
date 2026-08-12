@@ -229,6 +229,33 @@ function DashboardContent() {
 
         {dashboard && dashboard.totalAnalysed > 0 && (
           <>
+            {/* ---------- Le potentiel, en euros ---------- */}
+            {/* Le tableau de bord n'affichait aucun montant avant le
+                troisième écran : quatre compteurs, puis le pick. Or la
+                question qui fait ouvrir l'app le lundi est « combien ».
+                Le chiffre existait déjà (focusEarnings), il était
+                simplement enterré. */}
+            {dashboard.focusEarnings && (
+              <section
+                className="kai-card flex flex-col gap-1"
+                style={{ backgroundColor: "var(--color-success-soft)", borderColor: "transparent" }}
+              >
+                <span className="text-xs font-semibold uppercase tracking-wide" style={{ color: "var(--color-success)" }}>
+                  Ta semaine, si tu tournes ces {dashboard.focus.length} produits
+                </span>
+                <p className="font-[family-name:var(--font-display)] text-3xl font-extrabold">
+                  <EstimatedValue
+                    range={dashboard.focusEarnings}
+                    format={(v) => eur(v)}
+                  />
+                </p>
+                <p className="text-xs text-[color:var(--color-ink-muted)]">
+                  Une vidéo par produit, à tes{" "}
+                  {userDoc?.profile.avgViews.toLocaleString("fr-FR")} vues moyennes.
+                </p>
+              </section>
+            )}
+
             {/* ---------- Chiffres clés ---------- */}
             <div className="grid grid-cols-2 gap-2">
               <Stat
@@ -394,6 +421,87 @@ function DashboardContent() {
               </section>
             )}
 
+            {/* ---------- Les terrains ---------- */}
+            {/* Un créateur choisit d'abord une famille, ensuite un produit.
+                Savoir que « beauté » a 12 fenêtres ouvertes et « tech » 2
+                oriente une semaine de tournage mieux qu'un classement de
+                90 lignes. */}
+            {dashboard.categories.length > 0 && (
+              <section className="kai-card flex flex-col gap-2">
+                <h2 className="font-[family-name:var(--font-display)] font-bold">
+                  Où le marché est ouvert
+                </h2>
+                <p className="text-xs text-[color:var(--color-ink-muted)]">
+                  Par famille de produits, sur ce qui a assez de recul pour
+                  qu&apos;on se prononce.
+                </p>
+                <div className="flex flex-col gap-2">
+                  {dashboard.categories.map((cat) => {
+                    const share = cat.total > 0 ? cat.open / cat.total : 0;
+                    return (
+                      <div key={cat.label} className="flex flex-col gap-1">
+                        <div className="flex items-baseline justify-between gap-2">
+                          <span className="truncate text-sm font-semibold capitalize">
+                            {cat.label}
+                          </span>
+                          <span className="shrink-0 text-xs text-[color:var(--color-ink-muted)]">
+                            {cat.open}/{cat.total} jouables
+                            {cat.avoid > 0 && ` · ${cat.avoid} à éviter`}
+                          </span>
+                        </div>
+                        {/* La barre est la part réellement jouable, pas un
+                            score composite : ce qu'elle montre se recompte
+                            à la main sur les deux nombres à côté. */}
+                        <div
+                          className="h-1.5 w-full overflow-hidden rounded-full"
+                          style={{ backgroundColor: "var(--color-border)" }}
+                        >
+                          <div
+                            className="h-full rounded-full"
+                            style={{
+                              width: `${Math.round(share * 100)}%`,
+                              backgroundColor:
+                                share >= 0.4 ? "var(--color-success)" : "var(--color-warning)",
+                            }}
+                          />
+                        </div>
+                        {cat.best && (
+                          <Link
+                            href={`/produit?id=${encodeURIComponent(cat.best.id)}`}
+                            className="truncate text-xs underline text-[color:var(--color-ink-muted)]"
+                          >
+                            Le meilleur : {shortTitle(cat.best.title, 42)}
+                          </Link>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </section>
+            )}
+
+            {/* ---------- La niche déclarée ne trouve rien ---------- */}
+            {/* Silence = le créateur croit que l'outil n'a rien pour lui,
+                alors que ce sont ses niches qui ne recoupent pas la
+                collecte. C'est réparable en un clic, encore faut-il le
+                savoir. */}
+            {dashboard.nicheMatches === 0 && (userDoc?.profile.niches.length ?? 0) > 0 && (
+              <section className="kai-card flex flex-col gap-1">
+                <p className="font-[family-name:var(--font-display)] font-bold">
+                  Rien dans tes niches cette semaine
+                </p>
+                <p className="text-sm text-[color:var(--color-ink-muted)]">
+                  Aucun produit jouable ne correspond à{" "}
+                  {userDoc?.profile.niches.join(", ")}. Les recommandations
+                  ci-dessus viennent donc des autres familles — elles restent
+                  valables, elles sont juste hors de ton terrain habituel.
+                </p>
+                <Link href="/onboarding/niches" className="mt-1 text-sm underline">
+                  Ajuster mes niches
+                </Link>
+              </section>
+            )}
+
             {/* ---------- Urgence ---------- */}
             {dashboard.closingSoon.length > 0 && (
               <section className="kai-card flex flex-col gap-2">
@@ -468,6 +576,63 @@ function DashboardContent() {
                   ))}
                 </div>
               </section>
+            )}
+
+            {/* ---------- Ce que tu as déjà fait ---------- */}
+            {/* `userDoc.stats` était écrit et jamais relu. Affiché en
+                permanence il donnerait « 0 · 0 » à tout nouveau compte,
+                c'est-à-dire un bilan d'échec dès la première visite : on ne
+                le montre qu'une fois qu'il y a quelque chose à montrer, et
+                on propose l'étape suivante sinon. */}
+            {userDoc && (userDoc.stats.briefsGenerated > 0 || userDoc.stats.videosPosted > 0) ? (
+              <section className="kai-card flex flex-col gap-2">
+                <h2 className="font-[family-name:var(--font-display)] font-bold">
+                  Ton activité
+                </h2>
+                <div className="flex gap-4">
+                  <div>
+                    <p className="font-[family-name:var(--font-display)] text-xl font-extrabold">
+                      {userDoc.stats.briefsGenerated}
+                    </p>
+                    <p className="text-xs text-[color:var(--color-ink-muted)]">
+                      brief{userDoc.stats.briefsGenerated > 1 ? "s" : ""} généré
+                      {userDoc.stats.briefsGenerated > 1 ? "s" : ""}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="font-[family-name:var(--font-display)] text-xl font-extrabold">
+                      {userDoc.stats.videosPosted}
+                    </p>
+                    <p className="text-xs text-[color:var(--color-ink-muted)]">
+                      vidéo{userDoc.stats.videosPosted > 1 ? "s" : ""} publiée
+                      {userDoc.stats.videosPosted > 1 ? "s" : ""}
+                    </p>
+                  </div>
+                </div>
+                {/* Aucun montant gagné n'est affiché : `estimatedEarningsCents`
+                    est une somme d'estimations, pas un revenu constaté. Le
+                    présenter comme « ce que tu as gagné » serait le mensonge
+                    le plus coûteux du produit. */}
+              </section>
+            ) : (
+              dashboard.topPick && (
+                <section className="kai-card flex flex-col gap-1">
+                  <p className="font-[family-name:var(--font-display)] font-bold">
+                    Ta prochaine étape
+                  </p>
+                  <p className="text-sm text-[color:var(--color-ink-muted)]">
+                    Tu n&apos;as pas encore généré de texte de tournage. C&apos;est
+                    ce qui transforme une recommandation en vidéo — et le
+                    premier est offert.
+                  </p>
+                  <Link
+                    href={`/brief?id=${encodeURIComponent(dashboard.topPick.item.id)}`}
+                    className="kai-btn-primary mt-1 text-center"
+                  >
+                    Obtenir le texte à dire
+                  </Link>
+                </section>
+              )
             )}
 
             {/* ---------- Trop récents ---------- */}

@@ -1,5 +1,5 @@
 import type { Firestore } from "firebase-admin/firestore";
-import type { Commission, SellerTrust } from "@kairos/shared";
+import { resolveCommission, type Commission, type SellerTrust } from "@kairos/shared";
 import { NEUTRAL_COMMISSION, NEUTRAL_SELLER_TRUST } from "./compute.js";
 
 // Métadonnées lues depuis le document produit existant (title/priceCents/
@@ -61,7 +61,14 @@ export async function readProductMeta(
       sourceQuery: (data?.sourceQuery as string | undefined) ?? NEUTRAL_META.sourceQuery,
       firstSeenAt: (data?.firstSeenAt as string | undefined) ?? NEUTRAL_META.firstSeenAt,
       imageUrl: (data?.imageUrl as string | undefined) ?? NEUTRAL_META.imageUrl,
-      commission: (data?.commission as Commission | undefined) ?? NEUTRAL_COMMISSION,
+      // Le barème de catégorie s'applique ici plutôt qu'à la collecte :
+      // les produits déjà en base ont un `ratePct: 0` que seule une
+      // recollecte corrigerait. Un taux réellement renseigné est conservé.
+      commission: resolveCommission(
+        data?.commission as Commission | undefined,
+        (data?.title as string | undefined) ?? "",
+        data?.sourceQuery as string | undefined,
+      ),
       sellerTrust: (data?.sellerTrust as SellerTrust | undefined) ?? NEUTRAL_SELLER_TRUST,
     });
   });
