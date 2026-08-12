@@ -4,7 +4,11 @@ import Link from "next/link";
 import { useState } from "react";
 import { planBySlug, type Plan, type PlanStatus } from "@kairos/shared";
 import { CheckoutError } from "@/lib/stripe/checkout";
-import { isPortalConfigured, openBillingPortal } from "@/lib/stripe/portal";
+import {
+  isPortalConfigured,
+  openBillingPortal,
+  PORTAL_FALLBACK_URL,
+} from "@/lib/stripe/portal";
 
 // Mon abonnement — état réel, et le chemin pour en sortir.
 //
@@ -63,6 +67,14 @@ export function SubscriptionCard({ plan }: { plan: Plan }) {
     try {
       await openBillingPortal();
     } catch (err) {
+      // Le secours part **tout seul**, sans redemander un clic : quelqu'un
+      // qui vient d'appuyer sur « résilier » a exprimé son intention, et
+      // lui répondre par un message d'erreur revient à mettre un obstacle
+      // exactement là où la loi en interdit un.
+      if (PORTAL_FALLBACK_URL) {
+        window.location.assign(PORTAL_FALLBACK_URL);
+        return;
+      }
       setError(
         err instanceof CheckoutError
           ? err.message
@@ -122,11 +134,26 @@ export function SubscriptionCard({ plan }: { plan: Plan }) {
         </>
       ) : isPaid ? (
         // Plan payant sans client Stripe : accordé à la main. Le dire, plutôt
-        // qu'un bouton qui échouerait.
-        <p className="text-xs text-[color:var(--color-ink-muted)]">
-          Ce plan t&apos;a été accordé directement, sans paiement. Il n&apos;y a
-          donc rien à résilier.
-        </p>
+        // qu'un bouton qui échouerait — mais laisser le portail accessible,
+        // parce qu'un `stripeCustomerId` absent peut aussi vouloir dire que
+        // le webhook n'a pas encore écrit le document.
+        <>
+          <p className="text-xs text-[color:var(--color-ink-muted)]">
+            Aucun paiement n&apos;est rattaché à ce compte — le plan t&apos;a
+            été accordé directement, ou l&apos;abonnement vient tout juste
+            d&apos;être créé.
+          </p>
+          {PORTAL_FALLBACK_URL && (
+            <a
+              href={PORTAL_FALLBACK_URL}
+              className="kai-btn-outline text-center"
+              target="_blank"
+              rel="noreferrer"
+            >
+              Accéder à mes factures et résilier
+            </a>
+          )}
+        </>
       ) : (
         <Link href="/tarifs" className="kai-btn-outline text-center">
           Voir les offres

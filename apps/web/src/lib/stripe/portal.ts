@@ -12,9 +12,21 @@ import { CheckoutError } from "./checkout";
 
 const WORKER_URL = process.env.NEXT_PUBLIC_STRIPE_WORKER_URL;
 
+/**
+ * Portail « sans code » de Stripe — le client y entre son email et reçoit
+ * un accès par lien.
+ *
+ * C'est le secours, jamais le chemin principal : il impose une étape de
+ * boîte mail là où la session créée par le Worker ouvre directement sur le
+ * bon client. Mais il ne dépend ni du Worker, ni du compte de service, ni
+ * de Firestore — et la résiliation est une obligation légale qui ne doit
+ * pas tomber en même temps que notre infrastructure.
+ */
+export const PORTAL_FALLBACK_URL = process.env.NEXT_PUBLIC_STRIPE_PORTAL_URL?.trim() || null;
+
 /** Le portail est-il joignable ? Sans Worker, aucun bouton ne doit paraître. */
 export function isPortalConfigured(): boolean {
-  return Boolean(WORKER_URL?.trim());
+  return Boolean(WORKER_URL?.trim()) || PORTAL_FALLBACK_URL !== null;
 }
 
 /**

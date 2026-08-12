@@ -38,6 +38,15 @@ export default function CguPage() {
         résiliation avant la fin de la période en cours, depuis le portail
         client Stripe.
       </p>
+      <p>
+        {/* Franchise en base : les prix affichés sont donc les prix finaux,
+            sans TVA à ajouter. La mention est obligatoire sur les factures
+            (art. 293 B du CGI) ; l'écrire aussi ici évite qu'un client se
+            demande si 19 € deviendront 22,80 € au paiement. */}
+        <strong>TVA non applicable, article 293 B du Code général des
+        impôts.</strong> Les montants affichés sont les montants finaux&nbsp;:
+        aucune taxe n&apos;est ajoutée au moment du paiement.
+      </p>
 
       <h2>Estimations et absence de garantie</h2>
       <p>
@@ -61,11 +70,20 @@ export default function CguPage() {
       <h2>Résiliation</h2>
       <p>
         Tu peux résilier ton abonnement à tout moment depuis le portail
-        client Stripe, ou supprimer ton compte depuis la page{" "}
+        client Stripe — accessible en un clic depuis la page{" "}
         <a href="/compte" className="underline">
           Ton compte
         </a>
-        . Voir aussi le droit de rétractation applicable aux nouveaux
+        , ou directement à l&apos;adresse{" "}
+        <a
+          href="https://billing.stripe.com/p/login/5kQ00cbcT6T8cjI79G8AE00"
+          className="underline"
+          target="_blank"
+          rel="noreferrer"
+        >
+          billing.stripe.com
+        </a>
+        . La résiliation prend effet à la fin de la période déjà payée. Voir aussi le droit de rétractation applicable aux nouveaux
         abonnés.
       </p>
 

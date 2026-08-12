@@ -77,7 +77,19 @@ export const createCheckoutSession = onCall(
       // TVA : Stripe Tax calcule et collecte selon le pays du client. Sans
       // lui, vendre un service numérique à des particuliers dans l'UE
       // laisse la TVA à la charge du vendeur. Voir docs/STRIPE.md.
-      automatic_tax: { enabled: true },
+      // TVA : **désactivée**, et c'est une décision fiscale, pas un oubli.
+      // Le vendeur relève de la franchise en base de TVA (art. 293 B du
+      // CGI) : il ne la collecte pas, donc Stripe ne doit pas l'ajouter.
+      // Activer `automatic_tax` ici facturerait au client une taxe qui n'est
+      // pas due et qu'il faudrait ensuite lui rembourser.
+      //
+      // Deux conséquences à ne pas perdre de vue le jour où le seuil de la
+      // franchise est dépassé : repasser ce drapeau à `true` **et** activer
+      // Stripe Tax dans le tableau de bord — l'un sans l'autre fait échouer
+      // la création de session. La mention « TVA non applicable, art. 293 B
+      // du CGI » doit par ailleurs figurer sur les factures, ce qui se règle
+      // dans Stripe (Paramètres → Facturation → pied de page des factures).
+      automatic_tax: { enabled: false },
       success_url: `${origin}/compte?paiement=ok`,
       cancel_url: `${origin}/tarifs?paiement=annule`,
       locale: "fr",
