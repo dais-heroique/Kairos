@@ -6,3 +6,4 @@ export * from "./attribution";
 export * from "./fraud-score";
 export * from "./clawback";
 export * from "./share-kit";
+export * from "./partner-stats";

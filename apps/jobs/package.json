@@ -15,7 +15,8 @@
     "apify:intelligent:dry": "tsx src/apify-intelligent-scrape.ts --dry-run",
     "apify:intelligent:verbose": "tsx src/apify-intelligent-scrape.ts --verbose",
     "recover:apify": "tsx src/recover-apify-data.ts",
-    "grant:plan": "tsx src/grant-plan.ts"
+    "grant:plan": "tsx src/grant-plan.ts",
+    "grant:role": "tsx src/grant-role.ts"
   },
   "dependencies": {
     "@google-cloud/bigquery": "^7.9.0",

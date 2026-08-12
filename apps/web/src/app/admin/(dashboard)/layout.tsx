@@ -2,6 +2,7 @@
 
 import { useTranslations } from "next-intl";
 import type { ReactNode } from "react";
+import { hasAtLeastRole } from "@kairos/shared";
 import { RequireAuth } from "@/components/RequireAuth";
 import { useAuth } from "@/lib/firebase/auth-context";
 
@@ -11,7 +12,7 @@ function AdminGate({ children }: { children: ReactNode }) {
 
   if (loading) return null;
 
-  if (userDoc?.role !== "admin") {
+  if (!userDoc || !hasAtLeastRole(userDoc.role, "admin")) {
     return (
       <main className="mx-auto flex min-h-dvh max-w-[390px] flex-col justify-center gap-3 px-5 py-8 sm:max-w-md">
         <h1 className="font-[family-name:var(--font-display)] text-2xl font-extrabold">

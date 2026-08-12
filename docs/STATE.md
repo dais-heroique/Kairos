@@ -292,6 +292,22 @@ le simulateur. Reste un ordre de grandeur à calibrer, pas un placeholder à
 
     `deploy.sh` construit désormais `shared`, `core`, `payments` et `ai-gateway` avant `apps/web`. Vérifié en supprimant tous les `packages/*/lib` puis en rejouant la séquence complète.
 
+83. **Programme partenaire : codes choisis, virements à la main** (2026-08-11) — `packages/affiliate` existait (Lot 7) mais pour un **autre modèle** : chaque utilisateur obtient un code aléatoire de 8 caractères, gagne des paliers, et serait payé par Stripe Connect. Le besoin réel est différent sur trois points, et aucun n'est cosmétique : le propriétaire **choisit** les codes, les influenceurs **n'ont pas de compte** KAIROS, et ils sont payés **par virement**. Réutiliser le modèle libre-service aurait demandé de neutraliser paliers, portefeuille et Connect — c'est-à-dire de garder la coquille en jetant le contenu.
+
+    D'où `packages/shared/src/partner.ts` et `packages/affiliate/src/partner-stats.ts` (17 tests), à côté et non à la place. **Un code est choisi, pas généré** : « LEA20 » se dicte à l'oral dans une vidéo, `A7K2M9PX` non — et un code d'affiliation qu'on ne peut pas dicter ne sert à rien. Normalisé en majuscules **des deux côtés** (création et lecture du `?ref=`), sinon un influenceur qui écrit son lien en minuscules enverrait ses inscrits sur un code inexistant, et personne ne le saurait avant qu'il réclame son virement.
+
+    Trois décisions de calcul, chacune payée en euros si elle est fausse : `trialing` et `past_due` **ne comptent pas** comme payants (rien n'est encore encaissé, et reprendre une commission déjà versée est la pire conversation possible avec un partenaire) ; l'arrondi va **vers le bas**, en faveur de celui qui paie de sa poche ; la commission est calculée **sur le total**, jamais en additionnant des arrondis — l'écart grandit avec le nombre de clients et c'est toujours le partenaire qui le perd.
+
+    `orphanCodes` remonte les codes utilisés mais jamais créés (code diffusé trop tôt, faute de frappe). Sans cette liste, ces inscrits ne seraient rattachés à personne — donc jamais payés, et jamais réclamés puisque personne ne saurait qu'ils existent.
+
+84. **Un troisième rôle, parce que créer un code engage de l'argent** (2026-08-11) — `role` passe à `user | admin | owner`. Un administrateur gère produits, classements et conformité, et **voit** les chiffres du programme partenaire ; seul le propriétaire crée ou désactive un code, puisque chaque code promet 30 % de commission.
+
+    Les six tests `role === "admin"` du code sont passés à `hasAtLeastRole(role, "admin")`, et la règle Firestore à `in ["admin", "owner"]` : une égalité stricte aurait exclu le propriétaire de sa propre administration — le genre de verrou qu'on ne découvre qu'enfermé dehors. **Aucune règle n'a été élargie** : `role` reste impossible à écrire depuis le navigateur, et `pnpm grant:role` (Admin SDK, en local) est le seul chemin. Le script refuse de rétrograder le dernier propriétaire, sans quoi plus personne ne pourrait créer de code ni se redonner le rôle.
+
+    `partnerCodes/{code}` est **lisible par tout visiteur, y compris non connecté** — la page d'inscription doit pouvoir dire « ce code n'existe pas » **avant** la création du compte, puisque `referredByCode` est figé ensuite. La **suppression est interdite à tout le monde**, propriétaire compris : effacer un code effacerait la trace de sommes dues. On désactive.
+
+    ⚠️ Les 5 tests de règles ajoutés n'ont **pas** été exécutés — l'émulateur Firebase n'est pas installable dans l'environnement de développement distant. À lancer avec `pnpm test:rules` depuis le Mac avant de déployer.
+
 ## Questions ouvertes (posées le 2026-08-03, aucune action prise)
 
 - ~~**La lecture publique du catalogue (décision #10) ne sert à rien.**~~ **Traité le 2026-08-05** (décision #39) : `/classements/*` est enveloppé dans `<RequireAuth>` : aucun visiteur anonyme n'atteint jamais ces pages — vérifié en naviguant réellement, on est redirigé vers `/connexion`. La justification d'origine (« rendues sans utilisateur connecté ») valait pour un rendu statique au build ; les pages sont depuis passées en `"use client"` + `useEffect`, ce qui l'a rendue caduque, mais la règle n'a jamais été refermée. **Repasser `products`/`shops`/`rankings`/`snapshots` en `isSignedIn()` ne coûterait aucune fonctionnalité** et fermerait le trou « n'importe qui vide la base ».

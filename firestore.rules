@@ -22,10 +22,28 @@ function isOwner(uid) {
   return isSignedIn() && request.auth.uid == uid;
 }
 
+function roleOf() {
+  return get(/databases/(default)/documents/users/$(request.auth.uid)).data.role;
+}
+
+// `in ["admin", "owner"]` et non `== "admin"` : le propriétaire doit
+// évidemment garder tout ce que peut un administrateur. Un test d'égalité
+// ici l'exclurait de sa propre administration — le genre de verrou qu'on
+// ne découvre qu'enfermé dehors.
 function isAdmin() {
   return isSignedIn() &&
     exists(/databases/(default)/documents/users/$(request.auth.uid)) &&
-    get(/databases/(default)/documents/users/$(request.auth.uid)).data.role == "admin";
+    roleOf() in ["admin", "owner"];
+}
+
+// Le propriétaire seul. Réservé à ce qui engage de l'argent réel : créer un
+// code partenaire, c'est promettre 30 % de commission sur des abonnements,
+// payés par virement. Un administrateur gère les produits et les
+// classements ; il n'a pas à pouvoir ouvrir cette vanne.
+function isSiteOwner() {
+  return isSignedIn() &&
+    exists(/databases/(default)/documents/users/$(request.auth.uid)) &&
+    roleOf() == "owner";
 }
 
 // Le rôle n'est jamais modifiable par le client — sinon n'importe qui peut
@@ -238,6 +256,27 @@ service cloud.firestore {
       allow create: if isAdmin();
       allow update: if isAdmin() || (isSignedIn() && isValidCodeRedemption());
       allow delete: if isAdmin();
+    }
+
+    // Codes partenaires — créés à la main par le propriétaire, confiés à
+    // des influenceurs qui n'ont pas de compte KAIROS.
+    //
+    // Lecture ouverte à tout visiteur, y compris non connecté, et c'est
+    // volontaire : la page d'inscription doit pouvoir dire « ce code
+    // n'existe pas » **avant** la création du compte, sinon on découvre la
+    // faute de frappe une fois l'inscription faite, quand `referredByCode`
+    // est déjà figé. Le document ne contient rien de sensible — un nom et
+    // un taux — et le code lui-même circule publiquement dans les vidéos.
+    //
+    // Écriture réservée au propriétaire : chaque ligne engage un virement.
+    match /partnerCodes/{code} {
+      allow read: if true;
+      allow create, update: if isSiteOwner();
+      // Jamais de suppression, même pour le propriétaire : effacer un code
+      // effacerait la trace des sommes dues à quelqu'un. On désactive
+      // (`active: false`), ce qui arrête l'attribution sans toucher à
+      // l'historique.
+      allow delete: if false;
     }
 
     match /affiliateClicks/{clickId} {

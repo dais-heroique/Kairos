@@ -551,6 +551,24 @@ describe("role & admin bootstrap", () => {
     );
   });
 
+  // Le propriétaire doit garder tout ce que peut un administrateur. Un
+  // `role == "admin"` strict dans les règles l'exclurait de sa propre
+  // administration — verrou qu'on ne découvre qu'enfermé dehors.
+  it("traite le propriétaire comme un administrateur", async () => {
+    await testEnv.withSecurityRulesDisabled((ctx) =>
+      Promise.all([
+        ctx
+          .firestore()
+          .collection("users")
+          .doc("boss")
+          .set(validUser("boss", { role: "owner" })),
+        ctx.firestore().collection("users").doc("alice").set(validUser("alice")),
+      ]),
+    );
+    const owner = testEnv.authenticatedContext("boss").firestore();
+    await assertSucceeds(owner.collection("users").doc("alice").get());
+  });
+
   it("lets an admin read any user's doc, blocks a normal user", async () => {
     await testEnv.withSecurityRulesDisabled((ctx) =>
       Promise.all([
@@ -568,6 +586,83 @@ describe("role & admin bootstrap", () => {
 
     const stranger = testEnv.authenticatedContext("bob").firestore();
     await assertFails(stranger.collection("users").doc("alice").get());
+  });
+});
+
+// Chaque code partenaire promet 30 % de commission sur des abonnements,
+// payés par virement. Un administrateur gère les produits ; il n'a pas à
+// pouvoir ouvrir cette vanne-là.
+describe("partnerCodes", () => {
+  const code = {
+    code: "LEA20",
+    partnerName: "Léa",
+    contact: null,
+    commissionPct: 30,
+    active: true,
+    createdAt: new Date().toISOString(),
+    notes: null,
+  };
+
+  it("laisse le propriétaire créer un code", async () => {
+    await testEnv.withSecurityRulesDisabled((ctx) =>
+      ctx
+        .firestore()
+        .collection("users")
+        .doc("boss")
+        .set(validUser("boss", { role: "owner" })),
+    );
+    const db = testEnv.authenticatedContext("boss").firestore();
+    await assertSucceeds(db.collection("partnerCodes").doc("LEA20").set(code));
+  });
+
+  it("refuse la création à un administrateur", async () => {
+    await testEnv.withSecurityRulesDisabled((ctx) =>
+      ctx
+        .firestore()
+        .collection("users")
+        .doc("admin1")
+        .set(validUser("admin1", { role: "admin" })),
+    );
+    const db = testEnv.authenticatedContext("admin1").firestore();
+    await assertFails(db.collection("partnerCodes").doc("LEA20").set(code));
+  });
+
+  it("refuse la création à un utilisateur ordinaire", async () => {
+    await testEnv.withSecurityRulesDisabled((ctx) =>
+      ctx.firestore().collection("users").doc("alice").set(validUser("alice")),
+    );
+    const db = testEnv.authenticatedContext("alice").firestore();
+    await assertFails(db.collection("partnerCodes").doc("LEA20").set(code));
+  });
+
+  it("laisse un visiteur non connecté lire un code", async () => {
+    // La page d'inscription doit pouvoir dire « ce code n'existe pas »
+    // AVANT la création du compte : après, `referredByCode` est figé.
+    await testEnv.withSecurityRulesDisabled((ctx) =>
+      ctx.firestore().collection("partnerCodes").doc("LEA20").set(code),
+    );
+    const db = testEnv.unauthenticatedContext().firestore();
+    await assertSucceeds(db.collection("partnerCodes").doc("LEA20").get());
+  });
+
+  it("interdit la suppression, même au propriétaire", async () => {
+    // Effacer un code effacerait la trace des sommes dues à quelqu'un.
+    // On désactive, on ne supprime pas.
+    await testEnv.withSecurityRulesDisabled((ctx) =>
+      Promise.all([
+        ctx
+          .firestore()
+          .collection("users")
+          .doc("boss")
+          .set(validUser("boss", { role: "owner" })),
+        ctx.firestore().collection("partnerCodes").doc("LEA20").set(code),
+      ]),
+    );
+    const db = testEnv.authenticatedContext("boss").firestore();
+    await assertFails(db.collection("partnerCodes").doc("LEA20").delete());
+    await assertSucceeds(
+      db.collection("partnerCodes").doc("LEA20").update({ active: false }),
+    );
   });
 });
 

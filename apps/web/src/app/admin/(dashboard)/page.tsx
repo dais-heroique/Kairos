@@ -136,6 +136,19 @@ export default function AdminDashboardPage() {
 
       <section className="kai-card flex flex-col gap-2">
         <h2 className="font-[family-name:var(--font-display)] font-bold">
+          Partenaires
+        </h2>
+        <p className="text-sm text-[color:var(--color-ink-muted)]">
+          Les codes confiés aux influenceurs, ce qu&apos;ils rapportent, et ce
+          qu&apos;il y a à leur virer. Seul le propriétaire peut créer un code.
+        </p>
+        <Link href="/admin/affiliation" className="kai-btn-outline mt-2 block text-center">
+          Voir les partenaires
+        </Link>
+      </section>
+
+      <section className="kai-card flex flex-col gap-2">
+        <h2 className="font-[family-name:var(--font-display)] font-bold">
           {t("seedTitle")}
         </h2>
         <p className="text-sm text-[color:var(--color-ink-muted)]">

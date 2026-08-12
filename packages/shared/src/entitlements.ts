@@ -1,7 +1,7 @@
 import { CAPABILITIES, CAPABILITIES_BY_PLAN, type Capability,
   FREE_LIMITS,
 } from "./plans";
-import type { PlanSlug, User } from "./user";
+import { hasAtLeastRole, type PlanSlug, type User } from "./user";
 
 // Un seul endroit décide de ce à quoi un compte a droit, et il lit le
 // catalogue des offres (`plans.ts`). Les fonctionnalités annoncées sur la
@@ -81,7 +81,7 @@ export function isFounder(email: string | null | undefined): boolean {
  */
 export function entitlementsOf(user: User | null | undefined): Entitlements {
   if (!user) return build("radar", false);
-  if (user.role === "admin" || isFounder(user.email)) return build(user.plan.slug, true);
+  if (hasAtLeastRole(user.role, "admin") || isFounder(user.email)) return build(user.plan.slug, true);
 
   // Un abonnement résilié ou impayé redescend au plan gratuit, même si le
   // slug est resté sur "pro".
@@ -92,7 +92,7 @@ export function entitlementsOf(user: User | null | undefined): Entitlements {
 /** Vrai si le compte atteint au moins le niveau demandé. */
 export function hasAtLeastPlan(user: User | null | undefined, minimum: PlanSlug): boolean {
   if (!user) return PLAN_RANK[minimum] === 0;
-  if (user.role === "admin" || isFounder(user.email)) return true;
+  if (hasAtLeastRole(user.role, "admin") || isFounder(user.email)) return true;
   const active = user.plan.status === "active" || user.plan.status === "trialing";
   if (!active) return PLAN_RANK[minimum] === 0;
   return PLAN_RANK[user.plan.slug] >= PLAN_RANK[minimum];

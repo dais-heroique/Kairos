@@ -13,6 +13,7 @@ import {
 import { type User, userSchema } from "@kairos/shared";
 import { auth } from "./client";
 import { ensureUserDocument, userDocRef } from "@/lib/firestore/user";
+import { isValidPartnerCode, normalisePartnerCode } from "@kairos/shared";
 
 interface AuthContextValue {
   firebaseUser: FirebaseUser | null;
@@ -26,9 +27,26 @@ const AuthContext = createContext<AuthContextValue>({
   loading: true,
 });
 
+/**
+ * Code partenaire porté par l'URL (`?ref=LEA20`).
+ *
+ * **Normalisé, et validé.** Deux raisons, chacune coûteuse :
+ *
+ * 1. Sans mise en majuscules, un influenceur qui écrit son lien en
+ *    minuscules enverrait ses inscrits sur un code que le registre ne
+ *    reconnaît pas — et personne ne s'en apercevrait avant qu'il réclame
+ *    son virement.
+ * 2. `referredByCode` est **figé à la création** du compte (voir
+ *    firestore.rules). Une valeur fantaisiste écrite ici ne se corrige
+ *    plus jamais : mieux vaut n'enregistrer que ce qui a la forme d'un
+ *    code.
+ */
 function readReferralCodeFromUrl(): string | null {
   if (typeof window === "undefined") return null;
-  return new URLSearchParams(window.location.search).get("ref");
+  const raw = new URLSearchParams(window.location.search).get("ref");
+  if (!raw) return null;
+  const code = normalisePartnerCode(raw);
+  return isValidPartnerCode(code) ? code : null;
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {

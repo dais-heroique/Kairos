@@ -62,8 +62,32 @@ export const userStatsSchema = z.object({
 });
 export type UserStats = z.infer<typeof userStatsSchema>;
 
-export const userRoleSchema = z.enum(["user", "admin"]);
+/**
+ * Trois rôles, et le troisième existe pour une raison précise.
+ *
+ * `owner` peut tout ce que peut `admin`, **plus** créer et modifier les
+ * codes partenaires — c'est-à-dire engager de l'argent réel : chaque code
+ * promet 30 % de commission sur des abonnements, payés par virement. Un
+ * administrateur peut gérer les produits et les classements sans avoir le
+ * droit d'ouvrir cette vanne-là.
+ *
+ * L'ordre du tableau est la hiérarchie : voir `hasAtLeastRole`.
+ */
+export const USER_ROLES = ["user", "admin", "owner"] as const;
+export const userRoleSchema = z.enum(USER_ROLES);
 export type UserRole = z.infer<typeof userRoleSchema>;
+
+/**
+ * `role` couvre-t-il au moins ce niveau ?
+ *
+ * À utiliser partout plutôt qu'un `role === "admin"` : ce test-là exclut
+ * le propriétaire de sa propre administration, ce qui est exactement le
+ * genre de bug qu'on ne voit qu'en production, le jour où on se retrouve
+ * verrouillé dehors.
+ */
+export function hasAtLeastRole(role: UserRole, minimum: UserRole): boolean {
+  return USER_ROLES.indexOf(role) >= USER_ROLES.indexOf(minimum);
+}
 
 export const userSchema = z.object({
   uid: z.string(),

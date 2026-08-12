@@ -10,6 +10,7 @@ export * from "./sound";
 export * from "./ranking";
 export * from "./user";
 export * from "./affiliate";
+export * from "./partner";
 export * from "./invite-code";
 export * from "./comment";
 export * from "./brief";

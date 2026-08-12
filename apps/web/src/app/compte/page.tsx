@@ -3,6 +3,7 @@
 import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import { type FormEvent, useState } from "react";
+import { hasAtLeastRole } from "@kairos/shared";
 import { AppShell } from "@/components/AppShell";
 import { RequireAuth } from "@/components/RequireAuth";
 import { SubscriptionCard } from "@/components/SubscriptionCard";
@@ -128,7 +129,7 @@ function AccountContent() {
             {userDoc.plan.slug}
           </span>
         )}
-        {userDoc?.role === "admin" && (
+        {userDoc && hasAtLeastRole(userDoc.role, "admin") && (
           <a
             href="/admin"
             className="mt-3 block text-sm font-semibold underline"
