@@ -34,8 +34,8 @@ ALLOWED_ORIGINS = "https://kairos-on.web.app,https://kairos-on.firebaseapp.com"
 # ci-dessous : n'en garder qu'un seul emplacement, celui-ci.
 STRIPE_PRICE_CREATOR_MONTHLY = "price_1U2Zjw4Do0A9o9JDl0l0oZkU"
 STRIPE_PRICE_CREATOR_YEARLY  = "price_1U2ZmQ4Do0A9o9JDMmG04oUW"
-# STRIPE_PRICE_PRO_MONTHLY     = "price_..."
-# STRIPE_PRICE_PRO_YEARLY      = "price_..."
+STRIPE_PRICE_PRO_MONTHLY     = "price_1U3ZEm4Do0A9o9JDgQwLlDrv"
+STRIPE_PRICE_PRO_YEARLY      = "price_1U3ZGE4Do0A9o9JDoGaLDMUD"
 
 # Secrets, à poser avec `wrangler secret put <NOM>` — jamais dans ce fichier :
 #   STRIPE_SECRET_KEY

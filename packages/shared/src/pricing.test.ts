@@ -130,11 +130,23 @@ describe("le catalogue livré", () => {
     expect(yearlySavingsPct(creator)).toBe(16);
   });
 
-  it("Pro n'affiche pas de prix tant qu'il n'existe pas dans Stripe", () => {
+  it("Pro est vendable et coûte plus cher que Creator", () => {
+    const creator = PLANS.find((p) => p.slug === "creator")!;
     const pro = PLANS.find((p) => p.slug === "pro")!;
-    expect(pro.priceCents).toBeNull();
-    expect(pro.yearlyPriceCents).toBeNull();
-    expect(formatPlanPrice(pro)).toBe("Bientôt");
+    expect(formatPlanPrice(pro)).toBe("39,00 € / mois");
+    expect(formatPlanPrice(pro, "yearly")).toBe("390,00 € / an");
+    // Un palier supérieur moins cher que celui qu'il englobe serait une
+    // inversion invisible au typecheck et visible sur un relevé bancaire.
+    expect(pro.priceCents!).toBeGreaterThan(creator.priceCents!);
+    expect(pro.yearlyPriceCents!).toBeGreaterThan(creator.yearlyPriceCents!);
+  });
+
+  it("les deux offres appliquent la même remise annuelle", () => {
+    // Deux ratios différents donnent l'impression que les prix sont
+    // improvisés — et obligent à réexpliquer la remise à chaque palier.
+    const payants = PLANS.filter((p) => p.priceCents !== null && p.priceCents > 0);
+    const remises = new Set(payants.map((p) => yearlySavingsPct(p)));
+    expect(remises.size, `remises trouvées : ${[...remises].join(", ")}`).toBe(1);
   });
 
   it("le plan gratuit reste gratuit dans les deux périodicités", () => {

@@ -149,12 +149,13 @@ describe("PaywallGate", () => {
     expect(screen.getByText(new RegExp(escapeRegExp(formatPlanPrice(plan))))).toBeTruthy();
   });
 
-  it("dit « Bientôt » pour un palier dont le tarif n'est pas arrêté", () => {
-    // `rankingArchive` est propre à Pro, qui n'a pas encore de prix Stripe.
-    // Le jour où il en aura un, ce test tombera — et c'est le bon moment
-    // pour vérifier que le montant affiché est celui qu'on facture.
+  it("propose Pro à son tarif quand la capacité lui est propre", () => {
+    // Ce test attendait « Bientôt » tant que Pro n'avait pas de prix
+    // Stripe. Il en a un depuis le 2026-08-11 : ce qui reste à garder,
+    // c'est qu'un abonné Creator qui bute sur une capacité Pro se voie
+    // proposer **Pro**, à son prix réel — et pas Creator, qu'il a déjà.
     const plan = planUnlocking("rankingArchive");
-    expect(plan.priceCents).toBeNull();
+    expect(plan.slug).toBe("pro");
     render(
       <PaywallGate
         capability="rankingArchive"
@@ -164,7 +165,7 @@ describe("PaywallGate", () => {
         <p>contenu</p>
       </PaywallGate>,
     );
-    expect(screen.getByText(/Bientôt/)).toBeTruthy();
+    expect(screen.getByText(new RegExp(escapeRegExp(formatPlanPrice(plan))))).toBeTruthy();
   });
 
   // Annoncer une fonctionnalité qui n'existe pas encore sans le dire

@@ -274,8 +274,12 @@ export const PLANS: PlanDefinition[] = [
   {
     slug: "pro",
     name: "Pro",
-    priceCents: null,
-    yearlyPriceCents: null,
+    // Correspondent au centime aux prix Stripe `price_1U3ZEm…` (mensuel)
+    // et `price_1U3ZGE…` (annuel). Le double de Creator, pas plus : au-delà
+    // il faudrait une différence de nature (multi-comptes, API), que Pro
+    // n'a pas — il ajoute quatre fonctionnalités au même produit.
+    priceCents: 3900,
+    yearlyPriceCents: 39000,
     tagline: "Pour en faire un vrai revenu",
     highlight: "Suivre un produit sur plusieurs semaines",
     popular: false,
