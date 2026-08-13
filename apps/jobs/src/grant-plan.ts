@@ -106,12 +106,12 @@ async function main(): Promise<void> {
   }
   if (keyPath) process.env.GOOGLE_APPLICATION_CREDENTIALS = keyPath;
 
+  const projectId = process.env.GCP_PROJECT_ID ?? "kairos-on";
   if (getApps().length === 0) {
-    initializeApp({
-      projectId: process.env.GCP_PROJECT_ID ?? "kairos-on",
-      credential: applicationDefault(),
-    });
+    initializeApp({ projectId, credential: applicationDefault() });
   }
+
+  console.log(`▸ Projet Firebase : ${projectId}`);
 
   const auth = getAuth();
   const db = getFirestore();
@@ -119,11 +119,26 @@ async function main(): Promise<void> {
   let uid: string;
   try {
     uid = (await auth.getUserByEmail(args.email)).uid;
-  } catch {
-    console.error(
-      `\n❌ Aucun compte Firebase Auth pour ${args.email}.\n` +
-        "   L'utilisateur doit s'être connecté au moins une fois.\n",
-    );
+  } catch (error) {
+    const code = (error as { code?: string } | undefined)?.code;
+    if (code === "auth/user-not-found") {
+      console.error(
+        `\n❌ Aucun compte Firebase Auth pour ${args.email} dans le projet ${projectId}.\n` +
+          "   L'utilisateur doit s'être connecté au moins une fois.\n" +
+          "   Si tu le vois pourtant dans la console Firebase : vérifie en haut à\n" +
+          `   gauche que le projet sélectionné est bien « ${projectId} ».\n`,
+      );
+    } else {
+      // Voir la même correction dans grant-role.ts : déguiser toute erreur
+      // en « compte introuvable » a déjà fait chercher le problème au
+      // mauvais endroit.
+      console.error(`\n❌ Échec de la recherche du compte (${code ?? "erreur inconnue"}).`);
+      console.error(error);
+      console.error(
+        `\n   Vérifie que la clé de compte de service appartient bien au projet\n` +
+          `   ${projectId} (son champ project_id, dans le fichier .json).\n`,
+      );
+    }
     process.exit(1);
   }
 

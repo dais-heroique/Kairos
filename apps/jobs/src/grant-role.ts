@@ -76,12 +76,16 @@ async function main(): Promise<void> {
   }
   if (keyPath) process.env.GOOGLE_APPLICATION_CREDENTIALS = keyPath;
 
+  const projectId = process.env.GCP_PROJECT_ID ?? "kairos-on";
   if (getApps().length === 0) {
-    initializeApp({
-      projectId: process.env.GCP_PROJECT_ID ?? "kairos-on",
-      credential: applicationDefault(),
-    });
+    initializeApp({ projectId, credential: applicationDefault() });
   }
+
+  // Affiché systématiquement, avant tout appel : si le projet réellement
+  // interrogé ne correspond pas à celui vu dans la console (plusieurs
+  // projets sur le même compte Google, clé téléchargée pour le mauvais),
+  // c'est ici que ça se voit — et pas après un message d'erreur trompeur.
+  console.log(`▸ Projet Firebase : ${projectId}`);
 
   const auth = getAuth();
   const db = getFirestore();
@@ -89,12 +93,30 @@ async function main(): Promise<void> {
   let uid: string;
   try {
     uid = (await auth.getUserByEmail(args.email)).uid;
-  } catch {
-    console.error(
-      `\n❌ Aucun compte Firebase Auth pour ${args.email}.\n` +
-        "   La personne doit s'être connectée au moins une fois — c'est cette\n" +
-        "   première connexion qui crée son compte et son document.\n",
-    );
+  } catch (error) {
+    const code = (error as { code?: string } | undefined)?.code;
+    if (code === "auth/user-not-found") {
+      console.error(
+        `\n❌ Aucun compte Firebase Auth pour ${args.email} dans le projet ${projectId}.\n` +
+          "   La personne doit s'être connectée au moins une fois — c'est cette\n" +
+          "   première connexion qui crée son compte et son document.\n" +
+          "   Si tu la vois pourtant dans la console Firebase : vérifie en haut à\n" +
+          "   gauche de la console que le projet sélectionné est bien\n" +
+          `   « ${projectId} », et pas un autre projet du même compte Google.\n`,
+      );
+    } else {
+      // Toute autre erreur (identifiants invalides, permissions, projet de
+      // la clé différent de celui interrogé, réseau…) mérite d'être vue
+      // telle quelle : la déguiser en « compte introuvable » a déjà fait
+      // perdre du temps à chercher le problème au mauvais endroit.
+      console.error(`\n❌ Échec de la recherche du compte (${code ?? "erreur inconnue"}).`);
+      console.error(error);
+      console.error(
+        "\n   Ce n'est pas forcément « le compte n'existe pas » — vérifie que la clé\n" +
+          `   de compte de service appartient bien au projet ${projectId} (son champ\n` +
+          "   project_id, dans le fichier .json).\n",
+      );
+    }
     process.exit(1);
   }
 
