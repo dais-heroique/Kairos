@@ -64,17 +64,39 @@ function parseArgs(argv: string[]): Args {
 async function main(): Promise<void> {
   const args = parseArgs(process.argv.slice(2));
 
+  // Capturé avant l'appel : findServiceAccountKey() retombe sur la
+  // recherche automatique si ce chemin ne pointe vers rien, donc après
+  // l'appel on ne peut plus savoir si c'était le cas.
+  const explicitPath = process.env.GOOGLE_APPLICATION_CREDENTIALS;
   const keyPath = findServiceAccountKey();
-  if (!keyPath && !process.env.GOOGLE_APPLICATION_CREDENTIALS) {
-    console.error(
-      "\n❌ Aucune clé de compte de service trouvée.\n" +
-        "   Console Firebase > Paramètres du projet > Comptes de service >\n" +
-        "   « Générer une nouvelle clé privée », puis :\n\n" +
-        "   GOOGLE_APPLICATION_CREDENTIALS=/chemin/vers/cle.json pnpm grant:role -- …\n",
-    );
+
+  if (!keyPath) {
+    if (explicitPath) {
+      console.error(
+        `\n❌ Le fichier indiqué n'existe pas : ${explicitPath}\n` +
+          "   Vérifie le chemin exact — un fichier téléchargé une deuxième\n" +
+          "   fois se retrouve souvent renommé « … (1).json » par le navigateur.\n" +
+          "   Aucune autre clé n'a non plus été trouvée automatiquement dans\n" +
+          "   ~/Downloads.\n",
+      );
+    } else {
+      console.error(
+        "\n❌ Aucune clé de compte de service trouvée.\n" +
+          "   Console Firebase > Paramètres du projet > Comptes de service >\n" +
+          "   « Générer une nouvelle clé privée », puis :\n\n" +
+          "   GOOGLE_APPLICATION_CREDENTIALS=/chemin/vers/cle.json pnpm grant:role -- …\n",
+      );
+    }
     process.exit(1);
   }
-  if (keyPath) process.env.GOOGLE_APPLICATION_CREDENTIALS = keyPath;
+  // Toujours réécrit avec le chemin **vérifié** — y compris pour remplacer
+  // un `explicitPath` périmé par celui retrouvé automatiquement.
+  process.env.GOOGLE_APPLICATION_CREDENTIALS = keyPath;
+  if (explicitPath && explicitPath !== keyPath) {
+    console.log(
+      `▸ ${explicitPath} introuvable — clé retrouvée automatiquement : ${keyPath}`,
+    );
+  }
 
   const projectId = process.env.GCP_PROJECT_ID ?? "kairos-on";
   if (getApps().length === 0) {

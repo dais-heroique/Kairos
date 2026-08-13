@@ -49,10 +49,15 @@ const KEY_SEARCH_DIRS = [
 ];
 
 /**
- * Retrouve la clé de compte de service quand GOOGLE_APPLICATION_CREDENTIALS
- * n'est pas renseignée, pour éviter d'avoir à taper un chemin long.
- * Ne lit jamais le contenu du fichier : seul son chemin est utilisé, et
- * c'est l'Admin SDK qui l'ouvre.
+ * Retrouve la clé de compte de service.
+ *
+ * Si `GOOGLE_APPLICATION_CREDENTIALS` pointe vers un fichier qui n'existe
+ * plus (renommé, déplacé — un deuxième téléchargement du même fichier se
+ * voit souvent suffixé « (1) » par le navigateur), on **retombe sur la
+ * recherche automatique** au lieu d'abandonner : constaté en pratique, un
+ * chemin explicite mais périmé laissait l'Admin SDK échouer bien plus
+ * loin, avec un `ENOENT` qui ne dit ni où chercher ni que la clé a
+ * probablement juste changé de nom.
  */
 export function findServiceAccountKey(): string | undefined {
   const explicit = process.env.GOOGLE_APPLICATION_CREDENTIALS;
@@ -61,7 +66,7 @@ export function findServiceAccountKey(): string | undefined {
     const expanded = explicit.startsWith("~")
       ? join(homedir(), explicit.slice(1))
       : explicit;
-    return existsSync(expanded) ? expanded : undefined;
+    if (existsSync(expanded)) return expanded;
   }
 
   for (const dir of KEY_SEARCH_DIRS) {
