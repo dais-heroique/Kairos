@@ -41,3 +41,36 @@ STRIPE_PRICE_PRO_YEARLY      = "price_1U3ZGE4Do0A9o9JDoGaLDMUD"
 #   STRIPE_SECRET_KEY
 #   STRIPE_WEBHOOK_SECRET
 #   FIREBASE_SERVICE_ACCOUNT
+
+# Journaux — pour diagnostiquer « Erreur interne » sur /stripe/checkout sans
+# deviner. Le Worker journalise déjà l'exception réelle côté serveur
+# (`console.error("[worker] erreur non rattrapée", …)`), jamais au client :
+# ça évite d'exposer un détail interne, mais ça veut dire que sans
+# observabilité activée, cette ligne n'était vue par personne.
+#
+# Posé ici plutôt que dans le tableau de bord pour la même raison que les
+# prix ci-dessus : ce fichier est déployé tel quel à chaque commit, un
+# réglage fait au clic ne survivrait pas forcément au déploiement suivant.
+#
+# `enabled = true` à la racine est nécessaire — documenté par Cloudflare
+# comme le commutateur général, indépendant du sous-bloc `logs` : un
+# tableau de bord qui affiche `"enabled": false` en tête, même avec
+# `logs.enabled: true` en dessous, correspond à une observabilité qui ne
+# tourne pas encore.
+[observability]
+enabled = true
+head_sampling_rate = 1
+
+[observability.logs]
+enabled = true
+head_sampling_rate = 1
+invocation_logs = true
+persist = true
+
+# Pas de bloc [observability.traces] : la version de wrangler verrouillée
+# ci-dessous (^3.99.0 — la même que Cloudflare installe au déploiement,
+# vérifié en `--dry-run`) ne reconnaît pas encore ce champ et le signale en
+# avertissement à chaque build. Les traces servent au débogage de
+# performance, pas au diagnostic d'une erreur métier ; rien à activer tant
+# que le besoin ne se présente pas. À ajouter le jour où `wrangler@4` est
+# installé.

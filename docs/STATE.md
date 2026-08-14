@@ -320,6 +320,12 @@ le simulateur. Reste un ordre de grandeur à calibrer, pas un placeholder à
 
     3 tests sur la fonction, 1 test de régression sur le paywall (Radar face à une capacité Pro, vérifie que Creator *et* Pro apparaissent).
 
+87. **Journaux du Worker posés dans `wrangler.toml`, pas dans le tableau de bord** (2026-08-14) — nécessaires pour diagnostiquer « Erreur interne » sur `/stripe/checkout` : le Worker journalise déjà l'exception réelle côté serveur (`console.error("[worker] erreur non rattrapée", …)`, jamais renvoyée au client par design), mais sans observabilité activée, cette ligne n'était vue par personne.
+
+    L'utilisateur avait activé quelque chose côté tableau de bord Cloudflare, et son export montrait `"observability": {"enabled": false, "logs": {"enabled": true, …}}` — l'interrupteur général à la racine restait à `false` malgré le sous-réglage. Vérifié par recherche (la doc Cloudflare elle-même bloquée en lecture directe depuis cet environnement, comme `workers.dev`) : `enabled` à la racine est le commutateur qui compte, indépendant du sous-bloc `logs`.
+
+    Posé dans `wrangler.toml` pour la même raison que les prix (décision du 2026-08-10) : ce fichier est déployé tel quel à chaque commit, un réglage fait au clic ne survit pas forcément au déploiement suivant. **Un premier essai avec `[observability.traces]` a été rejeté** par la version de wrangler réellement verrouillée (`^3.99.0`, la même que Cloudflare installe — vérifié en `--dry-run` avant de pousser, pas après) : champ inconnu de cette version, retiré plutôt que laissé en avertissement permanent. Les traces restent désactivées par défaut ; rien ne manque, elles ne servent qu'au débogage de performance.
+
 ## Questions ouvertes (posées le 2026-08-03, aucune action prise)
 
 - ~~**La lecture publique du catalogue (décision #10) ne sert à rien.**~~ **Traité le 2026-08-05** (décision #39) : `/classements/*` est enveloppé dans `<RequireAuth>` : aucun visiteur anonyme n'atteint jamais ces pages — vérifié en naviguant réellement, on est redirigé vers `/connexion`. La justification d'origine (« rendues sans utilisateur connecté ») valait pour un rendu statique au build ; les pages sont depuis passées en `"use client"` + `useEffect`, ce qui l'a rendue caduque, mais la règle n'a jamais été refermée. **Repasser `products`/`shops`/`rankings`/`snapshots` en `isSignedIn()` ne coûterait aucune fonctionnalité** et fermerait le trou « n'importe qui vide la base ».
