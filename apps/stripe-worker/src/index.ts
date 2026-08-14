@@ -21,7 +21,20 @@ import { bearerToken, TokenError, verifyFirebaseToken } from "./verify-token";
 // quel événement change quoi vivent dans `packages/payments`, purs et
 // testés sans réseau (18 tests). Ici : vérifier, appeler, écrire.
 
-function stripeClient(env: WorkerEnv): Stripe {
+export function stripeClient(env: WorkerEnv): Stripe {
+  // Constaté en production le 2026-08-14 : une clé vide fait échouer le
+  // SDK Stripe avec « Neither apiKey nor config.authenticator provided »,
+  // à l'intérieur même de `new Stripe(...)` — un message qui ne dit rien
+  // de KAIROS et ne pointe vers aucun secret en particulier. On l'attrape
+  // ici pour nommer explicitement ce qui manque, sans jamais journaliser
+  // la clé elle-même : une clé Stripe réelle commence par `sk_live_` ou
+  // `sk_test_` et fait plus de 100 caractères, une clé vide ou tronquée se
+  // distingue immédiatement par sa longueur.
+  if (!env.STRIPE_SECRET_KEY) {
+    throw new Error(
+      `STRIPE_SECRET_KEY est vide ou absente (secret non enregistré, ou enregistré sous un autre nom).`,
+    );
+  }
   return new Stripe(env.STRIPE_SECRET_KEY, {
     apiVersion: "2025-02-24.acacia",
     // Obligatoire hors Node : le client HTTP par défaut de Stripe utilise
