@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
+  capabilitiesGainedFrom,
   formatPlanPrice,
   formatYearlyAsMonthly,
+  newCapabilitiesOf,
   type PlanDefinition,
   planPriceCents,
   PLANS,
@@ -153,5 +155,37 @@ describe("le catalogue livré", () => {
     const radar = PLANS.find((p) => p.slug === "radar")!;
     expect(formatPlanPrice(radar, "monthly")).toBe("Gratuit");
     expect(formatPlanPrice(radar, "yearly")).toBe("Gratuit");
+  });
+});
+
+// Le paywall affichait, à tort, ce que le palier ajoute par rapport au
+// palier juste en dessous — même pour un compte parti de plus bas. Un
+// Radar qui bute sur une capacité Pro ne voyait que les 4 capacités
+// propres à Pro, jamais les 4 de Creator qu'il gagne aussi en sautant
+// directement dessus. Signalé par l'utilisateur : « ça débloque presque
+// rien » à côté d'un plan gratuit qui affiche ses capacités en entier.
+describe("capabilitiesGainedFrom", () => {
+  it("un saut direct Radar → Pro inclut ce que Creator apporte aussi", () => {
+    const depuisRadar = capabilitiesGainedFrom("radar", "pro");
+    const depuisCreator = capabilitiesGainedFrom("creator", "pro");
+    // Strictement plus, jamais égal : c'est exactement l'écart qui
+    // manquait avant ce correctif.
+    expect(depuisRadar.length).toBeGreaterThan(depuisCreator.length);
+    for (const capacite of depuisCreator) {
+      expect(depuisRadar).toContain(capacite);
+    }
+  });
+
+  it("ne renvoie rien quand le palier visé n'apporte rien de plus", () => {
+    expect(capabilitiesGainedFrom("pro", "pro")).toEqual([]);
+    expect(capabilitiesGainedFrom("pro", "creator")).toEqual([]);
+  });
+
+  it("Radar vers Creator est identique à la vue palier-par-palier", () => {
+    // Les deux fonctions doivent s'accorder au premier échelon : c'est là
+    // qu'il n'y a pas de palier intermédiaire à rater.
+    expect(capabilitiesGainedFrom("radar", "creator")).toEqual(
+      newCapabilitiesOf("creator"),
+    );
   });
 });

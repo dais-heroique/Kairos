@@ -5,9 +5,9 @@ import { SubscribeButton } from "@/components/SubscribeButton";
 import type { ReactNode } from "react";
 import {
   CAPABILITY_INFO,
+  capabilitiesGainedFrom,
   FOUNDING_PRICE_LOCK,
   formatPlanPrice,
-  newCapabilitiesOf,
   planUnlocking,
   type Capability,
   type Entitlements,
@@ -49,7 +49,11 @@ export function PaywallGate({
   if (entitlements.can(capability)) return <>{children}</>;
 
   const plan = planUnlocking(capability);
-  const unlocked = newCapabilitiesOf(plan.slug);
+  // Depuis le plan **réellement détenu**, pas depuis le palier juste en
+  // dessous : un compte gratuit qui saute directement à Pro doit voir tout
+  // ce qu'il gagne, Creator compris — sinon Pro paraît n'apporter que 4
+  // choses pour 39 €/mois, quand il en apporte 8 vues d'un compte gratuit.
+  const unlocked = capabilitiesGainedFrom(entitlements.effectivePlan, plan.slug);
 
   return (
     <div
@@ -124,6 +128,15 @@ export function PaywallGate({
               </li>
             ))}
           </ul>
+
+          {/* Même repère que PlanCards sur /tarifs : sans lui, un compte
+              gratuit voit une liste de « tout ce qu'il a déjà eu » (Radar
+              expose ses capacités en entier ailleurs sur la page) à côté
+              d'un palier payant qui n'affiche que sa différence — ce qui le
+              fait paraître plus pauvre que le gratuit, jamais plus riche. */}
+          <p className="text-xs font-semibold text-[color:var(--color-ink-muted)]">
+            {unlocked.length} fonctionnalité{unlocked.length > 1 ? "s" : ""} de plus qu&apos;aujourd&apos;hui
+          </p>
 
           {/* Le paiement démarre **ici**, pas après un détour par /tarifs.
               Ce bloc s'affiche au moment précis où quelqu'un vient de

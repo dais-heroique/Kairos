@@ -189,6 +189,30 @@ describe("PaywallGate", () => {
     expect(screen.queryAllByText("pas encore là")).toHaveLength(aVenir.length);
   });
 
+  // Régression du 2026-08-14, signalée par l'utilisateur : le paywall
+  // n'affichait que ce que le palier ajoute par rapport au précédent, pas
+  // par rapport à ce que le compte détient vraiment. Un Radar qui bute sur
+  // rankingArchive (propre à Pro) ne voyait que les 4 capacités de Pro,
+  // jamais les 4 de Creator qu'il gagne aussi en sautant directement
+  // dessus — Pro paraissait apporter moins que le plan gratuit affiché
+  // juste à côté.
+  it("un compte gratuit qui saute à Pro voit aussi ce que Creator apporte", () => {
+    render(
+      <PaywallGate
+        capability="rankingArchive"
+        entitlements={entitlementsOf(user("radar"))}
+        title="Débloque l'archive"
+      >
+        <p>contenu</p>
+      </PaywallGate>,
+    );
+    // Propre à Pro (vu depuis Creator) — devait déjà s'afficher.
+    expect(screen.getByText(CAPABILITY_INFO.rankingArchive.label)).toBeTruthy();
+    // Propre à Creator (vu depuis Radar) — c'est ce qui manquait.
+    expect(screen.getByText(CAPABILITY_INFO.brief.label)).toBeTruthy();
+    expect(screen.getByText(CAPABILITY_INFO.earningsAll.label)).toBeTruthy();
+  });
+
   it("un compte Pro n'est jamais bloqué", () => {
     render(
       <PaywallGate

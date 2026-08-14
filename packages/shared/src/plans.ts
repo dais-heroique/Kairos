@@ -298,6 +298,25 @@ export function newCapabilitiesOf(slug: PlanSlug): Capability[] {
   return CAPABILITIES_BY_PLAN[slug].filter((c) => !previous.has(c));
 }
 
+/**
+ * Ce que `to` apporte **par rapport au plan réellement détenu**, `from` —
+ * pas par rapport au palier juste en dessous.
+ *
+ * La différence n'est pas cosmétique : un compte Radar qui bute sur une
+ * capacité propre à Pro ne doit pas voir seulement les capacités de Pro
+ * (`newCapabilitiesOf("pro")`, 4 items) — il lui manque *aussi* tout ce que
+ * Creator apporte, qu'il n'a jamais eu. Lui montrer 4 items pour 39 €/mois
+ * fait paraître le palier payant plus pauvre que le gratuit, qui liste ses
+ * propres capacités en entier juste à côté. `newCapabilitiesOf` reste utile
+ * pour les colonnes de `/tarifs`, où chaque palier compare toujours au
+ * précédent ; celle-ci sert quand le point de départ réel de l'utilisateur
+ * compte, ce qui est le cas de tout paywall.
+ */
+export function capabilitiesGainedFrom(from: PlanSlug, to: PlanSlug): Capability[] {
+  const owned = new Set(CAPABILITIES_BY_PLAN[from]);
+  return CAPABILITIES_BY_PLAN[to].filter((c) => !owned.has(c));
+}
+
 /** Le premier plan qui débloque cette capacité — ce qu'il faut proposer. */
 export function planUnlocking(capability: Capability): PlanDefinition {
   return PLANS.find((p) => CAPABILITIES_BY_PLAN[p.slug].includes(capability)) ?? PLANS[0]!;
