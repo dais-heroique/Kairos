@@ -12,7 +12,10 @@ compatibility_flags = ["nodejs_compat"]
 
 [vars]
 FIREBASE_PROJECT_ID = "kairos-on"
-ALLOWED_ORIGINS = "https://kairos-on.web.app,https://kairos-on.firebaseapp.com"
+# Firebase Hosting reste déployable (scripts/deploy.sh, intact) et Vercel
+# s'y ajoute : les deux origines coexistent, retirer l'une ne dépend que du
+# choix final d'hébergement, jamais du code du Worker.
+ALLOWED_ORIGINS = "https://kairos-on.web.app,https://kairos-on.firebaseapp.com,https://kairos-on.vercel.app"
 
 # Identifiants de prix Stripe. Ce ne sont **pas** des secrets : ils
 # apparaissent de toute façon dans l'URL de paiement. Les mettre ici plutôt
