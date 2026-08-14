@@ -28,6 +28,39 @@ export interface VerifiedUser {
 export class TokenError extends Error {}
 
 /**
+ * Lit `iss`/`aud` d'un jeton **sans vérifier sa signature** — uniquement
+ * pour enrichir un message d'erreur, jamais pour une décision d'accès.
+ *
+ * Utile précisément quand `jwtVerify` rejette le jeton pour `iss` ou `aud`
+ * incorrect : l'erreur de `jose` dit que la valeur est mauvaise, jamais
+ * laquelle. Sans ça, la seule façon de savoir contre quel projet le
+ * jeton a réellement été émis est de le décoder à la main — un aller-retour
+ * évitable. `iss`/`aud` ne sont pas des secrets : ce sont de simples
+ * identifiants de projet, déjà publics par ailleurs (ils apparaissent dans
+ * la configuration Firebase du site, servie à tout visiteur).
+ */
+export function unverifiedClaims(
+  idToken: string,
+): { iss?: string | undefined; aud?: string | undefined } | null {
+  try {
+    const payload = idToken.split(".")[1];
+    if (!payload) return null;
+    const base64 = payload.replace(/-/g, "+").replace(/_/g, "/");
+    const padded = base64 + "=".repeat((4 - (base64.length % 4)) % 4);
+    const claims = JSON.parse(atob(padded)) as { iss?: unknown; aud?: unknown };
+    // Les deux champs sont posés explicitement à `undefined`, jamais omis :
+    // `exactOptionalPropertyTypes` distingue une propriété absente d'une
+    // propriété valant `undefined`, et le type déclaré exige la seconde forme.
+    return {
+      iss: typeof claims.iss === "string" ? claims.iss : undefined,
+      aud: typeof claims.aud === "string" ? claims.aud : undefined,
+    };
+  } catch {
+    return null;
+  }
+}
+
+/**
  * Vérifie un jeton d'identité Firebase et renvoie l'utilisateur.
  *
  * Les trois contrôles qui comptent, et qu'un `jwtVerify` nu ne fait pas :
@@ -51,9 +84,19 @@ export async function verifyFirebaseToken(
       audience: projectId,
     }));
   } catch (error) {
-    throw new TokenError(
-      `Jeton refusé : ${error instanceof Error ? error.message : "signature invalide"}`,
-    );
+    const base = error instanceof Error ? error.message : "signature invalide";
+    // N'ajoute la comparaison que si elle éclaire vraiment quelque chose :
+    // sur une signature invalide ou un jeton expiré, `iss`/`aud` sont
+    // corrects et répéter « attendu kairos-on, reçu kairos-on » n'aiderait
+    // personne.
+    const claims = unverifiedClaims(idToken);
+    const expectedIss = `${ISSUER_PREFIX}${projectId}`;
+    const mismatch =
+      claims && ((claims.iss && claims.iss !== expectedIss) || (claims.aud && claims.aud !== projectId));
+    const detail = mismatch
+      ? ` (jeton émis pour le projet Firebase « ${claims.aud ?? claims.iss} », ce Worker attend « ${projectId} » — vérifie FIREBASE_PROJECT_ID dans wrangler.toml et la configuration Firebase du site)`
+      : "";
+    throw new TokenError(`Jeton refusé : ${base}${detail}`);
   }
 
   const uid = typeof payload.sub === "string" ? payload.sub : "";
