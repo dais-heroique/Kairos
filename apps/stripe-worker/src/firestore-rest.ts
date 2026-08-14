@@ -89,7 +89,21 @@ export async function getAccessToken(env: WorkerEnv): Promise<string> {
     return cachedToken.value;
   }
 
-  const account = JSON.parse(env.FIREBASE_SERVICE_ACCOUNT) as ServiceAccount;
+  // Constaté en production le 2026-08-14 : un `JSON.parse` qui échoue ici ne
+  // dit, dans les journaux, que « JSON.parse (<anonymous>) » — aucune piste
+  // sur ce qui cloche dans le secret. La longueur reçue, elle, tranche tout
+  // de suite entre les deux causes réelles rencontrées : 0 (le secret n'a
+  // jamais été enregistré, ou sous un autre nom) et une valeur basse mais
+  // non nulle (collage tronqué, souvent sur mobile). On ne journalise
+  // jamais le contenu lui-même : c'est une clé privée.
+  let account: ServiceAccount;
+  try {
+    account = JSON.parse(env.FIREBASE_SERVICE_ACCOUNT) as ServiceAccount;
+  } catch {
+    throw new Error(
+      `FIREBASE_SERVICE_ACCOUNT n'est pas un JSON valide (${env.FIREBASE_SERVICE_ACCOUNT?.length ?? 0} caractères reçus — un fichier de clé de service fait normalement plus de 2000 caractères). Recolle le contenu ENTIER du fichier .json téléchargé depuis Firebase, de la première accolade à la dernière.`,
+    );
+  }
   if (!account.client_email || !account.private_key) {
     throw new Error("FIREBASE_SERVICE_ACCOUNT incomplet : client_email ou private_key manquant.");
   }
