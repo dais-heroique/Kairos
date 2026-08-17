@@ -122,10 +122,10 @@
     },
     "Profil": {
       "title": "Ton profil créateur",
-      "subtitle": "Ça sert à calculer tes gains estimés en euros — pas à te classer.",
+      "subtitle": "Ton rythme décrit ton activité ; les gains sont comparés pour 1 000 vues, sans prédire ta portée.",
       "followerRangeLabel": "Nombre d'abonnés",
-      "avgViewsLabel": "Vues moyennes par vidéo",
-      "avgViewsPlaceholder": "ex. 5000",
+      "postsPerDayLabel": "Tu publies combien de vidéos par jour ?",
+      "postsPerDayPlaceholder": "ex. 1",
       "experienceLabel": "Ton expérience en affiliation",
       "experience": {
         "debutant": "Débutant — je découvre",

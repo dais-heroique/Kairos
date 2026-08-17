@@ -84,7 +84,7 @@ function ProduitContent() {
   const earnings = useMemo(() => {
     if (!item || !userDoc) return null;
     return computeEarnings({
-      expectedViews: userDoc.profile.avgViews,
+      expectedViews: 1000,
       followerRange: userDoc.profile.followerRange,
       niche: userDoc.profile.niches[0] ?? "",
       medianConversionRate: DEFAULT_EARNINGS_CONFIG.defaultConversionRate,
@@ -187,7 +187,7 @@ function ProduitContent() {
 
       <section className="kai-card flex flex-col gap-2">
         <h2 className="font-[family-name:var(--font-display)] font-bold">
-          Tes gains pour une vidéo
+          Tes gains pour 1 000 vues
         </h2>
         {earnings ? (
           <EstimatedValue range={earnings} format={eur} className="text-lg font-bold" />
@@ -197,8 +197,7 @@ function ProduitContent() {
           </p>
         )}
         <p className="text-xs text-[color:var(--color-ink-muted)]">
-          Sur la base de {userDoc?.profile.avgViews.toLocaleString("fr-FR") ?? "—"} vues,
-          commission {item.commissionRatePct}%, {DEFAULT_EARNINGS_CONFIG.defaultReturnRatePct}%
+          Pour 1 000 vues, commission {item.commissionRatePct} %, {DEFAULT_EARNINGS_CONFIG.defaultReturnRatePct} %
           de retours déduits.
         </p>
       </section>

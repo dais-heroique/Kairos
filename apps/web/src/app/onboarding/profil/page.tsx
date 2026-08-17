@@ -38,8 +38,8 @@ export default function OnboardingProfilPage() {
   const [followerRange, setFollowerRange] = useState<FollowerRange>(
     userDoc?.profile.followerRange ?? "0_1k",
   );
-  const [avgViews, setAvgViews] = useState(
-    userDoc?.profile.avgViews ? String(userDoc.profile.avgViews) : "",
+  const [postsPerDay, setPostsPerDay] = useState(
+    userDoc?.profile.postsPerDay ? String(userDoc.profile.postsPerDay) : "1",
   );
   const [experienceLevel, setExperienceLevel] = useState<ExperienceLevel>(
     userDoc?.profile.experienceLevel ?? "debutant",
@@ -51,10 +51,10 @@ export default function OnboardingProfilPage() {
   // le tableau de bord affichera ensuite. Une démonstration qui ne
   // correspondrait pas au produit réel serait pire que pas de démonstration.
   const previewEarnings = useMemo(() => {
-    const views = Number(avgViews);
-    if (!Number.isFinite(views) || views <= 0) return null;
+    const cadence = Number(postsPerDay);
+    if (!Number.isFinite(cadence) || cadence < 0) return null;
     return computeEarnings({
-      expectedViews: Math.floor(views),
+      expectedViews: 1000,
       followerRange,
       niche: "",
       medianConversionRate: DEFAULT_EARNINGS_CONFIG.defaultConversionRate,
@@ -62,7 +62,7 @@ export default function OnboardingProfilPage() {
       commissionRatePct: PREVIEW_COMMISSION_PCT,
       estimatedReturnRatePct: DEFAULT_EARNINGS_CONFIG.defaultReturnRatePct,
     });
-  }, [avgViews, followerRange]);
+  }, [postsPerDay, followerRange]);
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
@@ -70,7 +70,7 @@ export default function OnboardingProfilPage() {
     setSaving(true);
     await completeOnboarding(firebaseUser.uid, {
       followerRange,
-      avgViews: Number(avgViews) || 0,
+      postsPerDay: Math.max(0, Math.floor(Number(postsPerDay) || 0)),
       experienceLevel,
     });
     router.push("/tableau-de-bord");
@@ -108,14 +108,16 @@ export default function OnboardingProfilPage() {
         </label>
 
         <label className="flex flex-col gap-1 text-sm font-medium">
-          {t("Profil.avgViewsLabel")}
+                      {t("Profil.postsPerDayLabel")}
+
           <input
             type="number"
             min={0}
+            step={1}
             required
-            value={avgViews}
-            onChange={(event) => setAvgViews(event.target.value)}
-            placeholder={t("Profil.avgViewsPlaceholder")}
+            value={postsPerDay}
+            onChange={(event) => setPostsPerDay(event.target.value)}
+            placeholder={t("Profil.postsPerDayPlaceholder")}
             className="kai-input font-[family-name:var(--font-mono)]"
           />
         </label>
@@ -137,14 +139,10 @@ export default function OnboardingProfilPage() {
           </select>
         </label>
 
-        {/* Aperçu immédiat.
-            L'onboarding ne faisait que collecter : trois champs, un bouton,
-            et la valeur du produit n'apparaissait qu'après. Or `avgViews`
-            est le champ dont tout dépend — mal renseigné ou laissé à 0,
-            l'application entière n'affiche que des tirets. Montrer le
-            résultat pendant la saisie fait deux choses : ça explique
-            pourquoi on demande ce chiffre, et ça donne la première preuve
-            que l'outil calcule vraiment quelque chose. */}
+                    {/* Aperçu immédiat : le gain est exprimé pour 1 000 vues, une
+            base comparable entre créateurs. Le rythme de publication décrit
+            l'activité, mais ne sert pas à inventer une portée future. */}
+
         {previewEarnings && (
           <div
             className="flex flex-col gap-1 rounded-xl p-3"
@@ -169,7 +167,7 @@ export default function OnboardingProfilPage() {
               />
             </p>
             <p className="text-xs text-[color:var(--color-ink-muted)]">
-              Pour une vidéo sur un produit à {PREVIEW_PRICE_EUR} € commissionné{" "}
+              Pour 1 000 vues sur un produit à {PREVIEW_PRICE_EUR} € commissionné{" "}
               {PREVIEW_COMMISSION_PCT} %. C&apos;est un exemple type, pas une
               promesse — les vrais produits arrivent juste après.
             </p>

@@ -23,7 +23,9 @@ export function SimulateurContent() {
   const preselectedId = useSearchParams().get("id");
   const [products, setProducts] = useState<ProductRankItem[] | null>(null);
   const [productId, setProductId] = useState("");
-  const [views, setViews] = useState(userDoc?.profile.avgViews || 20000);
+  // Le curseur est une hypothèse explicite de l'utilisateur, pas une portée
+  // récupérée depuis son profil. Une valeur neutre évite une fausse précision.
+  const [views, setViews] = useState(10000);
   const [conversionPct, setConversionPct] = useState(DEFAULT_CONVERSION_PCT);
 
   useEffect(() => {
@@ -152,11 +154,14 @@ export function SimulateurContent() {
 
         <label className="flex flex-col gap-2 text-sm font-medium">
           <span className="flex justify-between">
-            <span>Vues attendues</span>
+            <span>Vues simulées</span>
             <span className="font-[family-name:var(--font-mono)]">
               {views.toLocaleString("fr-FR")}
             </span>
           </span>
+          <p className="text-xs text-[color:var(--color-ink-muted)]">
+            Ici, tu poses toi-même une hypothèse de portée ; elle ne vient pas de ton profil.
+          </p>
           <input
             type="range"
             min={1000}

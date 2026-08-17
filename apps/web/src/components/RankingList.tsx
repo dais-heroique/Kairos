@@ -86,9 +86,10 @@ export function RankingList({
   const total = totalCount ?? items.length;
   const lockedCount = isFreePlan ? Math.max(0, total - FREE_PLAN_LIMIT) : 0;
 
-  // Gains personnalisés — jamais du GMV global (règle invariante #5) :
-  // computeEarnings (packages/core, Lot 1) à partir du profil réel de
-  // l'utilisateur (vues moyennes, fourchette d'abonnés). Uniquement pour
+  // Gains normalisés — jamais du GMV global (règle invariante #5) :
+  // computeEarnings (packages/core, Lot 1) exprime ici le gain pour 1 000
+  // vues, comparable entre créateurs. Le profil sert uniquement à contextualiser
+  // la fourchette d'abonnés et la niche.
   // les lignes déverrouillées — inutile de calculer un gain qu'on va
   // masquer (voir ProductRankCard, pattern "ligne visible, chiffre flouté"
   // repris de la concurrence plutôt que de cacher la ligne entière).
@@ -102,7 +103,7 @@ export function RankingList({
       map.set(
         item.id,
         computeEarnings({
-          expectedViews: userDoc.profile.avgViews,
+          expectedViews: 1000,
           followerRange: userDoc.profile.followerRange,
           niche: userDoc.profile.niches[0] ?? "",
           medianConversionRate: DEFAULT_EARNINGS_CONFIG.defaultConversionRate,
@@ -117,10 +118,9 @@ export function RankingList({
   }, [items, userDoc, isFreePlan, startIndex]);
 
   // Rien ne force l'onboarding à être terminé (RequireAuth ne vérifie que
-  // l'authentification) : on peut donc arriver ici avec `avgViews` à 0,
-  // auquel cas aucun gain n'est calculable. Le dire, plutôt que d'aligner
-  // des tirets sans explication.
-  const profileIncomplete = !!userDoc && userDoc.profile.avgViews === 0;
+  // l'authentification) : on peut donc arriver ici avant la fin du profil.
+  // Le dire plutôt que d'aligner des tirets sans explication.
+  const profileIncomplete = !!userDoc && userDoc.profile.onboardingCompletedAt === null;
 
   return (
     <div className="flex flex-col gap-2">
@@ -130,8 +130,8 @@ export function RankingList({
             Tes gains ne sont pas encore calculables
           </p>
           <p className="text-[color:var(--color-ink-muted)]">
-            Il manque tes vues moyennes par vidéo — c&apos;est ce qui convertit
-            une commission en euros.{" "}
+            Il manque encore ton profil créateur — il sert à contextualiser
+            les résultats.{" "}
             <Link href="/onboarding/profil" className="underline">
               Compléter mon profil
             </Link>

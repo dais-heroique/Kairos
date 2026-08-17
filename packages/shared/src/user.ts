@@ -41,14 +41,17 @@ export const followerRangeSchema = z.enum([
 ]);
 export type FollowerRange = z.infer<typeof followerRangeSchema>;
 
-// Capturé à l'onboarding — la fourchette d'abonnés + vues moyennes est ce
-// qui permet au simulateur de gains (M3) de convertir en €.
+// Capturé à l'onboarding — le rythme de publication décrit l'activité du
+// créateur, sans prétendre prédire sa portée future.
 export const userProfileSchema = z.object({
   niches: z.array(z.string()),
   markets: z.array(marketSchema),
   creatorHandle: z.string().optional(),
   followerRange: followerRangeSchema,
-  avgViews: z.number().int().nonnegative(),
+  // `.default(1)` garde les anciens documents Firebase lisibles pendant la
+  // migration : ils n'ont pas encore ce champ et ne doivent pas faire planter
+  // l'application.
+  postsPerDay: z.number().int().nonnegative().default(1),
   experienceLevel: experienceLevelSchema,
   onboardingCompletedAt: z.string().datetime().nullable(),
   timezone: z.string(),

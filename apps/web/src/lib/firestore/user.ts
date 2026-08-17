@@ -64,7 +64,7 @@ export async function ensureUserDocument(
       niches: [],
       markets: [],
       followerRange: "0_1k",
-      avgViews: 0,
+      postsPerDay: 1,
       experienceLevel: "debutant",
       onboardingCompletedAt: null,
       timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
@@ -109,13 +109,13 @@ export async function completeOnboarding(
   uid: string,
   input: {
     followerRange: FollowerRange;
-    avgViews: number;
+    postsPerDay: number;
     experienceLevel: ExperienceLevel;
   },
 ): Promise<void> {
   await updateDoc(userDocRef(uid), {
     "profile.followerRange": input.followerRange,
-    "profile.avgViews": input.avgViews,
+    "profile.postsPerDay": input.postsPerDay,
     "profile.experienceLevel": input.experienceLevel,
     "profile.onboardingCompletedAt": new Date().toISOString(),
   });

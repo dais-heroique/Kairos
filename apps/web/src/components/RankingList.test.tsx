@@ -20,9 +20,10 @@ const userDoc: User = {
     niches: ["beaute"],
     markets: ["FR"],
     followerRange: "5k_20k",
-    avgViews: 8000,
+    postsPerDay: 1,
     experienceLevel: "intermediaire",
     onboardingCompletedAt: new Date().toISOString(),
+    timezone: "Europe/Paris",
   },
   // Plan gratuit : c'est lui qui déclenche le verrou au-delà du top 10.
   plan: { slug: "radar", status: "active", currentPeriodEnd: null, stripeCustomerId: null },

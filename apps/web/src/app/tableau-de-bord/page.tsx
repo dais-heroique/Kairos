@@ -125,14 +125,14 @@ function DashboardContent() {
   }, [firebaseUser]);
 
   const entitlements = entitlementsOf(userDoc);
-  const profileIncomplete = !!userDoc && userDoc.profile.avgViews === 0;
+  const profileIncomplete = !!userDoc && userDoc.profile.onboardingCompletedAt === null;
 
   const dashboard: Dashboard | null = useMemo(() => {
     if (!opportunities) return null;
     const estimateFor = (item: ProductRankItem): EstimatedRange | null => {
       if (!userDoc) return null;
       return computeEarnings({
-        expectedViews: userDoc.profile.avgViews,
+        expectedViews: 1000,
         followerRange: userDoc.profile.followerRange,
         niche: userDoc.profile.niches[0] ?? "",
         medianConversionRate: DEFAULT_EARNINGS_CONFIG.defaultConversionRate,
@@ -207,7 +207,7 @@ function DashboardContent() {
               Tes gains ne sont pas encore calculables
             </p>
             <p className="text-[color:var(--color-ink-muted)]">
-              Il manque tes vues moyennes par vidéo.{" "}
+              Il manque encore ton profil créateur.{" "}
               <Link href="/onboarding/profil" className="underline">
                 Compléter mon profil
               </Link>
@@ -250,8 +250,7 @@ function DashboardContent() {
                   />
                 </p>
                 <p className="text-xs text-[color:var(--color-ink-muted)]">
-                  Une vidéo par produit, à tes{" "}
-                  {userDoc?.profile.avgViews.toLocaleString("fr-FR")} vues moyennes.
+                  Une vidéo par produit, comparaison faite pour 1 000 vues.
                 </p>
               </section>
             )}
@@ -326,8 +325,7 @@ function DashboardContent() {
                 {dashboard.topPick.earnings && (
                   <p className="text-sm">
                     <span className="text-[color:var(--color-ink-muted)]">
-                      Pour une vidéo à tes {userDoc?.profile.avgViews.toLocaleString("fr-FR")}{" "}
-                      vues :{" "}
+                      Pour 1 000 vues :{" "}
                     </span>
                     <EstimatedValue
                       range={dashboard.topPick.earnings}

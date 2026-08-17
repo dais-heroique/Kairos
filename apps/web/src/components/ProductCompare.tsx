@@ -97,13 +97,13 @@ export function ProductCompare({ items }: { items: ProductRankItem[] }) {
           Sélectionne au moins deux produits pour les mettre face à face.
         </p>
       ) : (
-        <CompareTable items={chosen} avgViews={userDoc?.profile.avgViews ?? 0} />
+        <CompareTable items={chosen} />
       )}
     </div>
   );
 }
 
-function CompareTable({ items, avgViews }: { items: ProductRankItem[]; avgViews: number }) {
+function CompareTable({ items }: { items: ProductRankItem[] }) {
   const eur = (v: number) =>
     v.toLocaleString("fr-FR", { style: "currency", currency: "EUR", maximumFractionDigits: 0 });
 
@@ -178,12 +178,12 @@ function CompareTable({ items, avgViews }: { items: ProductRankItem[]; avgViews:
             ))}
           </Ligne>
 
-          <Ligne titre={`Gain pour ${(avgViews || 1000).toLocaleString("fr-FR")} vues`}>
+          <Ligne titre="Gain pour 1 000 vues">
             {items.map((item) => (
               <td key={item.id} className="p-2 align-top">
                 <EstimatedValue
                   range={computeEarnings({
-                    expectedViews: avgViews || 1000,
+                    expectedViews: 1000,
                     followerRange: "5k_20k",
                     niche: "",
                     medianConversionRate: DEFAULT_EARNINGS_CONFIG.defaultConversionRate,

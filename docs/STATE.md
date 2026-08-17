@@ -352,6 +352,8 @@ le simulateur. Reste un ordre de grandeur à calibrer, pas un placeholder à
 
     Le build statique complet passe, le typecheck passe et les 135 tests web non dépendants de l'émulateur passent. La suite d'intégration n'a pas pu être exécutée dans cet environnement car la commande Firebase CLI n'y est pas installée.
 
+93. **Audit du calcul des gains et migration du profil** (2026-08-17) — l’audit a confirmé une divergence documentée mais non appliquée : le schéma et plusieurs écrans utilisaient encore `profile.avgViews`, alors que la décision de référence demandait `postsPerDay` et une base comparable de 1 000 vues. Le schéma utilise maintenant `postsPerDay` avec `.default(1)` afin que les anciens documents Firebase restent lisibles ; `completeOnboarding` écrit le nouveau champ. Le classement, le tableau de bord, la fiche produit et le comparateur utilisent 1 000 vues ; le simulateur garde son curseur de portée explicite, initialisé à 10 000. Les fixtures de tests et les textes d’onboarding sont alignés.
+
 ## Questions ouvertes (posées le 2026-08-03, aucune action prise)
 
 - ~~**La lecture publique du catalogue (décision #10) ne sert à rien.**~~ **Traité le 2026-08-05** (décision #39) : `/classements/*` est enveloppé dans `<RequireAuth>` : aucun visiteur anonyme n'atteint jamais ces pages — vérifié en naviguant réellement, on est redirigé vers `/connexion`. La justification d'origine (« rendues sans utilisateur connecté ») valait pour un rendu statique au build ; les pages sont depuis passées en `"use client"` + `useEffect`, ce qui l'a rendue caduque, mais la règle n'a jamais été refermée. **Repasser `products`/`shops`/`rankings`/`snapshots` en `isSignedIn()` ne coûterait aucune fonctionnalité** et fermerait le trou « n'importe qui vide la base ».
@@ -768,18 +770,12 @@ classements Créateurs / Vidéos / Sons. Écartée pour l'instant : contrainte
 « gratuit en tout ». Ces quatre onglets (+ Vagues) sont donc masqués de la
 navigation, routes conservées.
 
-**Travail en attente d'arbitrage, non commité** : un `git stash` local sur
-le poste de l'utilisateur (`stash@{0}`, session du 2026-08-03) contenait
-deux changements. **Vérifié dans le code le 2026-08-07 — un seul reste à
-faire :**
-
-- ⏳ **À refaire** : remplacer les vues moyennes auto-déclarées par le
-  rythme de publication (`postsPerDay`) et afficher les gains **pour
-  1 000 vues** plutôt qu'un total — un créateur ne connaît pas sa portée
-  future, et en tirer un montant donne une fausse précision. Toujours
-  bloqué par la même raison : `RankingList`, `produit`, `tableau-de-bord`,
-  `simulateur` et `onboarding/profil` lisent tous `profile.avgViews`, et
-  `userProfileSchema` le déclare encore.
+**Travail provenant de l'ancien stash — traité le 2026-08-17** : la migration
+prévue a été appliquée dans le code actuel. Le profil demande désormais
+`postsPerDay`, avec une valeur par défaut qui garde les anciens documents
+Firebase lisibles ; les écrans de classement, fiche produit, tableau de bord
+et onboarding expriment les gains pour **1 000 vues**. Le simulateur conserve
+un curseur de portée explicite, indépendant du profil.
 - ✅ **Déjà fait, ne pas refaire** : « commission inconnue » au lieu de
   « 0 % » et « gain non calculable » au lieu de « 0 € — 0 € ». C'est en
   place depuis la refonte du 2026-08-02 (`NEUTRAL_COMMISSION` traité comme
