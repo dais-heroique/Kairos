@@ -6,7 +6,7 @@ export default function CguAffiliationPage() {
   return (
     <LegalPage
       title="Conditions générales du programme d'affiliation"
-      updatedAt="28 juillet 2026"
+      updatedAt="17 août 2026"
     >
       <p>
         <em>
@@ -17,31 +17,33 @@ export default function CguAffiliationPage() {
 
       <h2>Principe</h2>
       <p>
-        Tout utilisateur peut parrainer d&apos;autres créateurs via un code
-        ou un lien personnel. Une commission de 30% du montant de
-        l&apos;abonnement du filleul est reversée au parrain, pendant 12
-        mois maximum à compter de l&apos;inscription du filleul — sauf pour
-        le palier Ambassadeur, où la commission peut devenir récurrente sans
-        limite de durée.
+        Le programme partenaire fonctionne au moyen de codes et de liens
+        créés par l&apos;owner de Kairos. Lorsqu&apos;un code est attribué à un
+        partenaire, une commission de 30 % du montant réellement encaissé sur
+        les abonnements attribués peut être comptabilisée selon les règles
+        affichées dans l&apos;espace partenaire. Aucun palier Ambassadeur ni aucune
+        commission sans limite de durée ne doit être annoncé tant qu&apos;il n&apos;est
+        pas activé et documenté dans l&apos;application.
       </p>
 
       <h2>Attribution</h2>
       <p>
         L&apos;attribution se fait au premier clic (« first-touch ») dans
-        les 90 jours précédant l&apos;inscription, via un cookie de suivi.
-        Un code peut aussi être saisi manuellement jusqu&apos;à 7 jours après
-        l&apos;inscription.
+        les 90 jours précédant l&apos;inscription, selon le mécanisme technique
+        effectivement activé par Kairos. Un code peut aussi être saisi
+        manuellement jusqu&apos;à 7 jours après l&apos;inscription.
       </p>
 
       <h2>Rétention et paiement</h2>
       <p>
         Une commission reste en attente 30 jours avant de devenir payable,
         pour couvrir les remboursements éventuels. Le paiement n&apos;est
-        déclenché qu&apos;à partir de 25€ de commissions payables cumulées.
-        Deux modes de versement sont proposés&nbsp;: virement (Stripe
-        Connect, réservé aux personnes majeures) ou crédit sur
-        l&apos;abonnement KAIROS (accessible aux mineurs, sans compte
-        Stripe).
+        déclenché qu&apos;à partir du seuil affiché dans l&apos;espace partenaire,
+        après vérification des données de paiement et des obligations légales.
+        Les virements sont effectués manuellement par Kairos ; Stripe Connect
+        n&apos;est pas actuellement activé. Aucun paiement ne doit être promis à
+        un bénéficiaire tant que son identité, ses coordonnées et son statut
+        fiscal ne sont pas vérifiés.
       </p>
 
       <h2>Anti-fraude et remboursement</h2>

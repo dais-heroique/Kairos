@@ -497,6 +497,7 @@ function SiteFooter({ t }: { t: T }) {
     { href: "/confidentialite", label: t("footerPrivacy") },
     { href: "/mentions-legales", label: t("footerLegalMentions") },
     { href: "/retractation", label: t("footerRetractation") },
+    { href: "/cookies", label: t("footerCookies") },
   ];
 
   return (

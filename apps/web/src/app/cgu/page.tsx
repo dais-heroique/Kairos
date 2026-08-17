@@ -87,8 +87,16 @@ export default function CguPage() {
         abonnés.
       </p>
 
+      <h2>Médiation de la consommation</h2>
+      <p>
+        Après une réclamation écrite restée sans solution, le consommateur peut
+        saisir gratuitement le médiateur de la consommation désigné par Kairos :
+        [nom du médiateur], [adresse], [site internet]. Ces coordonnées doivent
+        être complétées avant toute vente à un consommateur.
+      </p>
+
       <h2>Droit applicable</h2>
-      <p>Droit français. Tribunaux compétents&nbsp;: [ville du siège social].</p>
+      <p>Droit français. Tribunaux compétents&nbsp;: [ville du siège social], sous réserve des règles impératives applicables aux consommateurs.</p>
     </LegalPage>
   );
 }

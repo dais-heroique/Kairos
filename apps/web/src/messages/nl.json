@@ -78,7 +78,8 @@
     "faq4Q": "Worden mijn gegevens doorverkocht of gedeeld?",
     "faq4A": "Nee. Je kunt al je gegevens te allen tijde exporteren of verwijderen vanuit je account, zonder ons te hoeven mailen.",
     "faq5Q": "Voor welke markten werkt het?",
-    "faq5A": "TikTok Shop werkt per markt. KAIROS kan nu de belangrijkste beschikbare markten registreren — Frankrijk, Verenigde Staten, Verenigd Koninkrijk, Duitsland, Ierland, Italië, Spanje, Oostenrijk, België, Nederland en Polen. Ranglijsten verschijnen zodra er daadwerkelijk metingen voor een markt zijn verzameld."
+    "faq5A": "TikTok Shop werkt per markt. KAIROS kan nu de belangrijkste beschikbare markten registreren — Frankrijk, Verenigde Staten, Verenigd Koninkrijk, Duitsland, Ierland, Italië, Spanje, Oostenrijk, België, Nederland en Polen. Ranglijsten verschijnen zodra er daadwerkelijk metingen voor een markt zijn verzameld.",
+    "footerCookies": "Cookies"
   },
   "Auth": {
     "title": "Inloggen",
@@ -181,7 +182,11 @@
     "statusTrialing": "Proefperiode",
     "statusPastDue": "Betaling achterstallig",
     "statusCanceled": "Opgezegd",
-    "statusIncomplete": "Betaling onvolledig"
+    "statusIncomplete": "Betaling onvolledig",
+    "legalAcceptance": "Ik heb de gebruiks- en verkoopvoorwaarden van Kairos gelezen en ga ermee akkoord.",
+    "legalReadMore": "Lees de voorwaarden en het herroepingsbeleid",
+    "paymentOpening": "Betaling wordt geopend…",
+    "paymentError": "De betaling kon niet worden gestart. Probeer het opnieuw."
   },
   "Admin": {
     "title": "Dashboard",

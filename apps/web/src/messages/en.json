@@ -78,7 +78,8 @@
     "faq4Q": "Are my data sold or shared?",
     "faq4A": "No. You can export or delete all your data at any time from your account, without having to write to us.",
     "faq5Q": "Which markets does this work for?",
-    "faq5A": "TikTok Shop operates market by market. KAIROS can now record the main available markets — France, United States, United Kingdom, Germany, Ireland, Italy, Spain, Austria, Belgium, Netherlands and Poland. Rankings appear when a market actually has collected checks."
+    "faq5A": "TikTok Shop operates market by market. KAIROS can now record the main available markets — France, United States, United Kingdom, Germany, Ireland, Italy, Spain, Austria, Belgium, Netherlands and Poland. Rankings appear when a market actually has collected checks.",
+    "footerCookies": "Cookies"
   },
   "Auth": {
     "title": "Sign in",
@@ -181,7 +182,11 @@
     "statusTrialing": "Trial period",
     "statusPastDue": "Payment overdue",
     "statusCanceled": "Canceled",
-    "statusIncomplete": "Payment incomplete"
+    "statusIncomplete": "Payment incomplete",
+    "legalAcceptance": "I have read and accept the Kairos Terms of Use and Sale.",
+    "legalReadMore": "Read the Terms and withdrawal policy",
+    "paymentOpening": "Opening checkout…",
+    "paymentError": "Checkout could not be started. Please try again."
   },
   "Admin": {
     "title": "Dashboard",

@@ -78,7 +78,8 @@
     "faq4Q": "Czy moje dane są sprzedawane lub udostępniane?",
     "faq4A": "Nie. Możesz wyeksportować lub usunąć wszystkie swoje dane w dowolnym momencie ze swojego konta, bez kontaktu z nami.",
     "faq5Q": "Na jakim rynku to działa?",
-    "faq5A": "TikTok Shop działa na rynkach lokalnych. KAIROS może teraz rejestrować główne dostępne rynki — Francja, Stany Zjednoczone, Wielka Brytania, Niemcy, Irlandia, Włochy, Hiszpania, Austria, Belgia, Holandia i Polska. Rankingi pojawiają się, gdy dany rynek ma rzeczywiście zebrane odczyty."
+    "faq5A": "TikTok Shop działa na rynkach lokalnych. KAIROS może teraz rejestrować główne dostępne rynki — Francja, Stany Zjednoczone, Wielka Brytania, Niemcy, Irlandia, Włochy, Hiszpania, Austria, Belgia, Holandia i Polska. Rankingi pojawiają się, gdy dany rynek ma rzeczywiście zebrane odczyty.",
+    "footerCookies": "Cookies"
   },
   "Auth": {
     "title": "Logowanie",
@@ -181,7 +182,11 @@
     "statusTrialing": "Okres próbny",
     "statusPastDue": "Płatność zaległa",
     "statusCanceled": "Anulowany",
-    "statusIncomplete": "Płatność niepełna"
+    "statusIncomplete": "Płatność niepełna",
+    "legalAcceptance": "Przeczytałem(-am) i akceptuję warunki korzystania z Kairos i sprzedaży.",
+    "legalReadMore": "Przeczytaj warunki i zasady odstąpienia",
+    "paymentOpening": "Otwieranie płatności…",
+    "paymentError": "Nie udało się rozpocząć płatności. Spróbuj ponownie."
   },
   "Admin": {
     "title": "Panel administratora",

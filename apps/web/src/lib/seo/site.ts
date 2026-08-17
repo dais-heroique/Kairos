@@ -35,6 +35,7 @@ export const PUBLIC_ROUTES = [
   { path: "/confidentialite", priority: 0.3, changeFrequency: "yearly" as const },
   { path: "/mentions-legales", priority: 0.3, changeFrequency: "yearly" as const },
   { path: "/retractation", priority: 0.3, changeFrequency: "yearly" as const },
+  { path: "/cookies", priority: 0.3, changeFrequency: "yearly" as const },
 ];
 
 /**

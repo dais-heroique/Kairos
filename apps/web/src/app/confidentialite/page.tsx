@@ -70,12 +70,19 @@ export default function ConfidentialitePage() {
         (cnil.fr).
       </p>
 
-      <h2>Cookies</h2>
+      <h2>Cookies et stockage local</h2>
       <p>
-        Un cookie technique d&apos;attribution d&apos;affiliation (
-        <code>kai_ref</code>) peut être déposé lors d&apos;une inscription
-        via un lien de parrainage. Voir la bannière de consentement affichée
-        à ta première visite.
+        Kairos utilise des mécanismes techniques nécessaires au fonctionnement
+        de l&apos;authentification et de la personnalisation, ainsi que le
+        stockage local de certaines préférences. Le code doit être vérifié
+        avant chaque mise en production afin de confirmer l&apos;inventaire réel
+        des cookies et traceurs. Aucun traceur publicitaire ou outil de mesure
+        d&apos;audience soumis à consentement ne doit être activé sans mécanisme
+        de consentement préalable.
+      </p>
+      <p>
+        Consulte la <a href="/cookies" className="underline">politique cookies et traceurs</a>
+        pour connaître l&apos;inventaire et les modalités de retrait applicables.
       </p>
     </LegalPage>
   );
