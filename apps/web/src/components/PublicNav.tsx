@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Logo } from "@/components/icons";
+import { LanguageSwitcher } from "@/components/LanguageSwitcher";
+import { useTranslations } from "next-intl";
 
 // Barre des pages publiques — accueil, méthode, tarifs.
 //
@@ -17,12 +19,13 @@ import { Logo } from "@/components/icons";
 // même largeur et le même alignement avant et après connexion.
 
 const LINKS = [
-  { href: "/methode", label: "La méthode" },
-  { href: "/tarifs", label: "Tarifs" },
+  { href: "/methode", label: "method" },
+  { href: "/tarifs", label: "pricing" },
 ] as const;
 
 export function PublicNav() {
   const pathname = usePathname();
+  const t = useTranslations("Nav");
 
   return (
     <nav className="sticky top-0 z-20 border-b border-[color:var(--color-border)] bg-[color:var(--color-bg)]">
@@ -39,6 +42,7 @@ export function PublicNav() {
             dans un menu — à deux entrées, un menu déroulant coûterait un
             geste pour rien. */}
         <div className="flex items-center gap-1 sm:gap-2">
+          <LanguageSwitcher />
           {LINKS.map((link) => {
             const active = pathname === link.href;
             return (
@@ -51,7 +55,7 @@ export function PublicNav() {
                   color: active ? "var(--color-accent)" : "var(--color-ink-muted)",
                 }}
               >
-                {link.label}
+                {t(link.label)}
               </Link>
             );
           })}
@@ -63,7 +67,7 @@ export function PublicNav() {
               color: "var(--color-coral-ink)",
             }}
           >
-            Commencer
+            {t("start")}
           </Link>
         </div>
       </div>

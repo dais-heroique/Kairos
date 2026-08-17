@@ -2,6 +2,8 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useTranslations } from "next-intl";
+import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import {
   IconCoin,
   IconGauge,
@@ -24,15 +26,16 @@ import {
 // et à l'urgence (verdicts, boutons primaires), sinon un onglet actif se
 // lit comme une alerte.
 const ITEMS = [
-  { href: "/tableau-de-bord", label: "Accueil", Icon: IconPipeline },
-  { href: "/classements", label: "Classements", Icon: IconRanking },
-  { href: "/simulateur", label: "Simulateur", Icon: IconCoin },
-  { href: "/watchlist", label: "Watchlist", Icon: IconPackage },
-  { href: "/compte", label: "Compte", Icon: IconGauge },
+  { href: "/tableau-de-bord", label: "home", Icon: IconPipeline },
+  { href: "/classements", label: "rankings", Icon: IconRanking },
+  { href: "/simulateur", label: "simulator", Icon: IconCoin },
+  { href: "/watchlist", label: "watchlist", Icon: IconPackage },
+  { href: "/compte", label: "account", Icon: IconGauge },
 ] as const;
 
 export function BottomNav() {
   const pathname = usePathname();
+  const t = useTranslations("AppNav");
 
   return (
     <div
@@ -64,7 +67,7 @@ export function BottomNav() {
                 }}
               >
                 <Icon className="h-5 w-5 md:h-4 md:w-4" />
-                {label}
+                {t(label)}
                 {active ? (
                   <span
                     aria-hidden
@@ -75,6 +78,9 @@ export function BottomNav() {
               </Link>
             );
           })}
+        </div>
+        <div className="hidden shrink-0 md:block">
+          <LanguageSwitcher />
         </div>
       </nav>
     </div>

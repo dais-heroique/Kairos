@@ -207,5 +207,18 @@
     "seedButton": "Générer le marché de démonstration",
     "seedingButton": "Génération et analyse…",
     "seedSuccess": "Fait — les classements affichent le marché simulé, analysé par les moteurs de production."
+  },
+  "Nav": {
+    "method": "La méthode",
+    "pricing": "Tarifs",
+    "start": "Commencer",
+    "language": "Langue"
+  },
+  "AppNav": {
+    "home": "Accueil",
+    "rankings": "Classements",
+    "simulator": "Simulateur",
+    "watchlist": "Watchlist",
+    "account": "Compte"
   }
 }

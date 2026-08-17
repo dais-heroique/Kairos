@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import { Bricolage_Grotesque, Instrument_Sans, JetBrains_Mono } from "next/font/google";
-import { NextIntlClientProvider } from "next-intl";
 import { getMessages } from "next-intl/server";
 import { FirebaseInit } from "@/components/FirebaseInit";
+import { LanguageProvider } from "@/components/LanguageProvider";
 import { AuthProvider } from "@/lib/firebase/auth-context";
 import { SITE_DESCRIPTION, SITE_NAME, SITE_TAGLINE, SITE_URL } from "@/lib/seo/site";
 import "./globals.css";
@@ -82,10 +82,10 @@ export default async function RootLayout({
       className={`${bricolage.variable} ${instrument.variable} ${jetbrains.variable}`}
     >
       <body>
-        <NextIntlClientProvider messages={messages}>
+        <LanguageProvider initialMessages={messages}>
           <FirebaseInit />
           <AuthProvider>{children}</AuthProvider>
-        </NextIntlClientProvider>
+        </LanguageProvider>
       </body>
     </html>
   );

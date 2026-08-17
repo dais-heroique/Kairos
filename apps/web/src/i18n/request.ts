@@ -1,8 +1,9 @@
 import { getRequestConfig } from "next-intl/server";
 
-// V1 = marché FR uniquement, une seule locale. Pas de préfixe /fr/ dans les
-// URLs (pas de middleware next-intl) — on garde la structure prête pour une
-// éventuelle extension multi-marché sans réécrire les pages.
+// L’export reste sans préfixe de locale dans les URLs. Le français sert de
+// contenu initial statique ; LanguageProvider détecte ensuite la langue du
+// navigateur côté client et permet un choix manuel mémorisé, sans middleware
+// dynamique ni route serveur.
 export default getRequestConfig(async () => {
   const locale = "fr";
   return {
