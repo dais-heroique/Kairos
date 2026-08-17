@@ -185,7 +185,7 @@
     "createCodeTitle": "Créer un code",
     "codeLabel": "Code",
     "codePlaceholder": "ex. AMIS2026",
-    "trialDaysLabel": "Jours d'essai Pro",
+    "trialDaysFixedLabel": "Essai Pro fixe de 5 jours",
     "maxUsesLabel": "Nombre d'utilisations max",
     "createButton": "Créer le code",
     "creatingButton": "Création…",

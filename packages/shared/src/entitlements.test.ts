@@ -31,9 +31,10 @@ function makeUser(overrides: {
       niches: ["beaute"],
       markets: ["FR"],
       followerRange: "5k_20k",
-      avgViews: 8000,
+      postsPerDay: 1,
       experienceLevel: "intermediaire",
       onboardingCompletedAt: new Date().toISOString(),
+      timezone: "Europe/Paris",
     },
     plan: {
       slug: overrides.slug ?? "radar",

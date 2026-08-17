@@ -221,13 +221,13 @@ function DashboardContent() {
 
         {dashboard && dashboard.totalAnalysed === 0 && (
           <div className="kai-card text-sm text-[color:var(--color-ink-muted)]">
-            Aucun produit n&apos;a encore assez de recul pour qu&apos;on
-            puisse dire quoi que ce soit. Il faut au moins 3 jours de suivi
-            par produit — reviens dans quelques jours.
+            Aucun produit n&apos;est encore classable de façon fiable. Les
+            produits en observation restent affichés plus bas avec leur suivi
+            réel ; le verdict apparaîtra dès que l&apos;historique sera suffisant.
           </div>
         )}
 
-        {dashboard && dashboard.totalAnalysed > 0 && (
+        {dashboard && (
           <>
             {/* ---------- Le potentiel, en euros ---------- */}
             {/* Le tableau de bord n'affichait aucun montant avant le
@@ -637,15 +637,24 @@ function DashboardContent() {
             {dashboard.needsHistory.length > 0 && (
               <section className="kai-card flex flex-col gap-2">
                 <h2 className="font-[family-name:var(--font-display)] font-bold">
-                  Trop tôt pour se prononcer
+                  Produits en observation
                 </h2>
                 <p className="text-xs text-[color:var(--color-ink-muted)]">
-                  Moins de 3 jours de suivi : une réponse n&apos;aurait
-                  aucune valeur. Ils sont listés quand même, pas cachés.
+                  Les cinq produits les plus récents restent visibles pendant
+                  la collecte. Aucun verdict ni gain n&apos;est inventé avant d&apos;avoir
+                  assez de relevés.
                 </p>
                 <div>
                   {dashboard.needsHistory.map((i) => (
-                    <ProductLine key={i.id} item={i} note="pas encore assez de recul" />
+                    <ProductLine
+                      key={i.id}
+                      item={i}
+                      note={
+                        typeof i.snapshotCount === "number"
+                          ? `${i.snapshotCount} relevé${i.snapshotCount > 1 ? "s" : ""} — suivi en cours`
+                          : "Suivi en cours — verdict à venir"
+                      }
+                    />
                   ))}
                 </div>
               </section>

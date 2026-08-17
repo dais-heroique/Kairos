@@ -25,7 +25,7 @@ export default function AdminDashboardPage() {
   const [seedSummary, setSeedSummary] = useState<string | null>(null);
 
   const [codeInput, setCodeInput] = useState("");
-  const [trialDays, setTrialDays] = useState("14");
+  const FIXED_TRIAL_DAYS = 5;
   const [maxUses, setMaxUses] = useState("1");
   const [creating, setCreating] = useState(false);
 
@@ -52,7 +52,6 @@ export default function AdminDashboardPage() {
     try {
       await createInviteCode(firebaseUser.uid, {
         code: codeInput.trim(),
-        trialDays: Number(trialDays) || 14,
         maxUses: Number(maxUses) || 1,
       });
       setCodeInput("");
@@ -221,16 +220,9 @@ export default function AdminDashboardPage() {
             />
           </label>
           <div className="flex gap-3">
-            <label className="flex flex-1 flex-col gap-1 text-sm">
-              {t("trialDaysLabel")}
-              <input
-                type="number"
-                min={1}
-                value={trialDays}
-                onChange={(e) => setTrialDays(e.target.value)}
-                className="kai-input"
-              />
-            </label>
+            <p className="flex-1 rounded-xl border px-3 py-2 text-sm" style={{ borderColor: "var(--color-border)" }}>
+              Essai Pro fixe : <strong>{FIXED_TRIAL_DAYS} jours</strong>
+            </p>
             <label className="flex flex-1 flex-col gap-1 text-sm">
               {t("maxUsesLabel")}
               <input

@@ -16,13 +16,15 @@ function inviteCodeRef(code: string) {
   return doc(firestore, "inviteCodes", code.toUpperCase());
 }
 
+export const INVITE_TRIAL_DAYS = 5;
+
 export async function createInviteCode(
   createdBy: string,
-  input: { code: string; trialDays: number; maxUses: number },
+  input: { code: string; maxUses: number },
 ): Promise<void> {
   const value = inviteCodeSchema.parse({
     code: input.code.toUpperCase(),
-    trialDays: input.trialDays,
+    trialDays: INVITE_TRIAL_DAYS,
     maxUses: input.maxUses,
     usedCount: 0,
     active: true,
