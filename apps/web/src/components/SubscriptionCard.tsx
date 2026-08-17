@@ -1,9 +1,9 @@
 "use client";
 
-import Link from "next/link";
 import { useState } from "react";
 import { planBySlug, type Plan, type PlanStatus } from "@kairos/shared";
 import { CheckoutError } from "@/lib/stripe/checkout";
+import { PlanUpgradeModal } from "@/components/PlanUpgradeModal";
 import {
   isPortalConfigured,
   openBillingPortal,
@@ -51,6 +51,7 @@ function formatDate(iso: string): string | null {
 export function SubscriptionCard({ plan }: { plan: Plan }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [upgradeOpen, setUpgradeOpen] = useState(false);
 
   const definition = planBySlug(plan.slug);
   const isPaid = plan.slug !== "radar";
@@ -155,9 +156,19 @@ export function SubscriptionCard({ plan }: { plan: Plan }) {
           )}
         </>
       ) : (
-        <Link href="/tarifs" className="kai-btn-outline text-center">
-          Voir les offres
-        </Link>
+        <>
+          <button
+            type="button"
+            onClick={() => setUpgradeOpen(true)}
+            className="kai-btn-primary"
+          >
+            Voir les offres et choisir mon plan
+          </button>
+          <p className="text-xs text-[color:var(--color-ink-muted)]">
+            Compare Creator et Pro sans quitter ton compte. Le paiement s&apos;ouvrira uniquement après ton choix.
+          </p>
+          <PlanUpgradeModal open={upgradeOpen} onClose={() => setUpgradeOpen(false)} />
+        </>
       )}
     </section>
   );
