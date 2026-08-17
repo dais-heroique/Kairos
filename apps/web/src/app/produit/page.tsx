@@ -23,6 +23,7 @@ import { addToWatchlist, getWatchlistIds } from "@/lib/firestore/watchlist";
 import { windowRangeOf } from "@/lib/dashboard/build-dashboard";
 import { buildScenarioSnapshots, SCENARIO_PRESETS } from "@/lib/demo/scenario";
 import { getRankingPageData } from "@/server/firestore/rankings";
+import { primaryMarketOf } from "@/lib/market";
 import type { ProductRankItem } from "@/types/product-rank-item";
 import { commissionShort } from "@/lib/format/product";
 
@@ -47,6 +48,7 @@ function ProduitContent() {
   const params = useSearchParams();
   const productId = params.get("id") ?? "";
   const { firebaseUser, userDoc } = useAuth();
+  const market = primaryMarketOf(userDoc);
 
   const [item, setItem] = useState<ProductRankItem | null | undefined>(undefined);
   const [snapshots, setSnapshots] = useState<ProductSnapshot[] | null>(null);
@@ -57,14 +59,14 @@ function ProduitContent() {
     // Le document de classement porte déjà tout l'affichage : une lecture
     // au lieu d'une par produit.
     Promise.all([
-      getRankingPageData("products", "FR", "7d"),
-      getRankingPageData("opportunities", "FR", "7d"),
+      getRankingPageData("products", market, "7d"),
+      getRankingPageData("opportunities", market, "7d"),
     ]).then(([a, b]) => {
       const found =
         a.items.find((i) => i.id === productId) ?? b.items.find((i) => i.id === productId) ?? null;
       setItem(found);
     });
-  }, [productId]);
+  }, [market, productId]);
 
   // L'historique est protégé côté serveur (firestore.rules) : sans plan
   // payant la lecture serait refusée. On ne la tente donc pas — inutile de

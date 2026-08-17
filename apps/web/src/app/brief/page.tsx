@@ -29,6 +29,7 @@ import { Teleprompter } from "@/components/Teleprompter";
 import { useAuth } from "@/lib/firebase/auth-context";
 import { getComplianceRules } from "@/lib/firestore/compliance-rules";
 import { getRankingPageData } from "@/server/firestore/rankings";
+import { primaryMarketOf } from "@/lib/market";
 import type { ProductRankItem } from "@/types/product-rank-item";
 
 // Brief de tournage, généré à partir de l'analyse réelle du produit.
@@ -60,6 +61,7 @@ function BriefPreview() {
 function BriefContent() {
   const productId = useSearchParams().get("id") ?? "";
   const { firebaseUser, userDoc } = useAuth();
+  const market = primaryMarketOf(userDoc);
 
   const [item, setItem] = useState<ProductRankItem | null | undefined>(undefined);
   const [rules, setRules] = useState<ComplianceRule[] | null>(null);
@@ -74,13 +76,13 @@ function BriefContent() {
   useEffect(() => {
     if (!productId) return;
     Promise.all([
-      getRankingPageData("opportunities", "FR", "7d"),
-      getRankingPageData("products", "FR", "7d"),
+      getRankingPageData("opportunities", market, "7d"),
+      getRankingPageData("products", market, "7d"),
     ]).then(([a, b]) => {
       setItem(a.items.find((i) => i.id === productId) ?? b.items.find((i) => i.id === productId) ?? null);
     });
     getComplianceRules().then(setRules);
-  }, [productId]);
+  }, [market, productId]);
 
   const entitlements = entitlementsOf(userDoc);
   const paidBrief = entitlements.can("brief");

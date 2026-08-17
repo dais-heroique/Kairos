@@ -78,7 +78,7 @@
     "faq4Q": "Mes données sont revendues ou partagées ?",
     "faq4A": "Non. Tu peux exporter ou supprimer toutes tes données à tout moment depuis ton compte, sans avoir à nous écrire.",
     "faq5Q": "Ça marche pour quel marché ?",
-    "faq5A": "La France uniquement pour l'instant. C'est le marché qu'on veut faire bien avant d'en ouvrir d'autres."
+    "faq5A": "TikTok Shop fonctionne marché par marché. KAIROS peut maintenant enregistrer les principaux marchés disponibles — France, États-Unis, Royaume-Uni, Allemagne, Irlande, Italie, Espagne, Autriche, Belgique, Pays-Bas et Pologne. Les classements apparaissent lorsqu'un marché dispose réellement de relevés collectés."
   },
   "Auth": {
     "title": "Connexion",
@@ -116,7 +116,7 @@
     },
     "Marche": {
       "title": "Ton marché",
-      "subtitle": "KAIROS est pensé pour la France en priorité.",
+      "subtitle": "Choisis les marchés dans lesquels tu veux suivre TikTok Shop. Les données apparaissent lorsqu’un marché est réellement alimenté.",
       "franceLabel": "France",
       "comingSoonLabel": "Bientôt disponible"
     },

@@ -20,6 +20,7 @@ import { addToWatchlist, getWatchlistEntries } from "@/lib/firestore/watchlist";
 import { buildDashboard, windowRangeOf, type Dashboard } from "@/lib/dashboard/build-dashboard";
 import { commissionLabel, commissionShort, shortTitle } from "@/lib/format/product";
 import { getRankingPageData } from "@/server/firestore/rankings";
+import { primaryMarketOf } from "@/lib/market";
 import type { ProductRankItem } from "@/types/product-rank-item";
 
 // Le point d'arrivée après connexion. Il ne rejoue pas les classements :
@@ -109,15 +110,16 @@ function DashboardContent() {
   const [generatedAt, setGeneratedAt] = useState<string | null>(null);
   const [isDemo, setIsDemo] = useState(false);
   const [added, setAdded] = useState<Set<string>>(new Set());
+  const market = primaryMarketOf(userDoc);
 
   useEffect(() => {
-    getRankingPageData("opportunities", "FR", "7d").then((d) => {
+    getRankingPageData("opportunities", market, "7d").then((d) => {
       setOpportunities(d.items);
       setGeneratedAt(d.generatedAt);
       setIsDemo(d.isDemo);
     });
-    getRankingPageData("products", "FR", "7d").then((d) => setProducts(d.items));
-  }, []);
+    getRankingPageData("products", market, "7d").then((d) => setProducts(d.items));
+  }, [market]);
 
   useEffect(() => {
     if (!firebaseUser) return;

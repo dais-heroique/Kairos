@@ -8,6 +8,7 @@ import { SampleRadarPrompt } from "@/components/SampleRadarPrompt";
 import { useAuth } from "@/lib/firebase/auth-context";
 import { getWatchlistEntries, updateWatchlistStatus } from "@/lib/firestore/watchlist";
 import { getRankingPageData } from "@/server/firestore/rankings";
+import { primaryMarketOf } from "@/lib/market";
 import type { ProductRankItem } from "@/types/product-rank-item";
 import { VerdictBadge } from "@/components/VerdictBadge";
 import { commissionLabel } from "@/lib/format/product";
@@ -35,7 +36,8 @@ const STATUS_LABELS: Record<WatchlistStatus, string> = {
 };
 
 function WatchlistContent() {
-  const { firebaseUser } = useAuth();
+  const { firebaseUser, userDoc } = useAuth();
+  const market = primaryMarketOf(userDoc);
   const [entries, setEntries] = useState<WatchlistEntry[] | null>(null);
   // La watchlist ne stocke qu'un identifiant : la page affichait donc
   // « huile-ricin-cils-sourcils » là où l'utilisateur revient tous les
@@ -48,10 +50,10 @@ function WatchlistContent() {
   useEffect(() => {
     if (!firebaseUser) return;
     getWatchlistEntries(firebaseUser.uid).then(setEntries);
-    getRankingPageData("products", "FR", "7d")
+    getRankingPageData("products", market, "7d")
       .then((data) => setLabels(new Map(data.items.map((i) => [i.id, i]))))
       .catch(() => setLabels(new Map()));
-  }, [firebaseUser]);
+  }, [firebaseUser, market]);
 
   async function handleStatusChange(productId: string, status: WatchlistStatus) {
     if (!firebaseUser) return;

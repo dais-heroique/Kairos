@@ -8,6 +8,7 @@ import { EstimatedValue } from "@/components/EstimatedValue";
 import { useAuth } from "@/lib/firebase/auth-context";
 import { commissionLabel, shortTitle } from "@/lib/format/product";
 import { getRankingPageData } from "@/server/firestore/rankings";
+import { primaryMarketOf } from "@/lib/market";
 import type { ProductRankItem } from "@/types/product-rank-item";
 
 // Position de départ du curseur, exprimée en pourcentage (le curseur, lui,
@@ -18,6 +19,7 @@ const DEFAULT_CONVERSION_PCT = DEFAULT_EARNINGS_CONFIG.defaultConversionRate * 1
 
 export function SimulateurContent() {
   const { userDoc } = useAuth();
+  const market = primaryMarketOf(userDoc);
   // « Simuler » depuis une fiche produit ou le tableau de bord doit ouvrir
   // le simulateur *sur ce produit*, pas sur le premier de la liste.
   const preselectedId = useSearchParams().get("id");
@@ -29,13 +31,13 @@ export function SimulateurContent() {
   const [conversionPct, setConversionPct] = useState(DEFAULT_CONVERSION_PCT);
 
   useEffect(() => {
-    getRankingPageData("products", "FR", "7d").then((data) => {
+    getRankingPageData("products", market, "7d").then((data) => {
       setProducts(data.items);
       setProductId(
         (current) => current || preselectedId || (data.items[0]?.id ?? ""),
       );
     });
-  }, [preselectedId]);
+  }, [market, preselectedId]);
 
   const product = useMemo(
     () => products?.find((p) => p.id === productId) ?? products?.[0],

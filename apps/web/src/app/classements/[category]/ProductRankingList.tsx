@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { RankingList } from "@/components/RankingList";
+import { useAuth } from "@/lib/firebase/auth-context";
+import { primaryMarketOf } from "@/lib/market";
 import { getRankingPageData } from "@/server/firestore/rankings";
 import type { ProductRankItem } from "@/types/product-rank-item";
 
@@ -15,11 +17,13 @@ export function ProductRankingList({
   type: string;
   emptyMessage: string;
 }) {
+  const { userDoc } = useAuth();
+  const market = primaryMarketOf(userDoc);
   const [items, setItems] = useState<ProductRankItem[] | null>(null);
 
   useEffect(() => {
     let cancelled = false;
-    getRankingPageData(type, "FR", "7d")
+    getRankingPageData(type, market, "7d")
       .then((data) => {
         if (!cancelled) setItems(data.items);
       })
@@ -29,7 +33,7 @@ export function ProductRankingList({
     return () => {
       cancelled = true;
     };
-  }, [type]);
+  }, [market, type]);
 
   if (items === null) {
     return <p className="text-sm text-[color:var(--color-ink-muted)]">Chargement…</p>;
