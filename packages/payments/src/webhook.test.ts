@@ -104,6 +104,7 @@ describe("resolveWebhookEvent", () => {
         plan: {
           slug: "creator",
           status: "active",
+          billingPeriod: "monthly",
           currentPeriodEnd: new Date(1_800_000_000 * 1000).toISOString(),
           stripeCustomerId: "cus_1",
         },
@@ -120,7 +121,10 @@ describe("resolveWebhookEvent", () => {
     );
 
     expect(outcome.kind).toBe("update");
-    if (outcome.kind === "update") expect(outcome.update.plan.slug).toBe("pro");
+    if (outcome.kind === "update") {
+      expect(outcome.update.plan.slug).toBe("pro");
+      expect(outcome.update.plan.billingPeriod).toBe("yearly");
+    }
   });
 
   it("marque l'impayé sans supprimer l'abonnement", () => {

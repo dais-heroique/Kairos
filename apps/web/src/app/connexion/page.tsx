@@ -24,7 +24,7 @@ export default function ConnexionPage() {
   useEffect(() => {
     if (loading || !firebaseUser || !userDoc) return;
     router.replace(
-      userDoc.profile.onboardingCompletedAt ? "/classements" : "/onboarding/niches",
+      userDoc.profile.onboardingCompletedAt ? "/tableau-de-bord" : "/onboarding/niches",
     );
   }, [loading, firebaseUser, userDoc, router]);
 

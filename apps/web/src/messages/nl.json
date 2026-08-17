@@ -138,7 +138,10 @@
         "5k_20k": "5.000 – 20.000",
         "20k_100k": "20.000 – 100.000",
         "100k_plus": "100.000 en meer"
-      }
+      },
+      "previewTitle": "Zo ziet het eruit",
+      "previewDescription": "Voor 1.000 weergaven van een product van €{price} met {commission}% commissie. Dit is een voorbeeld, geen belofte — echte producten volgen hierna.",
+      "saveError": "Je profiel kon niet worden opgeslagen. Controleer je verbinding en probeer het opnieuw."
     }
   },
   "Account": {
@@ -168,7 +171,17 @@
     "inviteInvalid": "Deze code bestaat niet (meer).",
     "inviteInactive": "Deze code is niet meer actief.",
     "inviteExhausted": "Deze code heeft zijn gebruikslimiet bereikt.",
-    "adminLink": "Naar het admin-dashboard"
+    "adminLink": "Naar het admin-dashboard",
+    "subscriptionTitle": "Mijn abonnement",
+    "planStatus": "{plan}-abonnement — {status}",
+    "billingMonthly": "Maandelijks",
+    "billingYearly": "Jaarlijks",
+    "billingUnknown": "Factureringsperiode niet beschikbaar",
+    "statusActive": "Actief",
+    "statusTrialing": "Proefperiode",
+    "statusPastDue": "Betaling achterstallig",
+    "statusCanceled": "Opgezegd",
+    "statusIncomplete": "Betaling onvolledig"
   },
   "Admin": {
     "title": "Dashboard",

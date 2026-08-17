@@ -61,6 +61,7 @@ export function encodePlan(plan: Plan): FirestoreValue {
       fields: {
         slug: { stringValue: plan.slug },
         status: { stringValue: plan.status },
+        billingPeriod: str(plan.billingPeriod),
         currentPeriodEnd: str(plan.currentPeriodEnd),
         stripeCustomerId: str(plan.stripeCustomerId),
       },

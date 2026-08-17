@@ -72,6 +72,7 @@ export async function ensureUserDocument(
     plan: {
       slug: "radar",
       status: "active",
+      billingPeriod: null,
       currentPeriodEnd: null,
       stripeCustomerId: null,
     },

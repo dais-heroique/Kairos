@@ -138,7 +138,10 @@
         "5k_20k": "5.000 – 20.000",
         "20k_100k": "20.000 – 100.000",
         "100k_plus": "100.000 e oltre"
-      }
+      },
+      "previewTitle": "Ecco come funziona",
+      "previewDescription": "Per 1.000 visualizzazioni su un prodotto da {price} € con una commissione del {commission} %. È un esempio, non una promessa: i prodotti reali arrivano subito dopo.",
+      "saveError": "Non è stato possibile salvare il profilo. Controlla la connessione e riprova."
     }
   },
   "Account": {
@@ -168,7 +171,17 @@
     "inviteInvalid": "Questo codice non esiste più o è invalido.",
     "inviteInactive": "Questo codice non è più attivo.",
     "inviteExhausted": "Questo codice ha raggiunto il limite di utilizzo.",
-    "adminLink": "Vai al pannello di amministrazione"
+    "adminLink": "Vai al pannello di amministrazione",
+    "subscriptionTitle": "Il mio abbonamento",
+    "planStatus": "Piano {plan} — {status}",
+    "billingMonthly": "Mensile",
+    "billingYearly": "Annuale",
+    "billingUnknown": "Periodo di fatturazione non disponibile",
+    "statusActive": "Attivo",
+    "statusTrialing": "Periodo di prova",
+    "statusPastDue": "Pagamento in ritardo",
+    "statusCanceled": "Annullato",
+    "statusIncomplete": "Pagamento incompleto"
   },
   "Admin": {
     "title": "Dashboard",

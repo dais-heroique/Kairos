@@ -1,7 +1,7 @@
 "use client";
 
 import type { ExperienceLevel, FollowerRange } from "@kairos/shared";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import { type FormEvent, useMemo, useState } from "react";
 import { computeEarnings, DEFAULT_EARNINGS_CONFIG } from "@kairos/core";
@@ -33,6 +33,7 @@ const PREVIEW_COMMISSION_PCT = 20;
 
 export default function OnboardingProfilPage() {
   const t = useTranslations("Onboarding");
+  const locale = useLocale();
   const router = useRouter();
   const { firebaseUser, userDoc } = useAuth();
   const [followerRange, setFollowerRange] = useState<FollowerRange>(
@@ -45,6 +46,7 @@ export default function OnboardingProfilPage() {
     userDoc?.profile.experienceLevel ?? "debutant",
   );
   const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
 
   // Le même moteur que le reste de l'application (`packages/core`), pas
   // une formule d'affichage : ce que l'aperçu montre est exactement ce que
@@ -68,12 +70,18 @@ export default function OnboardingProfilPage() {
     event.preventDefault();
     if (!firebaseUser) return;
     setSaving(true);
-    await completeOnboarding(firebaseUser.uid, {
-      followerRange,
-      postsPerDay: Math.max(0, Math.floor(Number(postsPerDay) || 0)),
-      experienceLevel,
-    });
-    router.push("/tableau-de-bord");
+    setSaveError(null);
+    try {
+      await completeOnboarding(firebaseUser.uid, {
+        followerRange,
+        postsPerDay: Math.max(0, Math.floor(Number(postsPerDay) || 0)),
+        experienceLevel,
+      });
+      router.push("/tableau-de-bord");
+    } catch {
+      setSaveError(t("Profil.saveError"));
+      setSaving(false);
+    }
   }
 
   return (
@@ -152,13 +160,13 @@ export default function OnboardingProfilPage() {
               className="text-xs font-semibold uppercase tracking-wide"
               style={{ color: "var(--color-success)" }}
             >
-              Ce que ça donne
+              {t("Profil.previewTitle")}
             </span>
             <p className="font-[family-name:var(--font-display)] text-xl font-extrabold">
               <EstimatedValue
                 range={previewEarnings}
                 format={(v) =>
-                  v.toLocaleString("fr-FR", {
+                  v.toLocaleString(locale, {
                     style: "currency",
                     currency: "EUR",
                     maximumFractionDigits: 0,
@@ -167,13 +175,19 @@ export default function OnboardingProfilPage() {
               />
             </p>
             <p className="text-xs text-[color:var(--color-ink-muted)]">
-              Pour 1 000 vues sur un produit à {PREVIEW_PRICE_EUR} € commissionné{" "}
-              {PREVIEW_COMMISSION_PCT} %. C&apos;est un exemple type, pas une
-              promesse — les vrais produits arrivent juste après.
+              {t("Profil.previewDescription", {
+                price: PREVIEW_PRICE_EUR,
+                commission: PREVIEW_COMMISSION_PCT,
+              })}
             </p>
           </div>
         )}
 
+        {saveError && (
+          <p className="text-sm font-semibold" style={{ color: "var(--color-coral)" }}>
+            {saveError}
+          </p>
+        )}
         <button type="submit" disabled={saving} className="kai-btn-primary mt-auto">
           {t("finish")}
         </button>

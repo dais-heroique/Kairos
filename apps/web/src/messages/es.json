@@ -138,7 +138,10 @@
         "5k_20k": "5 000 – 20 000",
         "20k_100k": "20 000 – 100 000",
         "100k_plus": "100 000 o más"
-      }
+      },
+      "previewTitle": "Así se ve",
+      "previewDescription": "Para 1.000 visualizaciones de un producto de {price} € con una comisión del {commission} %. Es un ejemplo, no una promesa: los productos reales aparecen después.",
+      "saveError": "No se ha podido guardar tu perfil. Comprueba tu conexión e inténtalo de nuevo."
     }
   },
   "Account": {
@@ -168,7 +171,17 @@
     "inviteInvalid": "Este código no existe o ya no es válido.",
     "inviteInactive": "Este código ya no está activo.",
     "inviteExhausted": "Este código ha alcanzado su límite de uso.",
-    "adminLink": "Ir al panel de administración"
+    "adminLink": "Ir al panel de administración",
+    "subscriptionTitle": "Mi suscripción",
+    "planStatus": "Plan {plan} — {status}",
+    "billingMonthly": "Mensual",
+    "billingYearly": "Anual",
+    "billingUnknown": "Periodo de facturación no disponible",
+    "statusActive": "Activo",
+    "statusTrialing": "Periodo de prueba",
+    "statusPastDue": "Pago pendiente",
+    "statusCanceled": "Cancelado",
+    "statusIncomplete": "Pago incompleto"
   },
   "Admin": {
     "title": "Panel de control",

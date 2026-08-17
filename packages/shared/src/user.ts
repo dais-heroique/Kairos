@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { marketSchema } from "./market";
+import { BILLING_PERIODS } from "./plans";
 import { affiliateCodeSchema } from "./affiliate";
 
 export const PLAN_SLUGS = ["radar", "creator", "pro"] as const;
@@ -17,9 +18,13 @@ export type PlanStatus = z.infer<typeof planStatusSchema>;
 
 // users/{uid}.plan — jamais modifiable par le client (Firestore Rules),
 // écrit uniquement par les webhooks Stripe via Admin SDK.
+export const billingPeriodSchema = z.enum(BILLING_PERIODS).nullable().default(null);
+export type PlanBillingPeriod = z.infer<typeof billingPeriodSchema>;
+
 export const planSchema = z.object({
   slug: planSlugSchema,
   status: planStatusSchema,
+  billingPeriod: billingPeriodSchema,
   currentPeriodEnd: z.string().datetime().nullable(),
   stripeCustomerId: z.string().nullable(),
 });

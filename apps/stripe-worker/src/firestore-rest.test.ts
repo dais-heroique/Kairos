@@ -6,6 +6,7 @@ function plan(overrides: Partial<Plan> = {}): Plan {
   return {
     slug: "creator",
     status: "active",
+    billingPeriod: "monthly",
     currentPeriodEnd: "2026-09-08T00:00:00.000Z",
     stripeCustomerId: "cus_1",
     ...overrides,
@@ -23,6 +24,7 @@ describe("encodePlan", () => {
         fields: {
           slug: { stringValue: "creator" },
           status: { stringValue: "active" },
+          billingPeriod: { stringValue: "monthly" },
           currentPeriodEnd: { stringValue: "2026-09-08T00:00:00.000Z" },
           stripeCustomerId: { stringValue: "cus_1" },
         },
@@ -40,11 +42,13 @@ describe("encodePlan", () => {
     expect(fields.currentPeriodEnd).toEqual({ nullValue: null });
     expect(fields.stripeCustomerId).toEqual({ nullValue: null });
     expect(Object.keys(fields).sort()).toEqual([
+      "billingPeriod",
       "currentPeriodEnd",
       "slug",
       "status",
       "stripeCustomerId",
     ]);
+    expect(fields.billingPeriod).toEqual({ stringValue: "monthly" });
   });
 
   it("porte le retour au gratuit d'une résiliation", () => {

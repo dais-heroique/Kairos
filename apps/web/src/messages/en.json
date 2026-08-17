@@ -138,7 +138,10 @@
         "5k_20k": "5,000 – 20,000",
         "20k_100k": "20,000 – 100,000",
         "100k_plus": "100,000+"
-      }
+      },
+      "previewTitle": "What this means",
+      "previewDescription": "For 1,000 views on a product priced at €{price} with a {commission}% commission. This is an example, not a promise — real products come next.",
+      "saveError": "Your profile could not be saved. Check your connection and try again."
     }
   },
   "Account": {
@@ -168,7 +171,17 @@
     "inviteInvalid": "This code doesn't exist or is no longer valid.",
     "inviteInactive": "This code is no longer active.",
     "inviteExhausted": "This code has reached its usage limit.",
-    "adminLink": "Go to admin dashboard"
+    "adminLink": "Go to admin dashboard",
+    "subscriptionTitle": "My subscription",
+    "planStatus": "{plan} plan — {status}",
+    "billingMonthly": "Monthly",
+    "billingYearly": "Yearly",
+    "billingUnknown": "Billing period unavailable",
+    "statusActive": "Active",
+    "statusTrialing": "Trial period",
+    "statusPastDue": "Payment overdue",
+    "statusCanceled": "Canceled",
+    "statusIncomplete": "Payment incomplete"
   },
   "Admin": {
     "title": "Dashboard",

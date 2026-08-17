@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { planBySlug, type Plan, type PlanStatus } from "@kairos/shared";
 import { CheckoutError } from "@/lib/stripe/checkout";
 import { PlanUpgradeModal } from "@/components/PlanUpgradeModal";
@@ -20,12 +21,12 @@ import {
 // Rien n'y est estimé ni arrondi : on affiche ce que porte le document
 // `plan`, écrit par le webhook Stripe et par personne d'autre.
 
-const STATUS_LABELS: Record<PlanStatus, string> = {
-  active: "Actif",
-  trialing: "Période d'essai",
-  past_due: "Paiement en retard",
-  canceled: "Résilié",
-  incomplete: "Paiement incomplet",
+const STATUS_KEYS: Record<PlanStatus, string> = {
+  active: "statusActive",
+  trialing: "statusTrialing",
+  past_due: "statusPastDue",
+  canceled: "statusCanceled",
+  incomplete: "statusIncomplete",
 };
 
 /** Ce que la date de fin de période signifie *selon* l'état de l'abonnement. */
@@ -49,6 +50,7 @@ function formatDate(iso: string): string | null {
 }
 
 export function SubscriptionCard({ plan }: { plan: Plan }) {
+  const t = useTranslations("Account");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [upgradeOpen, setUpgradeOpen] = useState(false);
@@ -56,6 +58,11 @@ export function SubscriptionCard({ plan }: { plan: Plan }) {
   const definition = planBySlug(plan.slug);
   const isPaid = plan.slug !== "radar";
   const endDate = plan.currentPeriodEnd ? formatDate(plan.currentPeriodEnd) : null;
+  const billingLabel = plan.billingPeriod === "monthly"
+    ? t("billingMonthly")
+    : plan.billingPeriod === "yearly"
+      ? t("billingYearly")
+      : t("billingUnknown");
 
   // Le portail suppose un client Stripe. Un plan accordé à la main
   // (`pnpm grant:plan`, compte fondateur) n'en a pas : proposer le bouton
@@ -89,10 +96,10 @@ export function SubscriptionCard({ plan }: { plan: Plan }) {
     <section className="flex flex-col gap-3">
       <div>
         <h2 className="font-[family-name:var(--font-display)] text-lg font-extrabold">
-          Mon abonnement
+          {t("subscriptionTitle")}
         </h2>
         <p className="mt-1 text-sm text-[color:var(--color-ink-muted)]">
-          Plan {definition.name} — {STATUS_LABELS[plan.status]}
+          {t("planStatus", { plan: definition.name, status: t(STATUS_KEYS[plan.status]) })} · {billingLabel}
           {endDate && (
             <>
               {" · "}

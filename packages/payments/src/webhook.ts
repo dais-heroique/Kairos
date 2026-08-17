@@ -157,6 +157,7 @@ export function resolveWebhookEvent(
           plan: {
             slug: matched.plan,
             status,
+            billingPeriod: matched.period,
             currentPeriodEnd: periodEndIso(object),
             stripeCustomerId: str(object.customer),
           },
@@ -179,6 +180,7 @@ export function resolveWebhookEvent(
           plan: {
             slug: "radar",
             status: "canceled",
+            billingPeriod: null,
             currentPeriodEnd: periodEndIso(object),
             stripeCustomerId: str(object.customer),
           },

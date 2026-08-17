@@ -138,7 +138,10 @@
         "5k_20k": "5 000 – 20 000",
         "20k_100k": "20 000 – 100 000",
         "100k_plus": "100 000 et plus"
-      }
+      },
+      "previewTitle": "Ce que ça donne",
+      "previewDescription": "Pour 1 000 vues sur un produit à {price} € commissionné à {commission} %. C'est un exemple type, pas une promesse — les vrais produits arrivent juste après.",
+      "saveError": "Impossible d'enregistrer ton profil. Vérifie ta connexion et réessaie."
     }
   },
   "Account": {
@@ -168,7 +171,17 @@
     "inviteInvalid": "Ce code n'existe pas ou plus.",
     "inviteInactive": "Ce code n'est plus actif.",
     "inviteExhausted": "Ce code a atteint sa limite d'utilisation.",
-    "adminLink": "Aller au tableau de bord admin"
+    "adminLink": "Aller au tableau de bord admin",
+    "subscriptionTitle": "Mon abonnement",
+    "planStatus": "Plan {plan} — {status}",
+    "billingMonthly": "Mensuel",
+    "billingYearly": "Annuel",
+    "billingUnknown": "Périodicité non renseignée",
+    "statusActive": "Actif",
+    "statusTrialing": "Période d'essai",
+    "statusPastDue": "Paiement en retard",
+    "statusCanceled": "Résilié",
+    "statusIncomplete": "Paiement incomplet"
   },
   "Admin": {
     "title": "Tableau de bord",

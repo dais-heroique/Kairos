@@ -138,7 +138,10 @@
         "5k_20k": "5.000 – 20.000",
         "20k_100k": "20.000 – 100.000",
         "100k_plus": "100.000 und mehr"
-      }
+      },
+      "previewTitle": "So sieht es aus",
+      "previewDescription": "Bei 1.000 Aufrufen eines Produkts für {price} € mit {commission} % Provision. Das ist ein Beispiel, keine Zusage — echte Produkte folgen gleich.",
+      "saveError": "Dein Profil konnte nicht gespeichert werden. Prüfe deine Verbindung und versuche es erneut."
     }
   },
   "Account": {
@@ -168,7 +171,17 @@
     "inviteInvalid": "Dieser Code existiert nicht (mehr).",
     "inviteInactive": "Dieser Code ist nicht mehr aktiv.",
     "inviteExhausted": "Dieser Code hat seine Nutzungsgrenze erreicht.",
-    "adminLink": "Zum Admin‑Dashboard"
+    "adminLink": "Zum Admin‑Dashboard",
+    "subscriptionTitle": "Mein Abonnement",
+    "planStatus": "{plan}-Tarif — {status}",
+    "billingMonthly": "Monatlich",
+    "billingYearly": "Jährlich",
+    "billingUnknown": "Abrechnungszeitraum nicht verfügbar",
+    "statusActive": "Aktiv",
+    "statusTrialing": "Testphase",
+    "statusPastDue": "Zahlung überfällig",
+    "statusCanceled": "Gekündigt",
+    "statusIncomplete": "Zahlung unvollständig"
   },
   "Admin": {
     "title": "Dashboard",
