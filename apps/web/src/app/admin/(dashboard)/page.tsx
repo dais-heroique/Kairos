@@ -16,7 +16,8 @@ import { runPipeline } from "@/lib/pipeline/run-pipeline";
 
 export default function AdminDashboardPage() {
   const t = useTranslations("Admin");
-  const { firebaseUser } = useAuth();
+  const { firebaseUser, userDoc } = useAuth();
+  const isOwner = userDoc?.role === "owner";
   const [users, setUsers] = useState<User[] | null>(null);
   const [codes, setCodes] = useState<InviteCode[] | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -208,7 +209,8 @@ export default function AdminDashboardPage() {
           {t("codesTitle")}
         </h2>
 
-        <form onSubmit={handleCreateCode} className="kai-card flex flex-col gap-3">
+        {isOwner ? (
+          <form onSubmit={handleCreateCode} className="kai-card flex flex-col gap-3">
           <p className="text-sm font-semibold">{t("createCodeTitle")}</p>
           <label className="flex flex-col gap-1 text-sm">
             {t("codeLabel")}
@@ -237,7 +239,12 @@ export default function AdminDashboardPage() {
           <button type="submit" disabled={creating} className="kai-btn-primary">
             {creating ? t("creatingButton") : t("createButton")}
           </button>
-        </form>
+          </form>
+        ) : (
+          <p className="kai-card text-sm text-[color:var(--color-ink-muted)]">
+            Seul le propriétaire peut générer, désactiver ou réactiver un code d&apos;invitation.
+          </p>
+        )}
 
         <div className="flex flex-col gap-2">
           {codes?.length === 0 && (
@@ -265,13 +272,15 @@ export default function AdminDashboardPage() {
                   </span>
                 </p>
               </div>
-              <button
-                type="button"
-                onClick={() => handleToggleActive(c)}
-                className="kai-btn-outline shrink-0 px-3 py-2 text-sm"
-              >
-                {c.active ? t("deactivateButton") : t("activateButton")}
-              </button>
+              {isOwner && (
+                <button
+                  type="button"
+                  onClick={() => handleToggleActive(c)}
+                  className="kai-btn-outline shrink-0 px-3 py-2 text-sm"
+                >
+                  {c.active ? t("deactivateButton") : t("activateButton")}
+                </button>
+              )}
             </div>
           ))}
         </div>

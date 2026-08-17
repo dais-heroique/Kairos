@@ -249,13 +249,14 @@ service cloud.firestore {
 
     // Perk "code d'invitation → essai Pro", pas le programme d'affiliation
     // §5 (Phase 6). Lecture ouverte à tout signé (nécessaire pour valider
-    // un code avant rédemption) ; create/désactivation réservés à l'admin ;
-    // la rédemption elle-même passe par isValidCodeRedemption().
+    // un code avant rédemption). Création, désactivation et suppression
+    // réservées exclusivement au propriétaire ; la rédemption elle-même
+    // passe par isValidCodeRedemption().
     match /inviteCodes/{code} {
       allow read: if isSignedIn();
-      allow create: if isAdmin();
-      allow update: if isAdmin() || (isSignedIn() && isValidCodeRedemption());
-      allow delete: if isAdmin();
+      allow create: if isSiteOwner();
+      allow update: if isSiteOwner() || (isSignedIn() && isValidCodeRedemption());
+      allow delete: if isSiteOwner();
     }
 
     // Codes partenaires — créés à la main par le propriétaire, confiés à
