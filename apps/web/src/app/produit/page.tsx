@@ -21,7 +21,7 @@ import { useAuth } from "@/lib/firebase/auth-context";
 import { getProductSnapshots } from "@/lib/firestore/product-entry";
 import { addToWatchlist, getWatchlistIds } from "@/lib/firestore/watchlist";
 import { windowRangeOf } from "@/lib/dashboard/build-dashboard";
-import { buildScenarioSnapshots, SCENARIO_PRESETS } from "@/lib/demo/scenario";
+import { productImageUrl } from "@/lib/product-image";
 import { getRankingPageData } from "@/server/firestore/rankings";
 import { primaryMarketOf } from "@/lib/market";
 import type { ProductRankItem } from "@/types/product-rank-item";
@@ -53,6 +53,7 @@ function ProduitContent() {
   const [item, setItem] = useState<ProductRankItem | null | undefined>(undefined);
   const [snapshots, setSnapshots] = useState<ProductSnapshot[] | null>(null);
   const [saved, setSaved] = useState(false);
+  const [imageFailed, setImageFailed] = useState(false);
 
   useEffect(() => {
     if (!productId) return;
@@ -124,6 +125,7 @@ function ProduitContent() {
 
   const eur = (v: number) =>
     v.toLocaleString("fr-FR", { style: "currency", currency: "EUR", maximumFractionDigits: 0 });
+  const image = productImageUrl(item.imageUrl ?? null, 320);
 
   return (
     <div className="flex flex-1 flex-col gap-4 kai-shell py-4">
@@ -131,15 +133,24 @@ function ProduitContent() {
         ← Retour
       </Link>
 
-      <div className="flex items-start gap-3">
-        <span className="text-4xl">{item.emoji ?? "📦"}</span>
-        <div className="min-w-0">
+      <div className="flex items-start gap-4 rounded-[28px] p-4 shadow-sm sm:p-5" style={{ backgroundColor: "var(--color-surface-raised)" }}>
+        <div className="flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden rounded-3xl text-4xl shadow-sm" style={{ backgroundColor: "var(--color-bg)", border: "1px solid var(--color-border)" }}>
+          {image && !imageFailed ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={image} alt="" width={96} height={96} className="h-full w-full object-cover" onError={() => setImageFailed(true)} />
+          ) : (
+            item.emoji ?? "📦"
+          )}
+        </div>
+        <div className="min-w-0 pt-1">
           <h1 className="font-[family-name:var(--font-display)] text-xl font-extrabold leading-tight">
             {item.title}
           </h1>
           <p className="text-sm text-[color:var(--color-ink-muted)]">
-            {item.shopName} · {eur(item.priceCents / 100)} · {commissionShort(item.commissionRatePct, item.commissionIsEstimated)} de
-            commission
+            {item.shopName} · {eur(item.priceCents / 100)} · {commissionShort(item.commissionRatePct, item.commissionIsEstimated)} de commission
+          </p>
+          <p className="mt-2 text-xs text-[color:var(--color-ink-muted)]">
+            {typeof item.snapshotCount === "number" ? `${item.snapshotCount} relevé${item.snapshotCount > 1 ? "s" : ""} réel${item.snapshotCount > 1 ? "s" : ""} collecté${item.snapshotCount > 1 ? "s" : ""}` : "Suivi en cours"}
           </p>
         </div>
       </div>
@@ -213,12 +224,17 @@ function ProduitContent() {
           entitlements={entitlements}
           title="Vois comment ce produit a évolué jour par jour"
           urgency={urgencyFor(item)}
-          // Aperçu flouté : le visiteur voit qu'il y a une vraie courbe
-          // derrière, pas un écran vide. Les relevés affichés ici sont
-          // ceux d'un scénario d'illustration, jamais la donnée protégée.
+          // Aperçu honnête : le visiteur voit l'état réel de la collecte
+          // sans afficher de courbe inventée à la place des relevés protégés.
           preview={
-            <div className="kai-card">
-              <SnapshotChart snapshots={buildScenarioSnapshots(SCENARIO_PRESETS[1]!.params)} />
+            <div className="kai-card flex min-h-32 flex-col justify-center gap-2">
+              <p className="font-[family-name:var(--font-display)] font-bold">Historique réel du produit</p>
+              <p className="text-sm text-[color:var(--color-ink-muted)]">
+                Les relevés quotidiens apparaîtront ici dès que ton plan autorise l&apos;historique.
+              </p>
+              <p className="text-xs font-semibold" style={{ color: "var(--color-coral)" }}>
+                {item.snapshotCount ?? 0} relevé{(item.snapshotCount ?? 0) > 1 ? "s" : ""} disponible{(item.snapshotCount ?? 0) > 1 ? "s" : ""}
+              </p>
             </div>
           }
         >
@@ -230,7 +246,19 @@ function ProduitContent() {
                 Aucun relevé disponible pour ce produit.
               </p>
             ) : (
-              <SnapshotChart snapshots={snapshots} />
+              <div className="flex flex-col gap-3">
+                <SnapshotChart snapshots={snapshots} />
+                <div className="grid grid-cols-2 gap-2 text-xs text-[color:var(--color-ink-muted)]">
+                  <div className="rounded-xl p-2" style={{ backgroundColor: "var(--color-surface-raised)" }}>
+                    <span className="block font-semibold text-[color:var(--color-ink)]">Premier relevé</span>
+                    {snapshots[0]?.capturedDate ?? "—"}
+                  </div>
+                  <div className="rounded-xl p-2" style={{ backgroundColor: "var(--color-surface-raised)" }}>
+                    <span className="block font-semibold text-[color:var(--color-ink)]">Dernier relevé</span>
+                    {snapshots[snapshots.length - 1]?.capturedDate ?? "—"}
+                  </div>
+                </div>
+              </div>
             )}
           </div>
         </PaywallGate>

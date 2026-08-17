@@ -21,6 +21,7 @@ import { buildDashboard, windowRangeOf, type Dashboard } from "@/lib/dashboard/b
 import { commissionLabel, commissionShort, shortTitle } from "@/lib/format/product";
 import { getRankingPageData } from "@/server/firestore/rankings";
 import { primaryMarketOf } from "@/lib/market";
+import { productImageUrl } from "@/lib/product-image";
 import type { ProductRankItem } from "@/types/product-rank-item";
 
 // Le point d'arrivée après connexion. Il ne rejoue pas les classements :
@@ -83,21 +84,43 @@ function ProductLine({
   item: ProductRankItem;
   note?: string | undefined;
 }) {
+  const [imageFailed, setImageFailed] = useState(false);
+  const image = productImageUrl(item.imageUrl ?? null, 200);
+
   return (
     <Link
       href={`/produit?id=${encodeURIComponent(item.id)}`}
-      className="flex items-center gap-3 border-b py-2 last:border-b-0"
+      className="group flex items-center gap-3 rounded-2xl border-b px-2.5 py-3 transition-colors last:border-b-0 hover:bg-[color:var(--color-surface-raised)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--color-coral)]"
       style={{ borderColor: "var(--color-border)" }}
+      aria-label={`Ouvrir la fiche de ${item.title}`}
     >
-      <span className="text-xl">{item.emoji ?? "📦"}</span>
+      <span
+        className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-2xl text-2xl shadow-sm"
+        style={{ backgroundColor: "var(--color-surface-raised)", border: "1px solid var(--color-border)" }}
+      >
+        {image && !imageFailed ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={image}
+            alt=""
+            loading="lazy"
+            decoding="async"
+            width={56}
+            height={56}
+            className="h-full w-full object-cover transition-transform duration-200 group-hover:scale-105"
+            onError={() => setImageFailed(true)}
+          />
+        ) : (
+          item.emoji ?? "📦"
+        )}
+      </span>
       <span className="min-w-0 flex-1">
-        <span className="block truncate text-sm font-semibold">{item.title}</span>
-        <span className="block text-xs text-[color:var(--color-ink-muted)]">
-          {note ??
-            `${item.shopName} · ${commissionShort(item.commissionRatePct, item.commissionIsEstimated)}`}
+        <span className="block truncate text-sm font-semibold group-hover:underline">{item.title}</span>
+        <span className="block truncate text-xs text-[color:var(--color-ink-muted)]">
+          {note ?? `${item.shopName} · ${commissionShort(item.commissionRatePct, item.commissionIsEstimated)}`}
         </span>
       </span>
-      <VerdictBadge verdict={item.verdict} />
+      <span className="shrink-0"><VerdictBadge verdict={item.verdict} /></span>
     </Link>
   );
 }
@@ -169,33 +192,34 @@ function DashboardContent() {
     <div className="flex min-h-dvh flex-col">
       <BottomNav />
 
-      <header className="flex items-start justify-between gap-3 kai-shell pt-6 pb-2">
-        <div>
-          <h1 className="font-[family-name:var(--font-display)] text-2xl font-extrabold">
-            {firstName ? `Salut ${firstName}` : "Ta semaine"}
-          </h1>
-          <p className="mt-1 text-sm text-[color:var(--color-ink-muted)]">
-            Ce qu&apos;il y a à tourner, et ce qu&apos;il vaut mieux laisser passer.
-          </p>
-        </div>
-        <Link
-          href="/tarifs"
-          className="shrink-0 rounded-full px-2.5 py-1 text-[11px] font-bold"
-          style={{
-            backgroundColor: entitlements.can("earningsAll")
-              ? "var(--color-success-soft)"
-              : "var(--color-surface)",
-            color: entitlements.can("earningsAll")
-              ? "var(--color-success)"
-              : "var(--color-ink-muted)",
-            border: "1px solid var(--color-border)",
-          }}
+      <header className="kai-shell pt-5 pb-2">
+        <div
+          className="relative overflow-hidden rounded-[28px] p-5 shadow-sm sm:p-7"
+          style={{ background: "linear-gradient(135deg, var(--color-ink) 0%, #2f3441 58%, var(--color-coral) 150%)", color: "white" }}
         >
-          {entitlements.label}
-        </Link>
+          <div className="relative z-10 flex items-start justify-between gap-4">
+            <div>
+              <p className="text-[11px] font-bold uppercase tracking-[0.18em] opacity-70">KAIROS / PILOTAGE</p>
+              <h1 className="mt-2 font-[family-name:var(--font-display)] text-3xl font-extrabold tracking-tight">
+                {firstName ? `Salut ${firstName}` : "Ton espace de pilotage"}
+              </h1>
+              <p className="mt-2 max-w-xl text-sm leading-relaxed text-white/75">
+                Repère les produits à tourner, suis ceux qui montent et décide avec des données réelles.
+              </p>
+            </div>
+            <Link
+              href="/tarifs"
+              className="shrink-0 rounded-full border border-white/20 bg-white/10 px-3 py-1.5 text-[11px] font-bold text-white backdrop-blur transition-transform hover:scale-105"
+            >
+              {entitlements.label}
+            </Link>
+          </div>
+          <div className="pointer-events-none absolute -right-12 -top-16 h-48 w-48 rounded-full bg-white/10 blur-2xl" />
+          <div className="pointer-events-none absolute -bottom-24 right-24 h-48 w-48 rounded-full bg-[color:var(--color-coral)]/30 blur-3xl" />
+        </div>
       </header>
 
-      <div className="flex flex-1 flex-col gap-4 kai-shell py-3">
+      <div className="flex flex-1 flex-col gap-5 kai-shell py-3">
         <RankingMeta generatedAt={generatedAt} isDemo={isDemo} />
 
         {/* Ce qui a bougé sur les produits suivis, en tête de page : c'est
