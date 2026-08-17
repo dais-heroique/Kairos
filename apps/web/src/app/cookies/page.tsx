@@ -6,10 +6,9 @@ export default function CookiesPage() {
   return (
     <LegalPage title="Cookies et traceurs" updatedAt="17 août 2026">
       <p>
-        <em>
-          Projet à faire valider par un professionnel du droit et à actualiser
-          après l’inventaire des outils réellement activés en production.
-        </em>
+        <strong>
+          Version de pré-lancement — à faire valider et à actualiser après l’inventaire des outils réellement activés en production.
+        </strong>
       </p>
 
       <h2>Ce que Kairos utilise actuellement</h2>
@@ -39,9 +38,11 @@ export default function CookiesPage() {
 
       <h2>Gérer une demande</h2>
       <p>
-        Pour toute question sur les traceurs ou pour exercer un droit, écris à
-        [email vie privée à compléter]. La politique de confidentialité décrit
-        les autres traitements de données et les droits applicables.
+        Pour toute question sur les traceurs ou pour exercer un droit, écris à{" "}
+        <a className="underline" href="mailto:conforva.contact@gmail.com">
+          conforva.contact@gmail.com
+        </a>.
+        La politique de confidentialité décrit les autres traitements de données et les droits applicables.
       </p>
 
       <h2>Documents associés</h2>

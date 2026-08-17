@@ -1,102 +1,70 @@
 import { LegalPage } from "@/components/LegalPage";
 
-export const metadata = { title: "CGU & CGV — KAIROS" };
+export const metadata = { title: "Conditions d’utilisation et de vente — KAIROS" };
 
 export default function CguPage() {
   return (
     <LegalPage
-      title="Conditions générales d'utilisation et de vente"
-      updatedAt="26 juillet 2026"
+      title="Conditions générales d’utilisation et de vente"
+      updatedAt="17 août 2026"
     >
       <p>
-        <em>
-          Modèle à faire valider par un professionnel du droit avant mise en
-          production.
-        </em>
+        <strong>Version de pré-lancement — à faire relire avant toute première vente.</strong>
+        <br />
+        Les informations d&apos;identification, de facturation, de TVA et de médiation seront complétées avant l&apos;ouverture commerciale définitive.
       </p>
 
-      <h2>Objet</h2>
+      <h2>Objet du service</h2>
       <p>
-        KAIROS est un service d&apos;aide à la décision pour créateurs
-        affiliés et petits vendeurs TikTok Shop en France&nbsp;: classements,
-        verdicts, simulateur de gains, briefs créatifs. KAIROS n&apos;est ni
-        affilié à TikTok, ni un intermédiaire de vente.
+        Le service propose aux créateurs des outils d&apos;observation, de classement, de simulation et de préparation de contenus pour TikTok Shop. Il n&apos;est ni affilié à TikTok, ni un intermédiaire de vente des produits présentés.
       </p>
 
       <h2>Compte et accès</h2>
       <p>
-        L&apos;accès nécessite un compte (email, Google ou Apple). Tu es
-        responsable de la confidentialité de tes moyens de connexion.
+        L&apos;accès nécessite un compte. Tu es responsable de la confidentialité de tes moyens de connexion et de l&apos;exactitude des informations fournies. Toute utilisation abusive, automatisée ou destinée à contourner les limitations du service peut entraîner une suspension.
       </p>
 
       <h2>Plans et paiement</h2>
       <p>
-        KAIROS propose un plan gratuit (Radar) et des plans payants (Creator,
-        Pro) facturés mensuellement ou annuellement via Stripe. Les prix en
-        vigueur sont affichés sur la page tarifs. Le paiement est exigible
-        d&apos;avance&nbsp;; le renouvellement est automatique sauf
-        résiliation avant la fin de la période en cours, depuis le portail
-        client Stripe.
-      </p>
-      <p>
-        {/* Franchise en base : les prix affichés sont donc les prix finaux,
-            sans TVA à ajouter. La mention est obligatoire sur les factures
-            (art. 293 B du CGI) ; l'écrire aussi ici évite qu'un client se
-            demande si 19 € deviendront 22,80 € au paiement. */}
-        <strong>TVA non applicable, article 293 B du Code général des
-        impôts.</strong> Les montants affichés sont les montants finaux&nbsp;:
-        aucune taxe n&apos;est ajoutée au moment du paiement.
+        Le service peut proposer un accès gratuit et des plans payants, selon les offres affichées sur la page tarifs. Les prix, la périodicité, les modalités de renouvellement et les fonctionnalités incluses sont présentés avant le paiement. Le paiement peut être traité par Stripe. Les documents de facturation et le régime de TVA applicables seront finalisés avant la première vente commerciale.
       </p>
 
       <h2>Estimations et absence de garantie</h2>
       <p>
-        Les estimations affichées (ventes, gains, saturation, fiabilité
-        vendeur) sont calculées à partir de données publiques et de modèles
-        statistiques. Elles sont fournies à titre indicatif, toujours
-        accompagnées d&apos;une fourchette et d&apos;un niveau de confiance,
-        et ne constituent ni un conseil financier ni une garantie de
-        résultat. Elles ne doivent pas être utilisées pour un calcul de
-        commission ou de règlement.
+        Les estimations de ventes, de gains, de saturation et de fiabilité sont indicatives. Elles peuvent dépendre de données déclarées, publiques ou modélisées. Elles ne constituent ni un conseil financier, ni une garantie de résultat, ni une promesse de commission ou de revenu.
       </p>
 
-      <h2>Programme d&apos;affiliation</h2>
+      <h2>Affiliation</h2>
       <p>
-        L&apos;utilisation du programme d&apos;affiliation est soumise à des
-        conditions spécifiques (taux de commission, durée, anti-fraude,
-        interdiction d&apos;auto-parrainage) détaillées dans le tableau de
-        bord d&apos;affiliation.
+        Le programme d&apos;affiliation, lorsqu&apos;il est activé, est soumis à des conditions spécifiques concernant l&apos;attribution, la fraude, l&apos;auto-parrainage, la vérification d&apos;identité et les paiements. Les modalités effectivement disponibles sont celles affichées dans l&apos;espace concerné.
       </p>
 
       <h2>Résiliation</h2>
       <p>
-        Tu peux résilier ton abonnement à tout moment depuis le portail
-        client Stripe — accessible en un clic depuis la page{" "}
-        <a href="/compte" className="underline">
-          Ton compte
-        </a>
-        , ou directement à l&apos;adresse{" "}
-        <a
-          href="https://billing.stripe.com/p/login/5kQ00cbcT6T8cjI79G8AE00"
-          className="underline"
-          target="_blank"
-          rel="noreferrer"
-        >
-          billing.stripe.com
-        </a>
-        . La résiliation prend effet à la fin de la période déjà payée. Voir aussi le droit de rétractation applicable aux nouveaux
-        abonnés.
+        Lorsque le paiement récurrent est activé, la résiliation peut être effectuée depuis l&apos;espace de gestion du paiement indiqué dans le compte. Pour toute demande d&apos;assistance, écris à{" "}
+        <a className="underline" href="mailto:conforva.contact@gmail.com">
+          conforva.contact@gmail.com
+        </a>.
       </p>
 
-      <h2>Médiation de la consommation</h2>
+      <h2>Droit de rétractation</h2>
       <p>
-        Après une réclamation écrite restée sans solution, le consommateur peut
-        saisir gratuitement le médiateur de la consommation désigné par Kairos :
-        [nom du médiateur], [adresse], [site internet]. Ces coordonnées doivent
-        être complétées avant toute vente à un consommateur.
+        Les modalités applicables au droit de rétractation et à la fourniture immédiate d&apos;un service numérique sont présentées sur la page <a href="/retractation" className="underline">Droit de rétractation</a>. Elles doivent être validées avant l&apos;activation des ventes.
+      </p>
+
+      <h2>Réclamation et médiation</h2>
+      <p>
+        Toute réclamation peut être adressée à{" "}
+        <a className="underline" href="mailto:conforva.contact@gmail.com">
+          conforva.contact@gmail.com
+        </a>.
+        Le médiateur de la consommation compétent et ses coordonnées seront ajoutés avant toute vente à des consommateurs.
       </p>
 
       <h2>Droit applicable</h2>
-      <p>Droit français. Tribunaux compétents&nbsp;: [ville du siège social], sous réserve des règles impératives applicables aux consommateurs.</p>
+      <p>
+        Le droit applicable et les règles de compétence seront précisés dans la version commerciale définitive, sous réserve des dispositions impératives protégeant les consommateurs.
+      </p>
     </LegalPage>
   );
 }

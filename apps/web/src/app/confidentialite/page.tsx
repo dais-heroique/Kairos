@@ -4,85 +4,53 @@ export const metadata = { title: "Politique de confidentialité — KAIROS" };
 
 export default function ConfidentialitePage() {
   return (
-    <LegalPage
-      title="Politique de confidentialité"
-      updatedAt="26 juillet 2026"
-    >
+    <LegalPage title="Politique de confidentialité" updatedAt="17 août 2026">
       <p>
-        <em>
-          Modèle à faire valider par un professionnel du droit avant mise en
-          production, notamment sur le régime applicable au traitement des
-          transferts hors UE (Vertex AI, Anthropic) et sur le DAC7 — voir
-          §5.9 et §5.4 du brief produit.
-        </em>
+        <strong>Version de pré-lancement — à vérifier avant toute exploitation commerciale définitive.</strong>
+        <br />
+        Cette page décrit les traitements prévus par le site. Les prestataires effectivement activés, les durées exactes et les transferts éventuels doivent être confirmés avant la première vente.
       </p>
 
-      <h2>Responsable de traitement</h2>
+      <h2>Contact vie privée</h2>
       <p>
-        [Nom légal de la société], [adresse complète]. Contact vie privée
-        &nbsp;: [email du DPO / contact RGPD].
+        Pour toute question relative à tes données ou pour exercer tes droits, écris à{" "}
+        <a className="underline" href="mailto:conforva.contact@gmail.com">
+          conforva.contact@gmail.com
+        </a>.
       </p>
 
       <h2>Données collectées</h2>
       <p>
-        Email, informations de profil créateur (niches, marché, fourchette
-        d&apos;abonnés, rythme de publication), historique d&apos;usage du service
-        (produits suivis, briefs générés), données de paiement (traitées par
-        Stripe, jamais stockées par KAIROS), et — si tu es affilié — code de
-        parrainage, revenus d&apos;affiliation et informations Stripe
-        Connect.
+        Le site peut traiter ton adresse email, les informations de profil créateur que tu renseignes, tes marchés et niches, les produits suivis, les briefs générés, les informations techniques nécessaires à la sécurité et les données liées à un abonnement lorsqu&apos;un paiement est activé.
       </p>
 
-      <h2>Finalités et base légale</h2>
+      <h2>Finalités et bases</h2>
       <p>
-        Fourniture du service (exécution du contrat), amélioration du produit
-        et mesure d&apos;audience (intérêt légitime), programme
-        d&apos;affiliation (exécution du contrat), obligations comptables et
-        fiscales (obligation légale).
+        Ces données servent à créer et sécuriser le compte, fournir les fonctionnalités demandées, enregistrer les préférences, gérer un abonnement lorsqu&apos;il existe, répondre aux demandes de support et respecter les obligations légales applicables. Les traitements fondés sur le consentement peuvent être retirés à tout moment.
       </p>
 
-      <h2>Durée de conservation</h2>
+      <h2>Prestataires</h2>
       <p>
-        Les données du compte sont conservées tant que le compte est actif,
-        puis supprimées dans un délai raisonnable après suppression du
-        compte (voir « Droit à l&apos;effacement » ci-dessous). Les données
-        de facturation sont conservées selon les délais légaux comptables.
+        Le fonctionnement peut utiliser Firebase / Google Cloud pour l&apos;authentification, l&apos;hébergement et la base de données, ainsi qu&apos;un prestataire de paiement tel que Stripe lorsque l&apos;abonnement est activé. D&apos;autres prestataires ne doivent être mentionnés ici qu&apos;après vérification de leur activation réelle et de leurs garanties de transfert.
       </p>
 
-      <h2>Destinataires</h2>
+      <h2>Conservation</h2>
       <p>
-        Prestataires techniques&nbsp;: Google Cloud / Firebase (hébergement,
-        base de données), Anthropic (génération de briefs), Google Vertex AI
-        / Gemini (analyse vidéo), Stripe (paiement), Resend (emails), Sentry
-        et PostHog (observabilité). Aucune vente de données à des tiers.
+        Les données du compte sont conservées pendant son utilisation puis supprimées ou anonymisées dans un délai raisonnable après sa fermeture, sous réserve des obligations légales de conservation. Les données de paiement ne sont pas stockées directement par le site lorsqu&apos;elles sont traitées par le prestataire de paiement.
       </p>
 
       <h2>Tes droits</h2>
       <p>
-        Conformément au RGPD, tu disposes d&apos;un droit d&apos;accès, de
-        rectification, d&apos;effacement, de portabilité et
-        d&apos;opposition. L&apos;export et la suppression de ton compte
-        sont disponibles directement depuis la page{" "}
-        <a href="/compte" className="underline">
-          Ton compte
-        </a>
-        . Tu peux aussi introduire une réclamation auprès de la CNIL
-        (cnil.fr).
+        Tu peux demander l&apos;accès, la rectification, l&apos;effacement, la portabilité ou la limitation de tes données, et t&apos;opposer à certains traitements. Écris à{" "}
+        <a className="underline" href="mailto:conforva.contact@gmail.com">
+          conforva.contact@gmail.com
+        </a>.
+        Tu peux également saisir la CNIL si tu estimes que tes droits ne sont pas respectés.
       </p>
 
       <h2>Cookies et stockage local</h2>
       <p>
-        Kairos utilise des mécanismes techniques nécessaires au fonctionnement
-        de l&apos;authentification et de la personnalisation, ainsi que le
-        stockage local de certaines préférences. Le code doit être vérifié
-        avant chaque mise en production afin de confirmer l&apos;inventaire réel
-        des cookies et traceurs. Aucun traceur publicitaire ou outil de mesure
-        d&apos;audience soumis à consentement ne doit être activé sans mécanisme
-        de consentement préalable.
-      </p>
-      <p>
-        Consulte la <a href="/cookies" className="underline">politique cookies et traceurs</a>
-        pour connaître l&apos;inventaire et les modalités de retrait applicables.
+        Le site peut utiliser des mécanismes techniques nécessaires à l&apos;authentification, au fonctionnement de la session et à la mémorisation de préférences. Les traceurs non nécessaires ne doivent être activés qu&apos;avec le consentement requis. Consulte la <a href="/cookies" className="underline">politique cookies</a> pour l&apos;inventaire à jour.
       </p>
     </LegalPage>
   );

@@ -9,16 +9,15 @@ export default function CguAffiliationPage() {
       updatedAt="17 août 2026"
     >
       <p>
-        <em>
-          Modèle à faire valider par un professionnel du droit avant mise en
-          production. Document distinct des CGU/CGV générales.
-        </em>
+        <strong>
+          Version de pré-lancement — à faire valider avant activation commerciale. Document distinct des conditions générales.
+        </strong>
       </p>
 
       <h2>Principe</h2>
       <p>
         Le programme partenaire fonctionne au moyen de codes et de liens
-        créés par l&apos;owner de Kairos. Lorsqu&apos;un code est attribué à un
+        créés par l&apos;opérateur du service. Lorsqu&apos;un code est attribué à un
         partenaire, une commission de 30 % du montant réellement encaissé sur
         les abonnements attribués peut être comptabilisée selon les règles
         affichées dans l&apos;espace partenaire. Aucun palier Ambassadeur ni aucune
@@ -30,7 +29,7 @@ export default function CguAffiliationPage() {
       <p>
         L&apos;attribution se fait au premier clic (« first-touch ») dans
         les 90 jours précédant l&apos;inscription, selon le mécanisme technique
-        effectivement activé par Kairos. Un code peut aussi être saisi
+        effectivement activé par le service. Un code peut aussi être saisi
         manuellement jusqu&apos;à 7 jours après l&apos;inscription.
       </p>
 
@@ -40,8 +39,7 @@ export default function CguAffiliationPage() {
         pour couvrir les remboursements éventuels. Le paiement n&apos;est
         déclenché qu&apos;à partir du seuil affiché dans l&apos;espace partenaire,
         après vérification des données de paiement et des obligations légales.
-        Les virements sont effectués manuellement par Kairos ; Stripe Connect
-        n&apos;est pas actuellement activé. Aucun paiement ne doit être promis à
+        Les virements sont effectués manuellement lorsque le paiement est activé ; Stripe Connect n&apos;est pas actuellement activé. Aucun paiement ne doit être promis à
         un bénéficiaire tant que son identité, ses coordonnées et son statut
         fiscal ne sont pas vérifiés.
       </p>
@@ -57,9 +55,8 @@ export default function CguAffiliationPage() {
 
       <h2>Résiliation du programme</h2>
       <p>
-        KAIROS peut suspendre ou clore le compte d&apos;affiliation d&apos;un
-        utilisateur en cas de fraude avérée ou de non-respect de ces
-        conditions.
+        Le service peut suspendre ou clore le compte d&apos;affiliation d&apos;un utilisateur en cas de fraude avérée ou de non-respect de ces conditions. Toute demande peut être envoyée à{" "}
+        <a className="underline" href="mailto:conforva.contact@gmail.com">conforva.contact@gmail.com</a>.
       </p>
     </LegalPage>
   );

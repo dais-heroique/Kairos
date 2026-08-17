@@ -4,55 +4,43 @@ export const metadata = { title: "Mentions légales — KAIROS" };
 
 export default function MentionsLegalesPage() {
   return (
-    <LegalPage title="Mentions légales" updatedAt="26 juillet 2026">
+    <LegalPage title="Mentions légales" updatedAt="17 août 2026">
       <p>
-        <em>
-          Modèle à faire valider par un professionnel du droit avant mise en
-          production — les champs entre crochets doivent être complétés avec
-          les informations réelles de la société.
-        </em>
+        <strong>Version de pré-lancement — à compléter avant la première vente commerciale.</strong>
+        <br />
+        Ce document ne constitue pas une déclaration d&apos;immatriculation et ne présente pas le site comme une société déjà créée.
       </p>
 
-      <h2>Éditeur du site</h2>
+      <h2>Éditeur et contact</h2>
       <p>
-        Le site KAIROS est édité par [Nom légal de la société], [forme
-        juridique, ex. SAS], au capital de [montant] €, immatriculée au
-        Registre du Commerce et des Sociétés de [ville] sous le numéro
-        [SIREN/SIRET], dont le siège social est situé [adresse complète].
-        <br />
-        Directeur de la publication&nbsp;: [nom, prénom].
-        <br />
-        Contact&nbsp;: [email de contact].
+        Le service est actuellement publié en phase de pré-lancement. Pour toute question, demande relative au compte, demande liée aux données personnelles ou réclamation, écris à{" "}
+        <a className="underline" href="mailto:conforva.contact@gmail.com">
+          conforva.contact@gmail.com
+        </a>.
       </p>
 
       <h2>Hébergement</h2>
       <p>
-        Le site est hébergé par Google LLC (Firebase Hosting), 1600
-        Amphitheatre Parkway, Mountain View, CA 94043, États-Unis.
+        Le site est hébergé au moyen de services Firebase / Google Cloud. Les informations détaillées concernant l&apos;hébergement, l&apos;identité de l&apos;éditeur et le cadre contractuel doivent être complétées avant l&apos;ouverture commerciale définitive.
       </p>
 
       <h2>Propriété intellectuelle</h2>
       <p>
-        L&apos;ensemble des contenus du site (textes, visuels, logo,
-        structure) est protégé par le droit de la propriété intellectuelle.
-        Toute reproduction non autorisée est interdite.
+        Les contenus, textes, visuels, éléments graphiques, logiciels et structure du site sont protégés par les règles applicables de propriété intellectuelle. Toute reproduction ou réutilisation non autorisée est interdite.
       </p>
 
-      <h2>Données publiques et estimations</h2>
+      <h2>Données et estimations</h2>
       <p>
-        KAIROS agrège et estime des données publiques relatives à des
-        produits, boutiques et créateurs sur TikTok Shop. Ces estimations
-        sont fournies à titre indicatif et ne sauraient engager la
-        responsabilité de l&apos;éditeur — voir la page{" "}
-        <a href="/confidentialite" className="underline">
-          Politique de confidentialité
-        </a>{" "}
-        et les{" "}
-        <a href="/cgu" className="underline">
-          CGU/CGV
-        </a>
-        .
+        Les informations présentées peuvent inclure des données déclarées, publiques ou estimées relatives à des produits et à des boutiques. Elles sont indicatives et ne constituent ni une garantie de résultat, ni un conseil financier, ni une donnée officielle de TikTok Shop.
+      </p>
+
+      <p>
+        Consulte également la <a href="/confidentialite" className="underline">politique de confidentialité</a>, les <a href="/cookies" className="underline">informations cookies</a> et les <a href="/cgu" className="underline">conditions d&apos;utilisation et de vente</a>.
       </p>
     </LegalPage>
   );
 }
+
+// Version de pré-lancement : les informations d'identité, d'immatriculation,
+// de direction de publication et de médiation doivent être ajoutées avant
+// toute exploitation commerciale définitive.
