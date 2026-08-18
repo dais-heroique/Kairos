@@ -476,7 +476,6 @@ function FinalCta({ t }: { t: T }) {
       style={{ backgroundColor: "var(--color-ink)" }}
     >
       <Reveal className="mx-auto flex max-w-lg flex-col items-center gap-5">
-        <Logo className="h-8 w-8" style={{ color: "var(--color-coral)" }} />
         <h2 className="font-[family-name:var(--font-display)] text-3xl font-extrabold tracking-tight text-white sm:text-4xl">
           {t("finalCtaTitle")}
         </h2>
