@@ -6,10 +6,10 @@
     "heroSub": "La lista de productos de TikTok Shop del momento, lo que tú cobrarías por ellos, y el texto para decir frente a cámara. Todo en un solo lugar.",
     "cta": "Crear mi cuenta gratuita",
     "ctaLogin": "Ya tengo cuenta",
-    "heroCardLabel": "Ejemplo — no tus cifras reales",
+    "heroCardLabel": "DEMO — simulación no personalizada",
     "heroCardProduct": "Sérum vitamina C iluminador",
     "heroCardShop": "GlowLab Paris · 25% de comisión",
-    "heroCardEarningsLabel": "Tus ganancias estimadas (10k vistas)",
+    "heroCardEarningsLabel": "Estimación para 10.000 vistas",
     "heroChip1": "Gratis para empezar",
     "heroChip2": "Hecho para Francia",
     "heroChip3": "Nunca una cifra inventada",
@@ -94,7 +94,10 @@
     "googleButton": "Continuar con Google",
     "appleButton": "Continuar con Apple",
     "errorGeneric": "Ha ocurrido un error. Inténtalo de nuevo en un momento.",
-    "errorInvalidEmail": "Correo electrónico inválido."
+    "errorInvalidEmail": "Correo electrónico inválido.",
+    "signupTitle": "Empieza gratis",
+    "signupSubtitle": "Introduce tu email para recibir tu enlace de Kairos — sin contraseña ni tarjeta.",
+    "signupSendLinkButton": "Recibir mi enlace para empezar"
   },
   "Verification": {
     "title": "Iniciando sesión",

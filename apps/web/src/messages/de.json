@@ -6,10 +6,10 @@
     "heroSub": "Die Liste aktueller TikTok Shop‑Produkte, was du dabei verdienen würdest und der Text, den du vor der Kamera sagen kannst. Alles an einem Ort.",
     "cta": "Kostenloses Konto erstellen",
     "ctaLogin": "Ich habe bereits ein Konto",
-    "heroCardLabel": "Beispiel — nicht deine echten Zahlen",
+    "heroCardLabel": "DEMO — nicht personalisierte Simulation",
     "heroCardProduct": "Vitamin‑C‑Serum Glow",
     "heroCardShop": "GlowLab Paris · 25 % Provision",
-    "heroCardEarningsLabel": "Deine geschätzten Einnahmen (10k Aufrufe)",
+    "heroCardEarningsLabel": "Schätzung für 10.000 Aufrufe",
     "heroChip1": "Kostenlos zum Start",
     "heroChip2": "Für Frankreich optimiert",
     "heroChip3": "Nie eine willkürliche Zahl",
@@ -94,7 +94,10 @@
     "googleButton": "Mit Google fortfahren",
     "appleButton": "Mit Apple fortfahren",
     "errorGeneric": "Ein Fehler ist aufgetreten. Bitte versuche es in einem Moment erneut.",
-    "errorInvalidEmail": "Ungültige E‑Mail‑Adresse."
+    "errorInvalidEmail": "Ungültige E‑Mail‑Adresse.",
+    "signupTitle": "Kostenlos starten",
+    "signupSubtitle": "Gib deine E-Mail ein, um deinen Kairos-Link zu erhalten — ohne Passwort und ohne Karte.",
+    "signupSendLinkButton": "Meinen Startlink erhalten"
   },
   "Verification": {
     "title": "Anmeldung läuft",

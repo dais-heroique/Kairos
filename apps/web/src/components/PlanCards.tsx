@@ -16,6 +16,7 @@ import {
   yearlySavingsPct,
 } from "@kairos/shared";
 import { SubscribeButton } from "@/components/SubscribeButton";
+import { isCheckoutConfigured } from "@/lib/stripe/checkout";
 
 // Les trois offres, une seule fois, dérivées de `packages/shared/plans.ts`.
 //
@@ -152,6 +153,14 @@ function PlanGrid({ compact, period }: { compact: boolean; period: BillingPeriod
                 </p>
               )}
               <p className="text-sm text-[color:var(--color-ink-muted)]">{plan.tagline}</p>
+              {plan.priceCents !== 0 && !isCheckoutConfigured(plan.slug as "creator" | "pro", period) && (
+                <p
+                  className="mt-2 rounded-lg px-2.5 py-2 text-xs font-semibold"
+                  style={{ backgroundColor: "var(--color-warning-soft)", color: "var(--color-warning)" }}
+                >
+                  Prix indicatif · paiement actuellement fermé. Aucun prélèvement ne sera effectué.
+                </p>
+              )}
             </div>
 
             {/* L'accroche du palier, en une phrase : c'est elle qu'on lit en
@@ -289,19 +298,19 @@ function PlanCta({
 }) {
   if (plan.priceCents === 0) {
     return (
-      <Link href="/connexion" className="kai-btn-primary text-center">
-        Créer mon compte — 30 secondes
-      </Link>
+            <Link href="/connexion?mode=signup" className="kai-btn-primary text-center">
+              Créer mon compte — 30 secondes
+            </Link>
     );
   }
 
   // Aucun tarif décidé : un bouton « Payer » qui ne mène nulle part serait
   // pire que de dire la vérité. Mais laisser un pavé mort ne sert personne
   // — on renvoie vers la seule action qui existe.
-  if (planPriceCents(plan, period) === null) {
+  if (planPriceCents(plan, period) === null || !isCheckoutConfigured(plan.slug as "creator" | "pro", period)) {
     return (
       <div className="flex flex-col gap-1.5">
-        <Link href="/connexion" className="kai-btn-outline text-center">
+        <Link href="/connexion?mode=signup" className="kai-btn-outline text-center">
           Commencer gratuitement en attendant
         </Link>
         {FOUNDING_PRICE_LOCK && (

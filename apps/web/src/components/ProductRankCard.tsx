@@ -126,6 +126,18 @@ export function ProductRankCard({
           <span className="text-xs text-[color:var(--color-ink-muted)]">
             {commissionShort(item.commissionRatePct, item.commissionIsEstimated)} commission
           </span>
+          {typeof item.snapshotCount === "number" && (
+            <span
+              className="text-xs font-semibold"
+              style={{
+                color: item.snapshotCount < 3 ? "var(--color-warning)" : "var(--color-ink-muted)",
+              }}
+              title="Nombre de relevés réellement disponibles pour ce produit"
+            >
+              {item.snapshotCount} relevé{item.snapshotCount > 1 ? "s" : ""}
+              {item.snapshotCount < 3 ? " · historique court" : ""}
+            </span>
+          )}
         </div>
 
         <p className="mt-2 text-sm">

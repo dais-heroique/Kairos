@@ -14,12 +14,17 @@ import { useAuth } from "@/lib/firebase/auth-context";
 export default function ConnexionPage() {
   const t = useTranslations("Auth");
   const router = useRouter();
+  const [isSignup, setIsSignup] = useState(false);
   const { firebaseUser, userDoc, loading } = useAuth();
   const [email, setEmail] = useState("");
   const [status, setStatus] = useState<"idle" | "sending" | "sent" | "error">(
     "idle",
   );
   const [providerError, setProviderError] = useState<string | null>(null);
+
+  useEffect(() => {
+    setIsSignup(new URLSearchParams(window.location.search).get("mode") === "signup");
+  }, []);
 
   useEffect(() => {
     if (loading || !firebaseUser || !userDoc) return;
@@ -71,10 +76,10 @@ export default function ConnexionPage() {
       <div className="mx-auto flex w-full max-w-[390px] flex-1 flex-col justify-center gap-6 px-5 py-8 sm:max-w-md">
       <div>
         <h1 className="font-[family-name:var(--font-display)] text-3xl font-extrabold">
-          {t("title")}
+          {isSignup ? t("signupTitle") : t("title")}
         </h1>
         <p className="mt-1 text-sm text-[color:var(--color-ink-muted)]">
-          {t("subtitle")}
+          {isSignup ? t("signupSubtitle") : t("subtitle")}
         </p>
       </div>
 
@@ -108,7 +113,11 @@ export default function ConnexionPage() {
             disabled={status === "sending"}
             className="kai-btn-primary"
           >
-            {status === "sending" ? t("sendingLink") : t("sendLinkButton")}
+            {status === "sending"
+              ? t("sendingLink")
+              : isSignup
+                ? t("signupSendLinkButton")
+                : t("sendLinkButton")}
           </button>
           {status === "error" && (
             <p className="text-sm font-medium" style={{ color: "var(--color-coral)" }}>

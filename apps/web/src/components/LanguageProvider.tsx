@@ -72,6 +72,10 @@ export function LanguageProvider({
     const detected = saved && SUPPORTED_LOCALES.includes(saved) ? saved : localeFromBrowser();
     setLocaleState(detected);
     document.documentElement.lang = detected;
+    // Mémoriser aussi la détection automatique : sinon chaque retour ou
+    // rechargement peut repartir de la langue du navigateur et remplacer la
+    // langue choisie implicitement sur la page précédente.
+    if (!saved) window.localStorage.setItem("kairos-locale", detected);
   }, []);
 
   function setLocale(nextLocale: Locale) {

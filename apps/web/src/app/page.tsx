@@ -76,7 +76,7 @@ function Hero({ t }: { t: T }) {
           </p>
 
           <div className="animate-[fadein_0.6s_ease-out_0.3s_both] flex flex-col gap-3 sm:flex-row">
-            <Link href="/connexion" className="kai-btn-primary">
+            <Link href="/connexion?mode=signup" className="kai-btn-primary">
               {t("cta")}
             </Link>
             <Link href="/connexion" className="kai-btn-outline">
@@ -480,8 +480,8 @@ function FinalCta({ t }: { t: T }) {
         </h2>
         <p className="text-base leading-relaxed text-white/70">{t("finalCtaBody")}</p>
         <Link
-          href="/connexion"
-          className="kai-btn-primary w-full max-w-xs sm:w-auto sm:px-8"
+          href="/connexion?mode=signup"
+          className="kai-btn-primary"
         >
           {t("finalCtaButton")}
         </Link>

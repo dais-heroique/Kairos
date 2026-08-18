@@ -6,10 +6,10 @@
     "heroSub": "De lijst met actuele TikTok Shop-producten, wat jij eraan zou verdienen en de tekst die je voor de camera kunt zeggen. Alles op één plek.",
     "cta": "Gratis account aanmaken",
     "ctaLogin": "Ik heb al een account",
-    "heroCardLabel": "Voorbeeld — niet jouw werkelijke cijfers",
+    "heroCardLabel": "DEMO — niet-gepersonaliseerde simulatie",
     "heroCardProduct": "Vitamine C glow-serum",
     "heroCardShop": "GlowLab Paris · 25% commissie",
-    "heroCardEarningsLabel": "Geschatte inkomsten (10k weergaven)",
+    "heroCardEarningsLabel": "Schatting voor 10.000 weergaven",
     "heroChip1": "Gratis om te beginnen",
     "heroChip2": "Gemaakt voor Frankrijk",
     "heroChip3": "Nooit een cijfer uit de lucht gegrepen",
@@ -94,7 +94,10 @@
     "googleButton": "Doorgaan met Google",
     "appleButton": "Doorgaan met Apple",
     "errorGeneric": "Er is iets misgegaan. Probeer het over een ogenblik opnieuw.",
-    "errorInvalidEmail": "Ongeldig e-mailadres."
+    "errorInvalidEmail": "Ongeldig e-mailadres.",
+    "signupTitle": "Gratis beginnen",
+    "signupSubtitle": "Vul je e-mail in om je Kairos-link te ontvangen — zonder wachtwoord en zonder kaart.",
+    "signupSendLinkButton": "Mijn startlink ontvangen"
   },
   "Verification": {
     "title": "Inloggen…",

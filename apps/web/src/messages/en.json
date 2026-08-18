@@ -6,10 +6,10 @@
     "heroSub": "The list of trending TikTok Shop products, what you’d earn on them, and the script to say on camera. All in one place.",
     "cta": "Create my free account",
     "ctaLogin": "I already have an account",
-    "heroCardLabel": "Example — not your real numbers",
+    "heroCardLabel": "DEMO — non-personalized simulation",
     "heroCardProduct": "Vitamin C Radiance Serum",
     "heroCardShop": "GlowLab Paris · 25% commission",
-    "heroCardEarningsLabel": "Your estimated earnings (10k views)",
+    "heroCardEarningsLabel": "Estimate for 10,000 views",
     "heroChip1": "Free to start",
     "heroChip2": "Built for France",
     "heroChip3": "Never a number pulled out of thin air",
@@ -94,7 +94,10 @@
     "googleButton": "Continue with Google",
     "appleButton": "Continue with Apple",
     "errorGeneric": "Something went wrong. Try again in a moment.",
-    "errorInvalidEmail": "Invalid email address."
+    "errorInvalidEmail": "Invalid email address.",
+    "signupTitle": "Start for free",
+    "signupSubtitle": "Enter your email to receive your Kairos link — no password and no card required.",
+    "signupSendLinkButton": "Send my start link"
   },
   "Verification": {
     "title": "Signing in",

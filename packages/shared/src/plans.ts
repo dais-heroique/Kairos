@@ -92,7 +92,7 @@ export const CAPABILITY_INFO: Record<Capability, CapabilityInfo> = {
   alerts: {
     label:
       "Ce qui a bougé sur tes produits suivis depuis ta dernière visite : ceux qui montent, et ceux où la place se remplit",
-    status: "live",
+    status: "soon",
   },
   // ---- Ce qui distingue Pro -----------------------------------------------
   // Creator répond à « quel produit je tourne cette semaine ». Pro répond à

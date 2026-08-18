@@ -46,7 +46,7 @@ export function SubscribeButton({
 
   if (!isCheckoutConfigured(plan, period)) {
     return (
-      <Link href="/connexion" className="kai-btn-outline text-center">
+      <Link href="/connexion?mode=signup" className="kai-btn-outline text-center">
         Commencer gratuitement en attendant
       </Link>
     );
@@ -56,7 +56,7 @@ export function SubscribeButton({
   // donc se connecter d'abord plutôt que d'ouvrir Stripe pour rien.
   if (!firebaseUser) {
     return (
-      <Link href="/connexion" className="kai-btn-primary text-center">
+      <Link href="/connexion?mode=signup" className="kai-btn-primary text-center">
         Créer mon compte pour continuer
       </Link>
     );

@@ -60,13 +60,22 @@ export function PaywallDemo() {
 
   return (
     <section className="flex flex-col gap-3">
-      <h2 className="font-[family-name:var(--font-display)] text-xl font-extrabold">
-        La différence, en vrai
-      </h2>
+      <div className="flex items-center justify-between gap-3">
+        <h2 className="font-[family-name:var(--font-display)] text-xl font-extrabold">
+          La différence, en vrai
+        </h2>
+        <span
+          className="rounded-full px-2 py-1 text-[10px] font-bold tracking-wide uppercase"
+          style={{ backgroundColor: "var(--color-warning-soft)", color: "var(--color-warning)" }}
+        >
+          Démo
+        </span>
+      </div>
       <p className="text-sm text-[color:var(--color-ink-muted)]">
-        Le classement complet et les recommandations sont à toi
-        gratuitement. Ce qui se débloque, c&apos;est le montant sur chaque
-        produit. Bascule pour voir.
+        Le classement et les recommandations sont visibles gratuitement. Cette
+        comparaison utilise des produits de démonstration et calcule une
+        <strong> estimation pour 10 000 vues</strong> : ce ne sont pas des
+        relevés personnalisés ni une prévision de revenu.
       </p>
 
       <div
@@ -148,8 +157,8 @@ export function PaywallDemo() {
 
       <p className="text-xs leading-relaxed text-[color:var(--color-ink-muted)]">
         {plan === "radar"
-          ? `Avec le plan gratuit, les ${hiddenCount} dernières lignes restent visibles — tu sais que ces produits existent et ce que l'outil en pense. Seul le montant est masqué.`
-          : `Les ${EXAMPLE_ROWS.length} montants sont calculés, pour ${EXAMPLE_VIEWS.toLocaleString("fr-FR")} vues. Produits d'exemple, calcul réel.`}
+          ? `Avec le plan gratuit, les ${hiddenCount} dernières lignes restent visibles : tu sais que ces produits existent dans la démo et ce que le moteur en pense. Seul le montant est masqué.`
+          : `Les ${EXAMPLE_ROWS.length} montants sont calculés par le moteur pour ${EXAMPLE_VIEWS.toLocaleString("fr-FR")} vues. Produits de démo, simulation non personnalisée — pas de relevé TikTok Shop.`}
       </p>
     </section>
   );

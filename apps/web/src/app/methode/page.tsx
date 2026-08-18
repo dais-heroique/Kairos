@@ -95,6 +95,14 @@ export default function MethodePage() {
       {/* Le moteur tourne dans le navigateur : plutôt que de décrire la
           méthode, on la met entre les mains du visiteur. */}
       <Section id="essayer" title="Essaie toi-même">
+        <p
+          className="rounded-xl px-3 py-2 text-sm font-semibold"
+          style={{ backgroundColor: "var(--color-warning-soft)", color: "var(--color-warning)" }}
+        >
+          DÉMO interactive : les scénarios et chiffres ci-dessous sont des
+          données de démonstration. Le moteur calcule réellement la réponse,
+          mais ce ne sont pas des relevés live d&apos;un produit TikTok Shop.
+        </p>
         <p className="text-sm text-[color:var(--color-ink-muted)]">
           Ci-dessous, c&apos;est le vrai calcul qui tourne, en direct. Tape
           sur une situation, ou pousse les curseurs jusqu&apos;à faire changer
@@ -229,26 +237,31 @@ export default function MethodePage() {
         </p>
         <p className="text-sm">
           <strong>Comment les produits arrivent :</strong> ils sont relevés à la
-          main, un par un, chaque jour, dans l&apos;espace affilié officiel de
-          TikTok Shop. Il n&apos;y a pas de récupération automatique — l&apos;API
-          d&apos;affiliation de TikTok n&apos;est pas ouverte en France, et
-          aspirer le site est contraire à leurs conditions. C&apos;est donc plus
-          lent, mais les chiffres viennent de la plateforme elle-même.
+          main, un par un, lorsque le pipeline de collecte est exécuté, depuis
+          les espaces et pages accessibles à l&apos;opérateur. Kairos n&apos;est ni
+          partenaire ni porte-parole de TikTok, et ne prétend pas disposer d&apos;une
+          API officielle. Chaque fiche doit donc afficher sa date de relevé et
+          son niveau de confiance ; sans assez de relevés, aucune conclusion
+          ferme ne doit être tirée.
         </p>
         <p className="text-sm">
-          <strong>Les paiements ne sont pas branchés.</strong> Les offres
-          Creator et Pro s&apos;affichent, mais rien n&apos;est encaissé pour
-          l&apos;instant.
+          <strong>Le checkout vérifie son état avant toute ouverture.</strong>
+          Les offres Creator et Pro s&apos;affichent avec leur prix indicatif ;
+          aucun prélèvement ne doit être déclenché si le paiement n&apos;est pas
+          explicitement configuré. Dans ce cas, le site renvoie vers le plan
+          gratuit au lieu d&apos;afficher un bouton de paiement en panne.
         </p>
       </Section>
 
       <Section id="limites" title="Les limites, dites franchement">
         <p className="text-sm text-[color:var(--color-ink-muted)]">
           KAIROS n&apos;a aucun lien avec TikTok ni ByteDance — ni partenaire,
-          ni porte-parole. Seule la France est couverte. Les seuils ci-dessus
-          sont des valeurs de départ défendables, pas des vérités : ils
-          s&apos;affineront avec le volume de données. Et une estimation reste
-          une estimation, même accompagnée de sa fourchette.
+          ni porte-parole. Les marchés sont activés seulement lorsqu&apos;ils
+          disposent réellement de relevés : France, États-Unis, Royaume-Uni,
+          Allemagne, Irlande, Italie, Espagne, Autriche, Belgique, Pays-Bas et
+          Pologne. Les seuils ci-dessus sont des valeurs de départ, pas des
+          vérités : ils s&apos;affineront avec le volume de données. Une estimation
+          reste une estimation, même accompagnée de sa fourchette.
         </p>
       </Section>
 
@@ -256,7 +269,7 @@ export default function MethodePage() {
         <p className="font-[family-name:var(--font-display)] text-lg font-bold">
           Voir ce que ça donne sur les produits du moment
         </p>
-        <Link href="/connexion" className="kai-btn-primary">
+        <Link href="/connexion?mode=signup" className="kai-btn-primary">
           Créer mon compte gratuit
         </Link>
         <p className="text-xs text-[color:var(--color-ink-muted)]">

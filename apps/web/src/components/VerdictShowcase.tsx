@@ -133,8 +133,9 @@ export function VerdictShowcase() {
         </ul>
 
         <p className="text-xs leading-relaxed text-[color:var(--color-ink-muted)]">
-          Ce n&apos;est pas une illustration : le calcul ci-dessus tourne dans
-          ton navigateur, avec le moteur de l&apos;application.{" "}
+          DÉMO : le calcul ci-dessus tourne réellement dans ton navigateur,
+          avec le moteur de l&apos;application, mais les scénarios ne sont pas des
+          relevés live d&apos;un produit TikTok Shop.{" "}
           <Link href="/methode" className="underline">
             Pousse les curseurs toi-même
           </Link>

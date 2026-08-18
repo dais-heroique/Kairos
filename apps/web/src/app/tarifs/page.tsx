@@ -68,7 +68,7 @@ export default function TarifsPage() {
             la liste complète et la recommandation sur chaque produit dès la
             première minute.
           </p>
-          <Link href="/connexion" className="kai-btn-primary text-center">
+          <Link href="/connexion?mode=signup" className="kai-btn-primary text-center">
             Créer mon compte gratuit
           </Link>
         </div>
@@ -112,7 +112,7 @@ export default function TarifsPage() {
         <p className="font-[family-name:var(--font-display)] text-xl font-extrabold">
           Le temps que tu hésites, la fenêtre se referme.
         </p>
-        <Link href="/connexion" className="kai-btn-primary">
+        <Link href="/connexion?mode=signup" className="kai-btn-primary">
           Créer mon compte gratuit
         </Link>
         <p className="text-xs text-[color:var(--color-ink-muted)]">
@@ -138,10 +138,11 @@ export default function TarifsPage() {
         </p>
         <p className="text-[color:var(--color-ink-muted)]">
           Et surtout : les produits ne sont pas encore récupérés
-          automatiquement depuis TikTok Shop. Ils sont relevés à la main, un
-          par un, tous les jours. C&apos;est plus lent, mais les chiffres
-          viennent de l&apos;espace affilié officiel, pas d&apos;une
-          estimation faite de loin.
+          automatiquement depuis TikTok Shop. Ils sont relevés selon le
+          pipeline de collecte, depuis les espaces et pages réellement
+          accessibles à l&apos;opérateur. Chaque produit doit afficher sa fraîcheur
+          et son niveau de confiance ; aucun chiffre ne doit être présenté
+          comme une validation officielle de TikTok.
         </p>
         <h3 className="font-[family-name:var(--font-display)] font-bold">
           Ce qu&apos;on ne fait pas
