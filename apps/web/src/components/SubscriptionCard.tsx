@@ -30,11 +30,11 @@ const STATUS_KEYS: Record<PlanStatus, string> = {
 };
 
 /** Ce que la date de fin de période signifie *selon* l'état de l'abonnement. */
-function periodLabel(status: PlanStatus): string {
-  if (status === "canceled") return "Accès conservé jusqu'au";
-  if (status === "trialing") return "Essai jusqu'au";
-  if (status === "past_due") return "Période en cours jusqu'au";
-  return "Prochain renouvellement le";
+function periodLabel(status: PlanStatus, t: ReturnType<typeof useTranslations<"Account">>): string {
+  if (status === "canceled") return t("periodCanceledUntil");
+  if (status === "trialing") return t("periodTrialUntil");
+  if (status === "past_due") return t("periodPastDueUntil");
+  return t("periodRenewalOn");
 }
 
 function formatDate(iso: string): string | null {
@@ -86,7 +86,7 @@ export function SubscriptionCard({ plan }: { plan: Plan }) {
       setError(
         err instanceof CheckoutError
           ? err.message
-          : "Le portail n'a pas pu s'ouvrir. Réessaie dans un instant.",
+          : t("portalError"),
       );
       setBusy(false);
     }
@@ -103,7 +103,7 @@ export function SubscriptionCard({ plan }: { plan: Plan }) {
           {endDate && (
             <>
               {" · "}
-              {periodLabel(plan.status)} {endDate}
+              {periodLabel(plan.status, t)} {endDate}
             </>
           )}
         </p>
@@ -114,8 +114,7 @@ export function SubscriptionCard({ plan }: { plan: Plan }) {
           className="kai-card text-sm font-semibold"
           style={{ color: "var(--color-warning)" }}
         >
-          Ton dernier paiement n&apos;est pas passé. Mets ton moyen de paiement
-          à jour pour ne pas perdre l&apos;accès.
+          {t("pastDueBody")}
         </p>
       )}
 
@@ -127,12 +126,10 @@ export function SubscriptionCard({ plan }: { plan: Plan }) {
             disabled={busy}
             className="kai-btn-outline"
           >
-            {busy ? "Ouverture…" : "Gérer ou résilier mon abonnement"}
+            {busy ? t("openingPortal") : t("manageSubscription")}
           </button>
           <p className="text-xs text-[color:var(--color-ink-muted)]">
-            Factures, moyen de paiement et résiliation, sur la page sécurisée
-            de Stripe. La résiliation prend effet à la fin de la période déjà
-            payée — tu gardes l&apos;accès jusque-là.
+            {t("portalHelp")}
           </p>
           {error && (
             <p className="text-sm font-semibold" style={{ color: "var(--color-coral)" }}>
@@ -147,9 +144,7 @@ export function SubscriptionCard({ plan }: { plan: Plan }) {
         // le webhook n'a pas encore écrit le document.
         <>
           <p className="text-xs text-[color:var(--color-ink-muted)]">
-            Aucun paiement n&apos;est rattaché à ce compte — le plan t&apos;a
-            été accordé directement, ou l&apos;abonnement vient tout juste
-            d&apos;être créé.
+            {t("manualPlanBody")}
           </p>
           {PORTAL_FALLBACK_URL && (
             <a
@@ -158,7 +153,7 @@ export function SubscriptionCard({ plan }: { plan: Plan }) {
               target="_blank"
               rel="noreferrer"
             >
-              Accéder à mes factures et résilier
+              {t("invoicesAndCancel")}
             </a>
           )}
         </>
@@ -169,10 +164,10 @@ export function SubscriptionCard({ plan }: { plan: Plan }) {
             onClick={() => setUpgradeOpen(true)}
             className="kai-btn-primary"
           >
-            Voir les offres et choisir mon plan
+            {t("choosePlanButton")}
           </button>
           <p className="text-xs text-[color:var(--color-ink-muted)]">
-            Compare Creator et Pro sans quitter ton compte. Le paiement s&apos;ouvrira uniquement après ton choix.
+            {t("choosePlanBody")}
           </p>
           <PlanUpgradeModal open={upgradeOpen} onClose={() => setUpgradeOpen(false)} />
         </>

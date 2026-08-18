@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useId, useState } from "react";
+import { useTranslations } from "next-intl";
 import {
   CAPABILITIES_BY_PLAN,
   CAPABILITY_INFO,
@@ -27,6 +28,7 @@ export function PlanUpgradeModal({
   onClose: () => void;
 }) {
   const [period, setPeriod] = useState<BillingPeriod>("monthly");
+  const t = useTranslations("Account");
   const titleId = useId();
 
   useEffect(() => {
@@ -69,23 +71,22 @@ export function PlanUpgradeModal({
               className="text-xs font-bold uppercase tracking-[0.14em]"
               style={{ color: "var(--color-coral)" }}
             >
-              Débloquer KAIROS
+              {t("upgradeEyebrow")}
             </p>
             <h2
               id={titleId}
               className="mt-1 font-[family-name:var(--font-display)] text-2xl font-extrabold sm:text-3xl"
             >
-              Choisis le plan qui correspond à ton rythme
+              {t("upgradeTitle")}
             </h2>
             <p className="mt-2 max-w-2xl text-sm text-[color:var(--color-ink-muted)]">
-              Tu restes sur cette page. Le paiement s&apos;ouvre ensuite de façon sécurisée,
-              sans perdre ton compte ni ton analyse.
+              {t("upgradeBody")}
             </p>
           </div>
           <button
             type="button"
             onClick={onClose}
-            aria-label="Fermer la fenêtre des offres"
+            aria-label={t("closeOffers")}
             className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-2xl leading-none transition-transform hover:bg-[var(--color-surface)] active:scale-95"
             style={{ color: "var(--color-ink-muted)" }}
           >
@@ -96,13 +97,13 @@ export function PlanUpgradeModal({
         <div className="mb-5 flex justify-center">
           <div
             role="radiogroup"
-            aria-label="Périodicité de facturation"
+            aria-label={t("billingPeriodAria")}
             className="inline-flex items-center gap-1 rounded-full p-1"
             style={{ backgroundColor: "var(--color-surface)", border: "1px solid var(--color-border)" }}
           >
             {([
-              ["monthly", "Mensuel"],
-              ["yearly", "Annuel"],
+              ["monthly", t("billingMonthly")],
+              ["yearly", t("billingYearly")],
             ] as const).map(([value, label]) => {
               const active = period === value;
               const savings = yearlySavingsPct(PAID_PLANS[0]!);
@@ -152,7 +153,7 @@ export function PlanUpgradeModal({
                     className="absolute -top-3 left-5 rounded-full px-2.5 py-0.5 text-[11px] font-bold"
                     style={{ backgroundColor: "var(--color-coral)", color: "var(--color-coral-ink)" }}
                   >
-                    Le plus choisi
+                    {t("mostPopular")}
                   </span>
                 )}
                 <div>
@@ -164,7 +165,7 @@ export function PlanUpgradeModal({
                   </p>
                   {period === "yearly" && formatYearlyAsMonthly(plan) && (
                     <p className="text-xs font-semibold text-[color:var(--color-ink-muted)]">
-                      soit {formatYearlyAsMonthly(plan)}, facturé en une fois
+                      {t("yearlyEquivalent", { monthly: formatYearlyAsMonthly(plan) })}
                     </p>
                   )}
                   <p className="mt-1 text-sm text-[color:var(--color-ink-muted)]">{plan.tagline}</p>
@@ -192,18 +193,18 @@ export function PlanUpgradeModal({
                 </ul>
 
                 <p className="border-t pt-3 text-xs font-semibold text-[color:var(--color-ink-muted)]" style={{ borderColor: "var(--color-border)" }}>
-                  {total} fonctionnalité{total > 1 ? "s" : ""} au total
+                  {t("featureTotal", { count: total })}
                 </p>
 
                 {price === null ? (
                   <p className="text-center text-sm font-semibold text-[color:var(--color-ink-muted)]">
-                    Offre bientôt disponible
+                    {t("comingSoon")}
                   </p>
                 ) : (
                   <SubscribeButton
                     plan={plan.slug as PaidPlan}
                     period={period}
-                    label={`Passer en ${plan.name}`}
+                    label={t("upgradePlan", { plan: plan.name })}
                   />
                 )}
               </article>
@@ -212,7 +213,7 @@ export function PlanUpgradeModal({
         </div>
 
         <p className="mt-5 text-center text-xs text-[color:var(--color-ink-muted)]">
-          Tu peux fermer cette fenêtre à tout moment avec la croix, la touche Échap ou en cliquant à l&apos;extérieur.
+          {t("closeOffersHint")}
         </p>
       </section>
     </div>
