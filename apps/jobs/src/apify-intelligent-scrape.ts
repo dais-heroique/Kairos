@@ -11,7 +11,7 @@
 
 import { applicationDefault, getApps, initializeApp } from "firebase-admin/app";
 import { getFirestore } from "firebase-admin/firestore";
-import { getBigQueryClient } from "./bigquery/client.js";
+import { createNoopBigQuery } from "./bigquery/client.js";
 import { createApifyIntelligentSourceFromEnv, printScrapingStrategy } from "./datasource/apify-intelligent-source.js";
 import { findServiceAccountKey, loadEnvLocal } from "./load-env.js";
 import { runDailyPipeline } from "./pipeline.js";
@@ -54,13 +54,13 @@ async function main(): Promise<void> {
     return;
   }
   process.env.GOOGLE_APPLICATION_CREDENTIALS = keyPath;
-  const projectId = process.env.GCP_PROJECT_ID ?? "kairos-on";
+  const projectId = process.env.GCP_PROJECT_ID?.trim() || "kairos-on";
   if (getApps().length === 0) {
     initializeApp({ projectId, credential: applicationDefault() });
   }
   console.log(`[apify-intelligent] ✅ Firebase project: ${projectId}`);
   const db = getFirestore();
-  const bq = getBigQueryClient();
+  const bq = createNoopBigQuery();
 
   // Créer la source intelligente
   console.log("[apify-intelligent] 🚀 Starting intelligent discovery...\n");

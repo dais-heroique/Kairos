@@ -10,7 +10,7 @@
 
 import { applicationDefault, getApps, initializeApp } from "firebase-admin/app";
 import { getFirestore } from "firebase-admin/firestore";
-import { getBigQueryClient } from "./bigquery/client.js";
+import { createNoopBigQuery } from "./bigquery/client.js";
 import { ApifySnapshotSource } from "./datasource/apify-source.js";
 import { findServiceAccountKey, loadEnvLocal } from "./load-env.js";
 import { runDailyPipeline } from "./pipeline.js";
@@ -66,13 +66,15 @@ async function main(): Promise<void> {
     return;
   }
   process.env.GOOGLE_APPLICATION_CREDENTIALS = keyPath;
-  const projectId = process.env.GCP_PROJECT_ID ?? "kairos-on";
+  const projectId = process.env.GCP_PROJECT_ID?.trim() || "kairos-on";
   if (getApps().length === 0) {
     initializeApp({ projectId, credential: applicationDefault() });
   }
   console.log(`[apify-scrape] ✅ Projet Firebase : ${projectId}`);
   const db = getFirestore();
-  const bq = getBigQueryClient();
+  // BigQuery ne sert qu'au journal d'audit ; il ne doit pas bloquer
+  // l'écriture Firestore qui alimente le dashboard.
+  const bq = createNoopBigQuery();
 
   // Créer la source Apify
   const source = new ApifySnapshotSource(apiToken);
