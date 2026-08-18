@@ -56,7 +56,14 @@ export default function ProduitsPage() {
         </p>
         <ExportButton items={visible} nom="produits" />
       </div>
-      {data && <RankingMeta generatedAt={data.generatedAt} isDemo={data.isDemo} />}
+      {data && (
+        <RankingMeta
+          generatedAt={data.generatedAt}
+          isDemo={data.isDemo}
+          marketVerified={data.marketVerified}
+          sourceMarket={data.sourceMarket}
+        />
+      )}
 
       <RankingControls
         filters={filters}

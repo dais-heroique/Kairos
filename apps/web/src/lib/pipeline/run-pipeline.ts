@@ -267,6 +267,7 @@ export async function runPipeline(): Promise<PipelineResult> {
     isDemo,
     type,
     market: "FR",
+    sourceMarket: "FR",
     period: "7d",
     category: null,
     items,

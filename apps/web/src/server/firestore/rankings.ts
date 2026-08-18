@@ -79,6 +79,7 @@ function toProductRankItem(
     commissionIsEstimated?: boolean;
     soldTotal?: number | null;
     imageUrl?: string | null;
+    sourceMarket?: Market | null;
     verdict?: ProductRankItem["verdict"];
     salesTrend?: ProductRankItem["salesTrend"];
     emoji?: string | null;
@@ -129,6 +130,7 @@ function toProductRankItem(
     commissionIsEstimated: commission.isEstimated,
     soldTotal: item.soldTotal ?? null,
     imageUrl: item.imageUrl ?? null,
+    sourceMarket: item.sourceMarket ?? null,
     verdict: item.verdict ?? "risque",
     salesTrend: item.salesTrend ?? "flat",
     // Le pipeline écrit bien `emoji` dans les items, mais cette conversion
@@ -156,6 +158,8 @@ export interface RankingPageData {
    * fictifs et leurs verdicts écrits en dur.
    */
   isDemo: boolean;
+  sourceMarket?: Market | null;
+  marketVerified?: boolean;
 }
 
 // 2 opérations Firestore au total quelle que soit la taille du
@@ -177,9 +181,24 @@ export async function getRankingPageData(
   try {
     rankingDoc = await getRankingDoc(type, market, period, category, counter);
   } catch {
-    return { items: [], generatedAt: null, isDemo: false };
+    return { items: [], generatedAt: null, isDemo: false, sourceMarket: null, marketVerified: false };
   }
-  if (!rankingDoc) return { items: [], generatedAt: null, isDemo: false };
+  if (!rankingDoc) return { items: [], generatedAt: null, isDemo: false, sourceMarket: null, marketVerified: false };
+
+  const isDemo = (rankingDoc as unknown as { isDemo?: boolean }).isDemo === true;
+  const sourceMarket = (rankingDoc as unknown as { sourceMarket?: Market }).sourceMarket ?? null;
+  // Les documents sans provenance sont des legacy documents. Les laisser
+  // passer sous FR reproduirait exactement le bug US→FR découvert à l'audit.
+  // Les données de démo restent visibles, car elles sont explicitement marquées.
+  if (!isDemo && sourceMarket !== market) {
+    return {
+      items: [],
+      generatedAt: rankingDoc.generatedAt,
+      isDemo: false,
+      sourceMarket,
+      marketVerified: false,
+    };
+  }
 
   const shopIds = rankingDoc.items
     .map((item) => (item as unknown as { shopId?: string | null }).shopId)
@@ -189,9 +208,8 @@ export async function getRankingPageData(
   return {
     items: rankingDoc.items.map((item) => toProductRankItem(item, shopNames)),
     generatedAt: rankingDoc.generatedAt,
-    // Absent des documents écrits avant l'ajout du drapeau : on ne
-    // présume pas qu'ils sont réels, mais les seuls documents non
-    // marqués aujourd'hui sont ceux d'apps/jobs, qui le sont.
-    isDemo: (rankingDoc as unknown as { isDemo?: boolean }).isDemo === true,
+    isDemo,
+    sourceMarket,
+    marketVerified: true,
   };
 }

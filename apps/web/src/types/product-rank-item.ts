@@ -1,5 +1,7 @@
 import type { Phase, VerdictLabel } from "@kairos/shared";
 
+import type { Market } from "@kairos/shared";
+
 // Remplace le type précédemment importé de @/lib/mock/products — dérivé
 // des champs d'affichage désormais embarqués dans rankings/*.items[] (voir
 // apps/jobs/src/rank.ts). Pas d'`emoji` réel côté données produit : le
@@ -29,6 +31,8 @@ export interface ProductRankItem {
   soldTotal?: number | null;
   /** Visuel produit ; absent si non collecté. */
   imageUrl?: string | null;
+  /** Marché couvert par la source de collecte, si connu. */
+  sourceMarket?: Market | null;
   emoji?: string;
   category?: string;
 

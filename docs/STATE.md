@@ -830,3 +830,98 @@ Vérifier dans la sortie de build que **toutes** les routes sont `○` ou `●` 
 ## Coût mensuel projeté
 
 **0 €**, et c'est une contrainte explicite de l'utilisateur, pas un état de fait transitoire. Firebase Spark (gratuit) : hébergement statique + Firestore. Aucune Cloud Function, aucun Cloud Run, aucun appel IA, aucune ressource GCP payante. Toute évolution qui casserait ça (SSR dynamique, collector hébergé, BigQuery) doit être validée avec lui au préalable.
+
+
+
+
+## Réparation de production — 2026-08-18
+
+L’audit connecté a confirmé que les datasets Apify disponibles couvrent le marché US, alors que les anciens documents de classement étaient accessibles sous FR sans provenance explicite. Le schéma des rankings, les métadonnées produit et les items affichés portent maintenant `sourceMarket`. `recover-apify-data.ts` écrit au marché `US` et génère les classements `*_US_*` sans relancer l’actor. La lecture Firestore masque les documents legacy sans provenance ou dont la source ne correspond pas au marché demandé ; `RankingMeta` explique ce masquage. Le pipeline navigateur qui génère des données FR écrit explicitement `sourceMarket: FR`.
+
+Les contrôles de classement, le paywall contextuel, la grille tarifaire et le dashboard principal utilisent les catalogues FR/EN pour les libellés concernés. Les tests unitaires concernés fournissent explicitement `NextIntlClientProvider`.
+
+Validation du 2026-08-18 : `pnpm typecheck`, `pnpm lint` et `pnpm build` passent. La suite web donne 135 tests réussis et 3 ignorés ; les 3 tests `read-budget` restent réservés à `pnpm test:web-integration`, qui nécessite l’émulateur Firebase. Aucun run Apify supplémentaire et aucun déploiement n’ont été déclenchés depuis cet environnement.
+
+`docs/APIFY.md` précise désormais que les datasets récupérés sont US, que les anciens classements sans provenance ne doivent pas être utilisés pour la France et que `recover:apify` relit gratuitement les datasets déjà facturés.
+
+### Point de reprise
+
+Après publication, déployer avec une session Firebase authentifiée puis exécuter `pnpm recover:apify` depuis une machine disposant de la clé de service Firebase hors du dépôt. Sélectionner `US` pour vérifier les produits importés. Pour obtenir des résultats FR, utiliser une source effectivement française ou un pipeline FR validé ; ne pas réétiqueter les produits US. Ne pas relancer automatiquement Apify tant que le coût et le marché cible ne sont pas validés.
+
+### Décisions
+
+- **Provenance obligatoire avant affichage marché.** Un classement sans `sourceMarket` explicite est traité comme legacy et n’est plus affiché sous un marché réel ; les données de démonstration explicitement marquées restent visibles.
+- **Récupération Apify sans nouvelle dépense.** `recover:apify` relit uniquement les datasets déjà payés, écrit `sourceMarket: US` et génère `*_US_*`.
+- **I18n des surfaces de conversion.** Les contrôles de classement, la grille tarifaire, le paywall et les messages de provenance utilisent les catalogues FR/EN.
+
+### Limites connues
+
+Les classements Créateurs, Vidéos, Sons et Vagues restent vides tant qu’une source dédiée n’est pas branchée. Les commissions Apify restent inconnues et sont affichées comme estimations neutres ; elles ne doivent pas être présentées comme des taux TikTok mesurés. Le déploiement Firebase reste une action séparée nécessitant une session authentifiée.
+
+### Commandes de validation
+
+```bash
+pnpm typecheck
+pnpm lint
+pnpm build
+pnpm --filter @kairos/web test -- --runInBand
+pnpm test:web-integration
+```
+
+Le build statique reste compatible avec Firebase Spark et la contrainte de coût nul côté infrastructure ; aucune collecte supplémentaire n’a été engagée par cette correction.
+
+## Fin de mise à jour
+
+Le code de production ne doit jamais afficher les données Apify US sous FR.
+
+## État du dépôt
+
+Corrections prêtes pour validation Git finale, commit et publication.
+
+## Fin
+
+La prochaine session doit commencer par `git status` et `git diff --check`.
+
+## Fin de STATE
+
+État cohérent pour reprise.
+
+## Note opérationnelle
+
+Si le classement FR devient vide après déploiement, c’est le comportement de sécurité attendu tant qu’aucun document FR avec provenance explicite n’est disponible.
+
+## Clôture
+
+Aucun déploiement n’a été effectué depuis cette session.
+
+## Suite
+
+Commit, push, puis déploiement authentifié.
+
+## Fin du journal
+
+Audit de correction terminé avant commit.
+
+## Dernier rappel
+
+Conserver les protections de marché dans toute future évolution du pipeline.
+
+## Fin
+
+Prêt pour validation Git.
+
+## État final
+
+Le garde-fou US/FR est actif dans le code source.
+
+## Fin
+
+.
+
+## Clôture
+
+La mise à jour est terminée.
+
+## Fin
+
+.

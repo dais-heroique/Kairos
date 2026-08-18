@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useTranslations } from "next-intl";
 import { MARKETS, RANKING_PERIODS, VERDICT_LABELS } from "@kairos/shared";
 import type { Market, RankingPeriod, VerdictLabel } from "@kairos/shared";
 import type { ProductRankItem } from "@/types/product-rank-item";
@@ -14,17 +15,17 @@ import type { ProductRankItem } from "@/types/product-rank-item";
 //  - Tri et filtres ne touchent que la liste déjà chargée → aucune lecture,
 //    donc réponse instantanée.
 
-const PERIOD_LABELS: Record<RankingPeriod, string> = {
-  "24h": "24 h",
-  "7d": "7 jours",
-  "30d": "30 jours",
+const PERIOD_KEYS: Record<RankingPeriod, string> = {
+  "24h": "period24h",
+  "7d": "period7d",
+  "30d": "period30d",
 };
 
-const VERDICT_TEXT: Record<VerdictLabel, string> = {
-  entrer_maintenant: "Entrer maintenant",
-  avec_un_angle: "Avec un angle",
-  risque: "Risque",
-  eviter: "Éviter",
+const VERDICT_KEYS: Record<VerdictLabel, string> = {
+  entrer_maintenant: "enterNow",
+  avec_un_angle: "withAngle",
+  risque: "risk",
+  eviter: "avoid",
 };
 
 // Tris limités à ce que rankings/*.items[] contient réellement
@@ -127,6 +128,7 @@ export function RankingControls({
   // premier produit. Elle est donc repliée par défaut sous les 768px, et
   // toujours dépliée au-dessus (`md:flex`), où la place ne manque pas.
   const [filtersOpen, setFiltersOpen] = useState(false);
+  const t = useTranslations("Rankings");
 
   const activeFilterCount = useMemo(
     () =>
@@ -156,7 +158,7 @@ export function RankingControls({
   return (
     <div className="flex flex-col gap-3">
       <div className="flex flex-wrap items-center gap-2">
-        <div className="kai-seg" role="group" aria-label="Période">
+        <div className="kai-seg" role="group" aria-label={t("periodAria")}>
           {RANKING_PERIODS.map((p) => (
             <button
               key={p}
@@ -165,12 +167,12 @@ export function RankingControls({
               aria-pressed={filters.period === p}
               onClick={() => onChange({ ...filters, period: p })}
             >
-              {PERIOD_LABELS[p]}
+              {t(PERIOD_KEYS[p])}
             </button>
           ))}
         </div>
 
-        <div className="kai-seg" role="group" aria-label="Marché">
+        <div className="kai-seg" role="group" aria-label={t("marketAria")}>
           {MARKETS.map((m) => (
             <button
               key={m}
@@ -185,18 +187,18 @@ export function RankingControls({
         </div>
 
         <label className="ml-auto flex items-center gap-2">
-          <span className="hidden text-xs font-semibold text-[color:var(--color-ink-muted)] sm:inline">
-            Trier par
+            <span className="hidden text-xs font-semibold text-[color:var(--color-ink-muted)] sm:inline">
+            {t("sortLabel")}
           </span>
           <select
             className="kai-select"
-            aria-label="Trier par"
+            aria-label={t("sortLabel")}
             value={filters.sort}
             onChange={(e) => onChange({ ...filters, sort: e.target.value as SortValue })}
           >
             {SORT_OPTIONS.map((o) => (
               <option key={o.value} value={o.value}>
-                {o.label}
+                {t(`sort.${o.value}`)}
               </option>
             ))}
           </select>
@@ -209,7 +211,7 @@ export function RankingControls({
           aria-expanded={filtersOpen}
           onClick={() => setFiltersOpen((v) => !v)}
         >
-          Filtres{activeFilterCount > 0 ? ` (${activeFilterCount})` : ""}
+          {t("filters", { count: activeFilterCount })}
         </button>
       </div>
 
@@ -224,7 +226,7 @@ export function RankingControls({
             aria-pressed={filters.verdicts.has(v)}
             onClick={() => toggleVerdict(v)}
           >
-            {VERDICT_TEXT[v]}
+            {t(`verdict.${VERDICT_KEYS[v]}`)}
           </button>
         ))}
 
@@ -234,18 +236,18 @@ export function RankingControls({
           aria-pressed={filters.trendUpOnly}
           onClick={() => onChange({ ...filters, trendUpOnly: !filters.trendUpOnly })}
         >
-          En hausse
+          {t("trendUp")}
         </button>
 
         <select
           className="kai-select"
           value={filters.price}
-          aria-label="Fourchette de prix"
+          aria-label={t("priceAria")}
           onChange={(e) => onChange({ ...filters, price: e.target.value as PriceBucket })}
         >
           {PRICE_BUCKETS.map((b) => (
             <option key={b.value} value={b.value}>
-              {b.label}
+              {t(`price.${b.value}`)}
             </option>
           ))}
         </select>
@@ -257,15 +259,15 @@ export function RankingControls({
             className="text-xs font-semibold underline underline-offset-2"
             style={{ color: "var(--color-ink-muted)" }}
           >
-            Tout effacer
+            {t("clearAll")}
           </button>
         ) : null}
       </div>
 
       <p className="text-xs text-[color:var(--color-ink-muted)]">
         {visibleCount === totalCount
-          ? `${totalCount} produit${totalCount > 1 ? "s" : ""}`
-          : `${visibleCount} sur ${totalCount} produit${totalCount > 1 ? "s" : ""}`}
+          ? t("count", { count: totalCount })
+          : t("countOf", { visible: visibleCount, total: totalCount })}
       </p>
     </div>
   );

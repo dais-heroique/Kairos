@@ -132,6 +132,8 @@ function DashboardContent() {
   const [watchlist, setWatchlist] = useState<WatchlistEntry[]>([]);
   const [generatedAt, setGeneratedAt] = useState<string | null>(null);
   const [isDemo, setIsDemo] = useState(false);
+  const [marketVerified, setMarketVerified] = useState(true);
+  const [sourceMarket, setSourceMarket] = useState<string | null>(null);
   const [added, setAdded] = useState<Set<string>>(new Set());
   const market = primaryMarketOf(userDoc);
 
@@ -140,6 +142,8 @@ function DashboardContent() {
       setOpportunities(d.items);
       setGeneratedAt(d.generatedAt);
       setIsDemo(d.isDemo);
+      setMarketVerified(d.marketVerified ?? true);
+      setSourceMarket(d.sourceMarket ?? null);
     });
     getRankingPageData("products", market, "7d").then((d) => setProducts(d.items));
   }, [market]);
@@ -220,7 +224,12 @@ function DashboardContent() {
       </header>
 
       <div className="flex flex-1 flex-col gap-5 kai-shell py-3">
-        <RankingMeta generatedAt={generatedAt} isDemo={isDemo} />
+        <RankingMeta
+          generatedAt={generatedAt}
+          isDemo={isDemo}
+          marketVerified={marketVerified}
+          sourceMarket={sourceMarket}
+        />
 
         {/* Ce qui a bougé sur les produits suivis, en tête de page : c'est
             l'information qu'une notification aurait portée, au moment où

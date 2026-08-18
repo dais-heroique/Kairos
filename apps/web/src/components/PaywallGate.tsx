@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { SubscribeButton } from "@/components/SubscribeButton";
 import type { ReactNode } from "react";
 import {
@@ -46,6 +47,7 @@ export function PaywallGate({
   urgency?: string | undefined;
   children: ReactNode;
 }) {
+  const t = useTranslations("Paywall");
   if (entitlements.can(capability)) return <>{children}</>;
 
   const plan = planUnlocking(capability);
@@ -121,7 +123,7 @@ export function PaywallGate({
                         color: "var(--color-warning)",
                       }}
                     >
-                      pas encore là
+                      {t("comingSoon")}
                     </span>
                   )}
                 </span>
@@ -135,7 +137,7 @@ export function PaywallGate({
               d'un palier payant qui n'affiche que sa différence — ce qui le
               fait paraître plus pauvre que le gratuit, jamais plus riche. */}
           <p className="text-xs font-semibold text-[color:var(--color-ink-muted)]">
-            {unlocked.length} fonctionnalité{unlocked.length > 1 ? "s" : ""} de plus qu&apos;aujourd&apos;hui
+            {t("featuresMore", { count: unlocked.length })}
           </p>
 
           {/* Le paiement démarre **ici**, pas après un détour par /tarifs.
@@ -148,25 +150,25 @@ export function PaywallGate({
               mort n'est possible. */}
           {plan.priceCents === null ? (
             <Link href="/tarifs" className="kai-btn-primary text-center">
-              Voir les offres
+              {t("viewOffers")}
             </Link>
           ) : (
             <>
               <SubscribeButton
                 plan={plan.slug as "creator" | "pro"}
-                label={`Passer en ${plan.name}`}
+                label={t("upgradePlan", { plan: plan.name })}
               />
               <Link
                 href="/tarifs"
                 className="text-center text-xs underline text-[color:var(--color-ink-muted)]"
               >
-                Comparer les offres d&apos;abord
+                {t("compareOffers")}
               </Link>
             </>
           )}
           {FOUNDING_PRICE_LOCK && plan.priceCents === null && (
             <p className="text-center text-[11px] text-[color:var(--color-ink-muted)]">
-              Les inscrits d&apos;aujourd&apos;hui gardent le tarif de lancement.
+              {t("foundingPriceNote")}
             </p>
           )}
         </div>
@@ -182,11 +184,12 @@ export function PaywallGate({
  * le produit n'existe pas.
  */
 export function LockedValue({ hint }: { hint?: string }) {
+  const t = useTranslations("Paywall");
   return (
     <Link
       href="/tarifs"
       className="inline-flex items-center gap-1.5 align-middle"
-      title={hint ?? "Débloquer avec un plan payant"}
+      title={hint ?? t("lockedTitle")}
     >
       <span
         className="inline-block h-3 w-16 rounded align-middle"
@@ -194,7 +197,7 @@ export function LockedValue({ hint }: { hint?: string }) {
         aria-hidden
       />
       <span className="text-xs font-semibold" style={{ color: "var(--color-coral)" }}>
-        débloquer
+        {t("unlock")}
       </span>
     </Link>
   );

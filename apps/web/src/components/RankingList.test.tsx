@@ -1,6 +1,9 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { cleanup, render, screen } from "@testing-library/react";
+import type { ReactNode } from "react";
+import { NextIntlClientProvider } from "next-intl";
+import fr from "@/messages/fr.json";
 import type { User } from "@kairos/shared";
 import type { ProductRankItem } from "@/types/product-rank-item";
 
@@ -46,6 +49,10 @@ const { RankingList } = await import("./RankingList");
 
 afterEach(cleanup);
 
+function renderWithIntl(ui: ReactNode) {
+  return render(<NextIntlClientProvider locale="fr" messages={fr}>{ui}</NextIntlClientProvider>);
+}
+
 function items(count: number, from = 1): ProductRankItem[] {
   return Array.from({ length: count }, (_, i) => ({
     id: `p${from + i}`,
@@ -67,7 +74,7 @@ function lockedRows(): number {
 
 describe("RankingList — verrou du plan gratuit", () => {
   it("déverrouille les 10 premières lignes et masque le reste", () => {
-    render(<RankingList items={items(14)} />);
+    renderWithIntl(<RankingList items={items(14)} />);
     expect(lockedRows()).toBe(4);
   });
 
@@ -77,13 +84,13 @@ describe("RankingList — verrou du plan gratuit", () => {
   // c'est-à-dire donnait gratuitement ce que le plan Creator vend.
   it("ne rouvre pas un top 10 par tranche", () => {
     const tout = items(14);
-    const { unmount } = render(
+    const { unmount } = renderWithIntl(
       <RankingList items={tout.slice(0, 6)} startIndex={0} totalCount={14} showLockedSummary={false} />,
     );
     expect(lockedRows()).toBe(0);
     unmount();
 
-    render(
+    renderWithIntl(
       <RankingList items={tout.slice(6)} startIndex={6} totalCount={14} showLockedSummary={false} />,
     );
     // Positions 7 à 14 : les quatre premières restent offertes, les quatre
@@ -92,14 +99,14 @@ describe("RankingList — verrou du plan gratuit", () => {
   });
 
   it("compte les gains masqués sur le classement entier, pas sur la tranche", () => {
-    render(
+    renderWithIntl(
       <RankingList items={items(4, 11)} startIndex={10} totalCount={14} showLockedSummary />,
     );
     expect(screen.getByText("4 gains encore masqués")).toBeDefined();
   });
 
   it("n'affiche le récapitulatif qu'une fois par page", () => {
-    render(
+    renderWithIntl(
       <RankingList items={items(4, 11)} startIndex={10} totalCount={14} showLockedSummary={false} />,
     );
     expect(screen.queryByText("4 gains encore masqués")).toBeNull();

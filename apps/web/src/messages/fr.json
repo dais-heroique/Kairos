@@ -210,7 +210,7 @@
     "billingPeriodAria": "Périodicité de facturation",
     "mostPopular": "Le plus choisi",
     "yearlyEquivalent": "soit {monthly}, facturé en une fois",
-    "featureTotal": "{count} fonctionnalité(s) au total",
+    "featureTotal": "{count, plural, one {# fonctionnalité au total} other {# fonctionnalités au total}}",
     "comingSoon": "Offre bientôt disponible",
     "upgradePlan": "Passer en {plan}",
     "closeOffersHint": "Tu peux fermer cette fenêtre à tout moment avec la croix, la touche Échap ou en cliquant à l'extérieur."
@@ -252,6 +252,66 @@
     "seedButton": "Générer le marché de démonstration",
     "seedingButton": "Génération et analyse…",
     "seedSuccess": "Fait — les classements affichent le marché simulé, analysé par les moteurs de production."
+  },
+  "Rankings": {
+    "periodAria": "Période",
+    "marketAria": "Marché",
+    "period24h": "24 h",
+    "period7d": "7 jours",
+    "period30d": "30 jours",
+    "sortLabel": "Trier par",
+    "sort": {
+      "rank": "Classement",
+      "sold": "Ventes",
+      "trend": "Tendance",
+      "commission": "Commission",
+      "price-asc": "Prix croissant",
+      "price-desc": "Prix décroissant"
+    },
+    "filters": "Filtres{count, plural, =0 {} other { (#)}}",
+    "enterNow": "Entrer maintenant",
+    "withAngle": "Avec un angle",
+    "risk": "Risque",
+    "avoid": "Éviter",
+    "trendUp": "En hausse",
+    "priceAria": "Fourchette de prix",
+    "price": {
+      "all": "Tous les prix",
+      "lt20": "< 20 €",
+      "20-50": "20–50 €",
+      "50-100": "50–100 €",
+      "gt100": "> 100 €"
+    },
+    "clearAll": "Tout effacer",
+    "count": "{count, plural, one {# produit} other {# produits}}",
+    "countOf": "{visible} sur {total} produits"
+  },
+  "Pricing": {
+    "billingPeriodAria": "Périodicité de facturation",
+    "monthly": "Mensuel",
+    "yearly": "Annuel",
+    "mostPopular": "Le plus choisi",
+    "yearlyEquivalent": "soit {monthly}, facturé en une fois",
+    "paymentClosed": "Prix indicatif · paiement actuellement fermé. Aucun prélèvement ne sera effectué.",
+    "inheritsPlus": "Tout {inherits}, plus :",
+    "availableNow": "Ce que tu as tout de suite :",
+    "comingSoon": "pas encore là",
+    "inheritedFeatures": "Et tout ce qui vient de {inherits} ({count})",
+    "featureTotal": "{count, plural, one {# fonctionnalité au total} other {# fonctionnalités au total}}",
+    "signupCta": "Créer mon compte — 30 secondes",
+    "startFreeCta": "Commencer gratuitement en attendant",
+    "foundingPriceNote": "Les inscrits d'aujourd'hui garderont le tarif de lancement.",
+    "upgradePlan": "Passer en {plan}"
+  },
+  "Paywall": {
+    "comingSoon": "pas encore là",
+    "featuresMore": "{count, plural, one {# fonctionnalité de plus qu'aujourd'hui} other {# fonctionnalités de plus qu'aujourd'hui}}",
+    "viewOffers": "Voir les offres",
+    "upgradePlan": "Passer en {plan}",
+    "compareOffers": "Comparer les offres d'abord",
+    "foundingPriceNote": "Les inscrits d'aujourd'hui gardent le tarif de lancement.",
+    "lockedTitle": "Débloquer avec un plan payant",
+    "unlock": "débloquer"
   },
   "Nav": {
     "method": "La méthode",

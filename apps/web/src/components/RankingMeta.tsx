@@ -36,10 +36,38 @@ const STALE_AFTER_DAYS = 3;
 export function RankingMeta({
   generatedAt,
   isDemo,
+  marketVerified = true,
+  sourceMarket = null,
 }: {
   generatedAt: string | null;
   isDemo: boolean;
+  marketVerified?: boolean | undefined;
+  sourceMarket?: string | null | undefined;
 }) {
+  if (!marketVerified) {
+    return (
+      <div
+        className="kai-card border-l-4 text-sm"
+        style={{ borderColor: "var(--color-coral)" }}
+        role="status"
+      >
+        <p
+          className="font-[family-name:var(--font-display)] font-bold"
+          style={{ color: "var(--color-coral)" }}
+        >
+          Données de marché non vérifiées
+        </p>
+        <p className="text-[color:var(--color-ink-muted)]">
+          Ce classement ancien n&apos;indique pas le marché réellement couvert par
+          la source. Il est masqué pour éviter de présenter des données US comme
+          des résultats France. Relance la récupération de la source avec le
+          marché correct avant de l&apos;utiliser.
+          {sourceMarket ? ` Marché source détecté : ${sourceMarket}.` : ""}
+        </p>
+      </div>
+    );
+  }
+
   if (isDemo) {
     return (
       <div

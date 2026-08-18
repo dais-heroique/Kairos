@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import {
   type BillingPeriod,
   CAPABILITIES_BY_PLAN,
@@ -62,6 +63,7 @@ function PeriodToggle({
   // L'économie annoncée est celle du plan mis en avant, calculée à partir
   // des deux montants réels (`yearlySavingsPct`) : jamais un « -20 % »
   // décoratif qui ne correspondrait pas à la facture.
+  const t = useTranslations("Pricing");
   const featured = PLANS.find((p) => p.popular) ?? PLANS[1]!;
   const savings = yearlySavingsPct(featured);
 
@@ -69,14 +71,14 @@ function PeriodToggle({
     <div className="flex justify-center">
       <div
         role="radiogroup"
-        aria-label="Périodicité de facturation"
+        aria-label={t("billingPeriodAria")}
         className="inline-flex items-center gap-1 rounded-full p-1"
         style={{ backgroundColor: "var(--color-surface)", border: "1px solid var(--color-border)" }}
       >
         {(
           [
-            ["monthly", "Mensuel"],
-            ["yearly", "Annuel"],
+            ["monthly", t("monthly")],
+            ["yearly", t("yearly")],
           ] as const
         ).map(([value, label]) => {
           const active = period === value;
@@ -106,6 +108,7 @@ function PeriodToggle({
 }
 
 function PlanGrid({ compact, period }: { compact: boolean; period: BillingPeriod }) {
+  const t = useTranslations("Pricing");
   return (
     <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
       {PLANS.map((plan, index) => {
@@ -133,7 +136,7 @@ function PlanGrid({ compact, period }: { compact: boolean; period: BillingPeriod
                   color: "var(--color-coral-ink)",
                 }}
               >
-                Le plus choisi
+                {t("mostPopular")}
               </span>
             )}
 
@@ -149,7 +152,7 @@ function PlanGrid({ compact, period }: { compact: boolean; period: BillingPeriod
                   partir du montant réel, jamais saisi à part. */}
               {period === "yearly" && formatYearlyAsMonthly(plan) && (
                 <p className="text-xs font-semibold text-[color:var(--color-ink-muted)]">
-                  soit {formatYearlyAsMonthly(plan)}, facturé en une fois
+                  {t("yearlyEquivalent", { monthly: formatYearlyAsMonthly(plan) })}
                 </p>
               )}
               <p className="text-sm text-[color:var(--color-ink-muted)]">{plan.tagline}</p>
@@ -158,7 +161,7 @@ function PlanGrid({ compact, period }: { compact: boolean; period: BillingPeriod
                   className="mt-2 rounded-lg px-2.5 py-2 text-xs font-semibold"
                   style={{ backgroundColor: "var(--color-warning-soft)", color: "var(--color-warning)" }}
                 >
-                  Prix indicatif · paiement actuellement fermé. Aucun prélèvement ne sera effectué.
+                  {t("paymentClosed")}
                 </p>
               )}
             </div>
@@ -178,7 +181,7 @@ function PlanGrid({ compact, period }: { compact: boolean; period: BillingPeriod
             </p>
 
             <p className="text-sm font-semibold">
-              {inherits ? `Tout ${inherits}, plus :` : "Ce que tu as tout de suite :"}
+              {inherits ? t("inheritsPlus", { inherits }) : t("availableNow")}
             </p>
 
             <ul className="flex flex-1 flex-col gap-2">
@@ -205,7 +208,7 @@ function PlanGrid({ compact, period }: { compact: boolean; period: BillingPeriod
                             color: "var(--color-warning)",
                           }}
                         >
-                          pas encore là
+                          {t("comingSoon")}
                         </span>
                       )}
                     </span>
@@ -243,8 +246,7 @@ function PlanGrid({ compact, period }: { compact: boolean; period: BillingPeriod
               <details className="group">
                 <summary className="flex cursor-pointer list-none items-center justify-between gap-2 text-xs font-semibold text-[color:var(--color-ink-muted)]">
                   <span>
-                    Et tout ce qui vient de {inherits} (
-                    {total - added.length})
+                    {t("inheritedFeatures", { inherits, count: total - added.length })}
                   </span>
                   <span
                     aria-hidden
@@ -278,7 +280,7 @@ function PlanGrid({ compact, period }: { compact: boolean; period: BillingPeriod
               className="border-t pt-3 text-xs font-semibold text-[color:var(--color-ink-muted)]"
               style={{ borderColor: "var(--color-border)" }}
             >
-              {total} fonctionnalité{total > 1 ? "s" : ""} au total
+              {t("featureTotal", { count: total })}
             </p>
 
             {!compact && <PlanCta plan={plan} period={period} />}
@@ -296,10 +298,11 @@ function PlanCta({
   plan: (typeof PLANS)[number];
   period: BillingPeriod;
 }) {
+  const t = useTranslations("Pricing");
   if (plan.priceCents === 0) {
     return (
             <Link href="/connexion?mode=signup" className="kai-btn-primary text-center">
-              Créer mon compte — 30 secondes
+              {t("signupCta")}
             </Link>
     );
   }
@@ -311,14 +314,14 @@ function PlanCta({
     return (
       <div className="flex flex-col gap-1.5">
         <Link href="/connexion?mode=signup" className="kai-btn-outline text-center">
-          Commencer gratuitement en attendant
+          {t("startFreeCta")}
         </Link>
         {FOUNDING_PRICE_LOCK && (
           <p
             className="text-center text-[11px] font-semibold"
             style={{ color: "var(--color-coral)" }}
           >
-            Les inscrits d&apos;aujourd&apos;hui garderont le tarif de lancement.
+            {t("foundingPriceNote")}
           </p>
         )}
       </div>
@@ -333,7 +336,7 @@ function PlanCta({
     <SubscribeButton
       plan={plan.slug as "creator" | "pro"}
       period={period}
-      label={`Passer en ${plan.name}`}
+      label={t("upgradePlan", { plan: plan.name })}
     />
   );
 }

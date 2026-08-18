@@ -63,6 +63,7 @@ function buildDisplayItem(
     shopId: meta?.shopId ?? null,
     soldTotal: meta?.soldTotal ?? null,
     imageUrl: meta?.imageUrl ?? null,
+    sourceMarket: meta?.sourceMarket ?? null,
     // 0 signifie ici « taux inconnu » : aucun programme d'affiliation ne
     // rémunère à 0 %. NEUTRAL_COMMISSION sert justement de marqueur d'absence
     // (voir compute.ts). L'affichage doit distinguer les deux — montrer
@@ -139,6 +140,7 @@ export function buildRankings(
     market,
     period,
     category: null,
+    sourceMarket: market,
     items: byVolume.map((c, i) => buildDisplayItem(c, i + 1, metaByProduct.get(c.productId))),
   });
 
@@ -153,6 +155,7 @@ export function buildRankings(
     market,
     period,
     category: null,
+    sourceMarket: market,
     items: byOpportunity.map((c, i) => ({
       ...buildDisplayItem(c, i + 1, metaByProduct.get(c.productId)),
       opportunityScore: c.opportunityScore,
@@ -203,6 +206,7 @@ export function buildRankings(
       market,
       period,
       category: null,
+      sourceMarket: market,
       items: (derived[type] ?? []) as RankingDoc["items"],
     });
   }

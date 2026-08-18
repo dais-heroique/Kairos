@@ -205,6 +205,7 @@ async function main(): Promise<void> {
         shopId: meta.shopId,
         shopName: meta.shopName,
         sourceQuery: meta.sourceQuery,
+        sourceMarket: "US",
         imageUrl: meta.imageUrl,
         productUrl: meta.productUrl,
         soldTotal: meta.sold,
@@ -265,11 +266,11 @@ async function main(): Promise<void> {
     new FixtureSnapshotSource(fixtureData),
     db,
     createNoopBigQuery(),
-    { dryRun: false, today },
+    { dryRun: false, today, market: "US" },
   );
 
-  console.log(`\n✅ ${result.productCount} produit(s), ${result.rankingDocCount} document(s) de classement`);
-  console.log("→ https://kairos-on.web.app/classements/produits\n");
+  console.log(`\n✅ ${result.productCount} produit(s), ${result.rankingDocCount} document(s) de classement US`);
+  console.log("→ https://kairos-on.web.app/classements/produits (sélectionner US)\n");
   console.log("ℹ️  Verdicts attendus : « Historique trop court » sur tous les produits.");
   console.log("   computeVerdict exige 3 relevés (minSnapshotsAbsolute) et il n'y en a");
   console.log("   qu'un seul jour de réel. Relance ce type de collecte 2 jours de plus");

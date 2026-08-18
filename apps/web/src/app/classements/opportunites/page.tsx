@@ -86,7 +86,14 @@ export default function OpportunitesPage() {
         Phase précoce × commission élevée × vendeur fiable × faible
         saturation.
       </p>
-      {data && <RankingMeta generatedAt={data.generatedAt} isDemo={data.isDemo} />}
+      {data && (
+        <RankingMeta
+          generatedAt={data.generatedAt}
+          isDemo={data.isDemo}
+          marketVerified={data.marketVerified}
+          sourceMarket={data.sourceMarket}
+        />
+      )}
 
       <RankingControls
         filters={filters}

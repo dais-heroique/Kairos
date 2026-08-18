@@ -87,6 +87,7 @@ describe("getRankingPageData — Firestore read budget", () => {
         generatedAt: new Date().toISOString(),
         type: "products",
         market: "FR",
+        sourceMarket: "FR",
         period: "7d",
         category: null,
         items,

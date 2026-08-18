@@ -68,6 +68,14 @@ l'actor, donc sans coût supplémentaire. Les run IDs sont en dur en tête de
 pnpm recover:apify
 ```
 
+La récupération écrit désormais `sourceMarket: US` et génère les classements
+`*_US_*`. Elle ne doit pas être utilisée pour alimenter le filtre France :
+l’interface masque les anciens documents sans provenance ou dont le marché
+source ne correspond pas au marché sélectionné. Cette protection évite de
+présenter des produits américains comme des résultats français. Relire un run
+existant reste gratuit ; aucune nouvelle collecte n’est déclenchée par cette
+commande.
+
 **Collecter des produits nommés** — liste éditable dans
 `src/datasource/products.config.ts` :
 

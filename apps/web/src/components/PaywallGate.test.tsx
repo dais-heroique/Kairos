@@ -1,6 +1,9 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { cleanup, render, screen } from "@testing-library/react";
+import type { ReactNode } from "react";
+import { NextIntlClientProvider } from "next-intl";
+import fr from "@/messages/fr.json";
 import {
   CAPABILITY_INFO,
   entitlementsOf,
@@ -30,6 +33,10 @@ vi.mock("@/lib/stripe/checkout", () => ({
 const { PaywallGate } = await import("./PaywallGate");
 
 afterEach(cleanup);
+
+function renderWithIntl(ui: ReactNode) {
+  return render(<NextIntlClientProvider locale="fr" messages={fr}>{ui}</NextIntlClientProvider>);
+}
 
 /** « 19,00 € / mois » contient des caractères que RegExp interprète. */
 function escapeRegExp(value: string): string {
@@ -64,7 +71,7 @@ function user(slug: "radar" | "creator" | "pro"): User {
 
 describe("PaywallGate", () => {
   it("laisse passer le contenu quand la capacité est acquise", () => {
-    render(
+    renderWithIntl(
       <PaywallGate
         capability="brief"
         entitlements={entitlementsOf(user("creator"))}
@@ -78,7 +85,7 @@ describe("PaywallGate", () => {
   });
 
   it("masque le contenu et propose le premier plan qui débloque", () => {
-    render(
+    renderWithIntl(
       <PaywallGate
         capability="brief"
         entitlements={entitlementsOf(user("radar"))}
@@ -98,7 +105,7 @@ describe("PaywallGate", () => {
   // entière du palier, pas seulement la fonctionnalité qu'il vient de
   // heurter.
   it("liste tout ce que le palier apporte, pas juste la capacité heurtée", () => {
-    render(
+    renderWithIntl(
       <PaywallGate
         capability="brief"
         entitlements={entitlementsOf(user("radar"))}
@@ -116,7 +123,7 @@ describe("PaywallGate", () => {
   });
 
   it("affiche l'aperçu flouté quand il est fourni", () => {
-    render(
+    renderWithIntl(
       <PaywallGate
         capability="productHistory"
         entitlements={entitlementsOf(user("radar"))}
@@ -138,7 +145,7 @@ describe("PaywallGate", () => {
   // de Stripe, donc de ce qui est réellement prélevé.
   it("affiche le tarif du catalogue, jamais un montant à lui", () => {
     const plan = planUnlocking("brief");
-    render(
+    renderWithIntl(
       <PaywallGate
         capability="brief"
         entitlements={entitlementsOf(user("radar"))}
@@ -157,7 +164,7 @@ describe("PaywallGate", () => {
     // proposer **Pro**, à son prix réel — et pas Creator, qu'il a déjà.
     const plan = planUnlocking("rankingArchive");
     expect(plan.slug).toBe("pro");
-    render(
+    renderWithIntl(
       <PaywallGate
         capability="rankingArchive"
         entitlements={entitlementsOf(user("creator"))}
@@ -174,7 +181,7 @@ describe("PaywallGate", () => {
   // une » — elles sont toutes livrées aujourd'hui — mais « s'il en existe
   // une, elle est signalée à l'endroit où elle est annoncée ».
   it("signale ce qui n'est pas encore disponible, et rien d'autre", () => {
-    render(
+    renderWithIntl(
       <PaywallGate
         capability="brief"
         entitlements={entitlementsOf(user("radar"))}
@@ -198,7 +205,7 @@ describe("PaywallGate", () => {
   // dessus — Pro paraissait apporter moins que le plan gratuit affiché
   // juste à côté.
   it("un compte gratuit qui saute à Pro voit aussi ce que Creator apporte", () => {
-    render(
+    renderWithIntl(
       <PaywallGate
         capability="rankingArchive"
         entitlements={entitlementsOf(user("radar"))}
@@ -215,7 +222,7 @@ describe("PaywallGate", () => {
   });
 
   it("un compte Pro n'est jamais bloqué", () => {
-    render(
+    renderWithIntl(
       <PaywallGate
         capability="rankingArchive"
         entitlements={entitlementsOf(user("pro"))}

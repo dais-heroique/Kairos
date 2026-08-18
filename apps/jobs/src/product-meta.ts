@@ -1,5 +1,5 @@
 import type { Firestore } from "firebase-admin/firestore";
-import { resolveCommission, type Commission, type SellerTrust } from "@kairos/shared";
+import { resolveCommission, type Commission, type Market, type SellerTrust } from "@kairos/shared";
 import { NEUTRAL_COMMISSION, NEUTRAL_SELLER_TRUST } from "./compute.js";
 
 // Métadonnées lues depuis le document produit existant (title/priceCents/
@@ -19,6 +19,8 @@ export interface ProductMeta {
   firstSeenAt: string | null;
   /** Visuel produit fourni par la source, si collecté. */
   imageUrl: string | null;
+  /** Marché effectivement couvert par la source de collecte. */
+  sourceMarket: Market | null;
   commission: Commission;
   sellerTrust: SellerTrust;
 }
@@ -32,6 +34,7 @@ const NEUTRAL_META: Omit<ProductMeta, "commission" | "sellerTrust"> = {
   sourceQuery: null,
   firstSeenAt: null,
   imageUrl: null,
+  sourceMarket: null,
 };
 
 // db.getAll() = une seule RPC batchée pour tous les produits, jamais un
@@ -61,6 +64,7 @@ export async function readProductMeta(
       sourceQuery: (data?.sourceQuery as string | undefined) ?? NEUTRAL_META.sourceQuery,
       firstSeenAt: (data?.firstSeenAt as string | undefined) ?? NEUTRAL_META.firstSeenAt,
       imageUrl: (data?.imageUrl as string | undefined) ?? NEUTRAL_META.imageUrl,
+      sourceMarket: (data?.sourceMarket as Market | undefined) ?? NEUTRAL_META.sourceMarket,
       // Le barème de catégorie s'applique ici plutôt qu'à la collecte :
       // les produits déjà en base ont un `ratePct: 0` que seule une
       // recollecte corrigerait. Un taux réellement renseigné est conservé.

@@ -36,6 +36,8 @@ export const rankingDocSchema = z.object({
   market: marketSchema,
   period: rankingPeriodSchema,
   category: z.string().nullable(),
+  /** Marché réellement couvert par la source, distinct du marché demandé par l'écran. */
+  sourceMarket: marketSchema.optional(),
   items: z.array(rankingItemSchema.passthrough()).max(100),
 });
 export type RankingDoc = z.infer<typeof rankingDocSchema>;
