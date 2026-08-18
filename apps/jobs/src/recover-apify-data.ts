@@ -32,11 +32,12 @@ import { runDailyPipeline } from "./pipeline.js";
 // Avant toute lecture de process.env.
 loadEnvLocal();
 
-// Runs déjà exécutés et facturés le 2026-08-02 (~0,48 €).
+// Runs déjà exécutés et facturés le 2026-08-18. Les IDs viennent du
+// dernier lancement réel : on relit leurs datasets sans relancer Apify.
 const PAID_RUNS = [
-  { runId: "L2YTpwgx664k4nhW5", label: "ergonomic chair" },
-  { runId: "GeGXBoaaCX2ewxHht", label: "wireless headphones" },
-  { runId: "BEHvPetAoXMrjYBGp", label: "desk lamp" },
+  { runId: "86AhBUICwVjcoisqq", label: "ergonomic chair" },
+  { runId: "gzg8l0b8TocL1zk8x", label: "wireless headphones" },
+  { runId: "91XWgdWIVu1jf3z7l", label: "desk lamp" },
 ];
 
 // L'actor renvoie des prix en USD (searchRegion: US, marché unique
@@ -150,7 +151,7 @@ async function main(): Promise<void> {
   // ---- 3. Écriture Firestore ----------------------------------------------
   if (getApps().length === 0) {
     initializeApp({
-      projectId: process.env.GCP_PROJECT_ID ?? "kairos-on",
+      projectId: process.env.GCP_PROJECT_ID?.trim() || "kairos-on",
       ...(process.env.GOOGLE_APPLICATION_CREDENTIALS ? { credential: applicationDefault() } : {}),
     });
   }
