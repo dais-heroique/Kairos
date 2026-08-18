@@ -9,11 +9,11 @@
  *   pnpm apify:intelligent --verbose    # Logs détaillés
  */
 
-import { getApps, initializeApp } from "firebase-admin/app";
+import { applicationDefault, getApps, initializeApp } from "firebase-admin/app";
 import { getFirestore } from "firebase-admin/firestore";
 import { getBigQueryClient } from "./bigquery/client.js";
 import { createApifyIntelligentSourceFromEnv, printScrapingStrategy } from "./datasource/apify-intelligent-source.js";
-import { loadEnvLocal } from "./load-env.js";
+import { findServiceAccountKey, loadEnvLocal } from "./load-env.js";
 import { runDailyPipeline } from "./pipeline.js";
 
 loadEnvLocal();
@@ -43,8 +43,22 @@ async function main(): Promise<void> {
   }
   console.log("[apify-intelligent] ✅ Apify token found");
 
-  // Initialiser Firebase
-  if (getApps().length === 0) initializeApp();
+  // Initialiser Firebase avec une clé et un projet explicites pour les
+  // exécutions locales sur macOS.
+  const keyPath = findServiceAccountKey();
+  if (!keyPath) {
+    console.error(
+      "[apify-intelligent] ❌ Clé Firebase introuvable. Place-la dans ~/Downloads ou définis GOOGLE_APPLICATION_CREDENTIALS.",
+    );
+    process.exitCode = 1;
+    return;
+  }
+  process.env.GOOGLE_APPLICATION_CREDENTIALS = keyPath;
+  const projectId = process.env.GCP_PROJECT_ID ?? "kairos-on";
+  if (getApps().length === 0) {
+    initializeApp({ projectId, credential: applicationDefault() });
+  }
+  console.log(`[apify-intelligent] ✅ Firebase project: ${projectId}`);
   const db = getFirestore();
   const bq = getBigQueryClient();
 

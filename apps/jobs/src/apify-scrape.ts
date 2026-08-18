@@ -8,11 +8,11 @@
  *   pnpm apify:scrape --single product-id # Un seul produit
  */
 
-import { getApps, initializeApp } from "firebase-admin/app";
+import { applicationDefault, getApps, initializeApp } from "firebase-admin/app";
 import { getFirestore } from "firebase-admin/firestore";
 import { getBigQueryClient } from "./bigquery/client.js";
 import { ApifySnapshotSource } from "./datasource/apify-source.js";
-import { loadEnvLocal } from "./load-env.js";
+import { findServiceAccountKey, loadEnvLocal } from "./load-env.js";
 import { runDailyPipeline } from "./pipeline.js";
 import { getProductsToTrack } from "./datasource/products.config.js";
 
@@ -55,8 +55,22 @@ async function main(): Promise<void> {
   }
   console.log(`[apify-scrape] ✅ Token Apify trouvé`);
 
-  // Initialiser Firebase
-  if (getApps().length === 0) initializeApp();
+  // Initialiser Firebase avec la même configuration que les commandes admin.
+  // `initializeApp()` seul ne trouve pas le project ID depuis un Mac local.
+  const keyPath = findServiceAccountKey();
+  if (!keyPath) {
+    console.error(
+      "[apify-scrape] ❌ Clé Firebase introuvable. Télécharge une clé de compte de service depuis la Console Firebase et place-la dans ~/Downloads, ou définis GOOGLE_APPLICATION_CREDENTIALS.",
+    );
+    process.exitCode = 1;
+    return;
+  }
+  process.env.GOOGLE_APPLICATION_CREDENTIALS = keyPath;
+  const projectId = process.env.GCP_PROJECT_ID ?? "kairos-on";
+  if (getApps().length === 0) {
+    initializeApp({ projectId, credential: applicationDefault() });
+  }
+  console.log(`[apify-scrape] ✅ Projet Firebase : ${projectId}`);
   const db = getFirestore();
   const bq = getBigQueryClient();
 
