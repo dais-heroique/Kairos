@@ -6,20 +6,27 @@ import { PRIVATE_PATH_PREFIXES, SITE_URL } from "@/lib/seo/site";
 export const dynamic = "force-static";
 
 export default function robots(): MetadataRoute.Robots {
+  const publicRule = {
+    allow: "/",
+    // Interdire l'exploration de ce qui est derrière authentification :
+    // un crawler n'y verrait qu'un écran de connexion, et chaque page
+    // vide explorée diluerait les pages réellement utiles.
+    // Sans slash final : « Disallow: /produit/ » ne couvre pas
+    // « /produit?id=xxx », dont le chemin est exactement « /produit ».
+    disallow: PRIVATE_PATH_PREFIXES,
+  };
+
   return {
-    rules: {
-      userAgent: "*",
-      allow: "/",
-      // Interdire l'exploration de ce qui est derrière authentification :
-      // un crawler n'y verrait qu'un écran de connexion, et chaque page
-      // vide explorée est du budget d'exploration perdu pour les pages
-      // qui ont réellement du contenu.
-      // Sans slash final : « Disallow: /produit/ » ne couvre pas
-      // « /produit?id=xxx », dont le chemin est exactement « /produit ».
-      // Or c'est justement la forme utilisée par les fiches produit et les
-      // briefs (route fixe + query string, pour rester statique).
-      disallow: PRIVATE_PATH_PREFIXES,
-    },
+    rules: [
+      { userAgent: "*", ...publicRule },
+      // OAI-SearchBot sert à faire apparaître les pages publiques dans les
+      // résultats de recherche ChatGPT. Il reçoit les mêmes interdictions
+      // que les autres robots : aucun espace authentifié n'est exposé.
+      { userAgent: "OAI-SearchBot", ...publicRule },
+      // GPTBot peut être autorisé séparément de la recherche. Le laisser
+      // suivre les pages publiques est un choix explicite de découvrabilité.
+      { userAgent: "GPTBot", ...publicRule },
+    ],
     sitemap: `${SITE_URL}/sitemap.xml`,
   };
 }

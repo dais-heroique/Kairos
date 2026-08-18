@@ -7,6 +7,7 @@ import {
   PLANS,
   TYPICAL_WINDOW_DAYS,
 } from "@kairos/shared";
+import { BreadcrumbJsonLd } from "@/components/JsonLd";
 import { PaywallDemo } from "@/components/PaywallDemo";
 import { PlanCards } from "@/components/PlanCards";
 import { PublicNav } from "@/components/PublicNav";
@@ -37,6 +38,9 @@ export const metadata: Metadata = {
 export default function TarifsPage() {
   return (
     <main className="min-h-dvh">
+      <BreadcrumbJsonLd
+        items={[{ name: "KAIROS", path: "/" }, { name: "Tarifs", path: "/tarifs" }]}
+      />
       <PublicNav />
       <div className="mx-auto flex max-w-[900px] flex-col gap-10 px-5 py-10">
       <header className="flex flex-col gap-3">

@@ -13,12 +13,12 @@ export const SITE_URL = (
 
 export const SITE_NAME = "KAIROS";
 
-export const SITE_TAGLINE = "Sais quand entrer, avant que ce soit saturé.";
+export const SITE_TAGLINE = "Analyse le timing des produits TikTok Shop avant la saturation.";
 
 export const SITE_DESCRIPTION =
-  "KAIROS analyse les produits TikTok Shop France et te dit quand entrer : " +
-  "verdict par produit, fenêtre avant saturation, et ton gain estimé calculé " +
-  "sur tes vraies vues. Gratuit pour commencer.";
+  "KAIROS est un outil d'analyse TikTok Shop pour les créateurs et affiliés : " +
+  "évalue le timing d'un produit, la concurrence, la saturation et un gain estimé " +
+  "à partir de tes vues. Commence gratuitement, sans promesse de revenu garanti.";
 
 /**
  * Pages réellement publiques. Tout le reste de l'app est derrière
@@ -27,8 +27,8 @@ export const SITE_DESCRIPTION =
  */
 export const PUBLIC_ROUTES = [
   { path: "/", priority: 1, changeFrequency: "weekly" as const },
-  { path: "/methode", priority: 0.8, changeFrequency: "monthly" as const },
-  { path: "/tarifs", priority: 0.7, changeFrequency: "monthly" as const },
+  { path: "/methode", priority: 0.9, changeFrequency: "monthly" as const },
+  { path: "/tarifs", priority: 0.8, changeFrequency: "monthly" as const },
   { path: "/connexion", priority: 0.5, changeFrequency: "yearly" as const },
   { path: "/cgu", priority: 0.3, changeFrequency: "yearly" as const },
   { path: "/cgu-affiliation", priority: 0.3, changeFrequency: "yearly" as const },

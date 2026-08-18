@@ -32,7 +32,7 @@ const jetbrains = JetBrains_Mono({
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
-    default: `${SITE_NAME} — Produits TikTok Shop France : quand entrer, quand passer`,
+    default: `${SITE_NAME} — Analyse TikTok Shop : quand entrer, quand passer`,
     // Les pages internes n'ont plus à répéter la marque à la main.
     template: `%s · ${SITE_NAME}`,
   },
@@ -55,11 +55,27 @@ export const metadata: Metadata = {
     url: "/",
     title: `${SITE_NAME} — ${SITE_TAGLINE}`,
     description: SITE_DESCRIPTION,
+    images: [
+      {
+        url: "/logo.svg",
+        width: 512,
+        height: 512,
+        alt: "Logo KAIROS",
+      },
+    ],
   },
   twitter: {
     card: "summary_large_image",
     title: `${SITE_NAME} — ${SITE_TAGLINE}`,
     description: SITE_DESCRIPTION,
+    images: ["/logo.svg"],
+  },
+  icons: {
+    icon: "/logo.svg",
+    shortcut: "/logo.svg",
+  },
+  formatDetection: {
+    telephone: false,
   },
   robots: {
     index: true,

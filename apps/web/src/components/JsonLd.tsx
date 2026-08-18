@@ -29,6 +29,21 @@ function JsonLdScript({ data }: { data: object }) {
   );
 }
 
+export function WebSiteJsonLd() {
+  return (
+    <JsonLdScript
+      data={{
+        "@context": "https://schema.org",
+        "@type": "WebSite",
+        name: SITE_NAME,
+        url: SITE_URL,
+        description: SITE_DESCRIPTION,
+        inLanguage: "fr-FR",
+      }}
+    />
+  );
+}
+
 export function OrganizationJsonLd() {
   return (
     <JsonLdScript
@@ -39,7 +54,19 @@ export function OrganizationJsonLd() {
         url: SITE_URL,
         logo: `${SITE_URL}/logo.svg`,
         description: SITE_DESCRIPTION,
-        areaServed: { "@type": "Country", name: "France" },
+        areaServed: [
+          { "@type": "Country", name: "France" },
+          { "@type": "Country", name: "United States" },
+          { "@type": "Country", name: "United Kingdom" },
+          { "@type": "Country", name: "Germany" },
+          { "@type": "Country", name: "Ireland" },
+          { "@type": "Country", name: "Italy" },
+          { "@type": "Country", name: "Spain" },
+          { "@type": "Country", name: "Austria" },
+          { "@type": "Country", name: "Belgium" },
+          { "@type": "Country", name: "Netherlands" },
+          { "@type": "Country", name: "Poland" },
+        ],
       }}
     />
   );
@@ -69,6 +96,27 @@ export function SoftwareApplicationJsonLd() {
           priceCurrency: "EUR",
           name: plan.name,
           description: plan.highlight,
+        })),
+      }}
+    />
+  );
+}
+
+export function BreadcrumbJsonLd({
+  items,
+}: {
+  items: Array<{ name: string; path: string }>;
+}) {
+  return (
+    <JsonLdScript
+      data={{
+        "@context": "https://schema.org",
+        "@type": "BreadcrumbList",
+        itemListElement: items.map((item, index) => ({
+          "@type": "ListItem",
+          position: index + 1,
+          name: item.name,
+          item: `${SITE_URL}${item.path}`,
         })),
       }}
     />

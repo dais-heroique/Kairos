@@ -5,6 +5,7 @@ import {
   DEFAULT_SCORING_WEIGHTS,
   DEFAULT_VERDICT_THRESHOLDS,
 } from "@kairos/core";
+import { BreadcrumbJsonLd } from "@/components/JsonLd";
 import { PublicNav } from "@/components/PublicNav";
 import { VerdictPlayground } from "@/components/VerdictPlayground";
 import { PHASE_LABELS, type Phase } from "@kairos/shared";
@@ -78,6 +79,9 @@ function Section({
 export default function MethodePage() {
   return (
     <main className="min-h-dvh">
+      <BreadcrumbJsonLd
+        items={[{ name: "KAIROS", path: "/" }, { name: "Méthode", path: "/methode" }]}
+      />
       <PublicNav />
       <div className="mx-auto flex max-w-[720px] flex-col gap-8 px-5 py-10">
       <header className="flex flex-col gap-3">

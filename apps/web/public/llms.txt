@@ -1,0 +1,24 @@
+# KAIROS
+
+> KAIROS est un outil web d'aide à la décision pour les créateurs TikTok Shop. Il aide à évaluer le timing d'un produit : entrer maintenant, surveiller, trop tard ou passer.
+
+## Pages publiques
+
+- [Accueil](https://kairos-on.web.app/): proposition de valeur, démonstration et FAQ.
+- [Méthode](https://kairos-on.web.app/methode): explication du scoring, des phases de vie et des limites des estimations.
+- [Tarifs](https://kairos-on.web.app/tarifs): plans, fonctionnalités et état réel de l'ouverture du paiement.
+- [Conditions](https://kairos-on.web.app/cgu): conditions d'utilisation et de vente.
+- [Confidentialité](https://kairos-on.web.app/confidentialite): données traitées et droits.
+- [Cookies](https://kairos-on.web.app/cookies): cookies et traceurs.
+
+## Positionnement
+
+KAIROS ne prétend pas être TikTok, TikTok Shop, une agence TikTok ou un partenaire officiel de TikTok. Les données sont présentées selon leur fraîcheur, leur provenance et leur niveau de confiance. Les valeurs de démonstration, simulations et estimations ne sont pas des résultats garantis.
+
+## Marchés
+
+Le produit est conçu pour des créateurs et affiliés TikTok Shop sur plusieurs marchés, dont la France, les États-Unis, le Royaume-Uni, l'Allemagne, l'Irlande, l'Italie, l'Espagne, l'Autriche, la Belgique, les Pays-Bas et la Pologne.
+
+## Contact
+
+Support : conforva.contact@gmail.com

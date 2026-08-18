@@ -4,6 +4,7 @@ import {
   FaqJsonLd,
   OrganizationJsonLd,
   SoftwareApplicationJsonLd,
+  WebSiteJsonLd,
 } from "@/components/JsonLd";
 import { HeroEarningsTeaser } from "@/components/HeroEarningsTeaser";
 import { PlanCards } from "@/components/PlanCards";
@@ -34,6 +35,7 @@ export default function HomePage() {
 
   return (
     <main className="bg-[color:var(--color-bg)]">
+      <WebSiteJsonLd />
       <OrganizationJsonLd />
       <SoftwareApplicationJsonLd />
       <FaqJsonLd entries={faq} />
