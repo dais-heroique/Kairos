@@ -19,27 +19,21 @@ interface AuthContextValue {
   firebaseUser: FirebaseUser | null;
   userDoc: User | null;
   loading: boolean;
+  profileError: boolean;
 }
 
 const AuthContext = createContext<AuthContextValue>({
   firebaseUser: null,
   userDoc: null,
   loading: true,
+  profileError: false,
 });
 
 /**
  * Code partenaire porté par l'URL (`?ref=LEA20`).
  *
- * **Normalisé, et validé.** Deux raisons, chacune coûteuse :
- *
- * 1. Sans mise en majuscules, un influenceur qui écrit son lien en
- *    minuscules enverrait ses inscrits sur un code que le registre ne
- *    reconnaît pas — et personne ne s'en apercevrait avant qu'il réclame
- *    son virement.
- * 2. `referredByCode` est **figé à la création** du compte (voir
- *    firestore.rules). Une valeur fantaisiste écrite ici ne se corrige
- *    plus jamais : mieux vaut n'enregistrer que ce qui a la forme d'un
- *    code.
+ * Le code est normalisé et validé avant d'être enregistré :
+ * `referredByCode` est figé à la création du compte dans les règles Firestore.
  */
 function readReferralCodeFromUrl(): string | null {
   if (typeof window === "undefined") return null;
@@ -53,18 +47,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [firebaseUser, setFirebaseUser] = useState<FirebaseUser | null>(null);
   const [userDoc, setUserDoc] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [profileError, setProfileError] = useState(false);
 
   useEffect(() => {
-    // onSnapshot (pas un simple getDoc) : le rôle admin, le plan issu d'un
-    // code d'invitation, etc. doivent apparaître partout sans reload manuel.
+    // onSnapshot garde le rôle et le plan synchronisés partout sans reload manuel.
     let unsubscribeDoc: (() => void) | undefined;
 
     const unsubscribeAuth = onAuthStateChanged(auth, async (nextUser) => {
       unsubscribeDoc?.();
+      unsubscribeDoc = undefined;
       setFirebaseUser(nextUser);
+      setUserDoc(null);
+      setProfileError(false);
+      setLoading(true);
 
       if (!nextUser) {
-        setUserDoc(null);
         setLoading(false);
         return;
       }
@@ -73,6 +70,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         await ensureUserDocument(nextUser, readReferralCodeFromUrl());
       } catch (err) {
         console.error("ensureUserDocument failed", err);
+        setProfileError(true);
         setLoading(false);
         return;
       }
@@ -80,13 +78,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       unsubscribeDoc = onSnapshot(
         userDocRef(nextUser.uid),
         (snap) => {
-          setUserDoc(snap.exists() ? userSchema.parse(snap.data()) : null);
-          setLoading(false);
+          try {
+            if (!snap.exists()) {
+              setUserDoc(null);
+              setProfileError(true);
+            } else {
+              setUserDoc(userSchema.parse(snap.data()));
+              setProfileError(false);
+            }
+          } catch (err) {
+            console.error("user document validation failed", err);
+            setUserDoc(null);
+            setProfileError(true);
+          } finally {
+            setLoading(false);
+          }
         },
         (err) => {
-          // Ne jamais rester bloqué en "loading" indéfiniment si la lecture
-          // échoue (permission, réseau, etc.) — sinon la page reste blanche.
           console.error("user doc onSnapshot failed", err);
+          setUserDoc(null);
+          setProfileError(true);
           setLoading(false);
         },
       );
@@ -99,7 +110,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ firebaseUser, userDoc, loading }}>
+    <AuthContext.Provider value={{ firebaseUser, userDoc, loading, profileError }}>
       {children}
     </AuthContext.Provider>
   );

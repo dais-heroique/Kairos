@@ -3,3 +3,16 @@ packages:
   - "packages/*"
   - "functions"
   - "tests/*"
+
+onlyBuiltDependencies:
+  - "@firebase/util"
+  - "esbuild"
+  - "protobufjs"
+  - "sharp"
+  - "unrs-resolver"
+
+overrides:
+  "sharp": "0.35.3"
+  "postcss": "8.5.26"
+  "nanoid": "3.3.18"
+  "uuid": "11.1.1"

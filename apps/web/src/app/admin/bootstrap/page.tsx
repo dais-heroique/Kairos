@@ -10,6 +10,8 @@ import { userDocRef } from "@/lib/firestore/user";
 // Bootstrap ponctuel du tout premier admin — verrouillé côté Firestore Rules
 // à une adresse email précise (voir isBootstrapAdminEmail()). À retirer une
 // fois utilisé : cette page et la règle associée n'ont plus lieu d'être.
+const BOOTSTRAP_EMAIL = "contact.conforva@gmail.com";
+
 function BootstrapContent() {
   const t = useTranslations("Admin");
   const { firebaseUser, userDoc } = useAuth();
@@ -28,7 +30,8 @@ function BootstrapContent() {
     }
   }
 
-  const alreadyAdmin = userDoc?.role === "admin" || status === "done";
+  const alreadyAdmin = userDoc?.role === "admin" || userDoc?.role === "owner" || status === "done";
+  const isEligible = firebaseUser?.email?.toLowerCase() === BOOTSTRAP_EMAIL;
 
   return (
     <main className="mx-auto flex min-h-dvh max-w-[390px] flex-col justify-center gap-4 px-5 py-8 sm:max-w-md">
@@ -47,10 +50,14 @@ function BootstrapContent() {
             {status === "done" ? t("bootstrapSuccess") : t("bootstrapAlready")}
           </p>
         </div>
-      ) : (
+      ) : isEligible ? (
         <button type="button" onClick={handlePromote} disabled={status === "working"} className="kai-btn-primary">
           {t("bootstrapButton")}
         </button>
+      ) : (
+        <p className="text-sm font-medium" style={{ color: "var(--color-coral)" }}>
+          {t("bootstrapDenied")}
+        </p>
       )}
 
       {status === "denied" && (

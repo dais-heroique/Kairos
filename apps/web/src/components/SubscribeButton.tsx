@@ -69,10 +69,9 @@ export function SubscribeButton({
       await startCheckout(plan, period);
     } catch (err) {
       setError(
-                  err instanceof CheckoutError
+        err instanceof CheckoutError
           ? err.message
           : copy.paymentError,
-
       );
       setBusy(false);
     }

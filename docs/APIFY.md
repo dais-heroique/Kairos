@@ -19,8 +19,13 @@ pas le simulateur de gains.** Il expose `discount_pct`, qui est une remise
 acheteur — pas une rémunération affilié. Les confondre produirait des
 montants en euros faux, ce que le produit s'interdit explicitement (voir la
 promesse « on ne t'affiche jamais un chiffre inventé » de la page d'accueil).
-`commission` reste donc à `NEUTRAL_COMMISSION` (0 %), et les gains sortent
-neutres plutôt que faux.
+`commission` ne vient donc jamais de `discount_pct`. Lorsqu’aucune
+commission n’a été saisie manuellement, KAIROS utilise une moyenne de catégorie
+marquée `isEstimated: true` et l’interface l’affiche avec `~`. Le simulateur
+présente alors une fourchette indicative, jamais un taux TikTok mesuré. Si aucune
+moyenne ne peut être résolue, le taux reste neutre plutôt que d’inventer une
+valeur.
+
 
 Pour obtenir de vraies commissions il faut une autre source : l'API Affiliate
 TikTok (documentée comme fermée à l'UE, décision #8) ou une saisie manuelle

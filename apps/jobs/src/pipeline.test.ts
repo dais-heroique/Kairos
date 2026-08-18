@@ -44,20 +44,7 @@ function makeFakeBigQuery(): BigQuery {
 
 let app: App;
 let db: Firestore;
-
-beforeAll(() => {
-  if (!process.env.FIRESTORE_EMULATOR_HOST) {
-    throw new Error(
-      "pipeline.test.ts requires the Firestore emulator — run via `pnpm test:jobs-integration`, not plain `pnpm test`",
-    );
-  }
-  app = getApps().length === 0 ? initializeApp({ projectId: "kairos-jobs-test" }) : getApps()[0]!;
-  db = getFirestore(app);
-});
-
-afterAll(async () => {
-  if (app) await deleteApp(app);
-});
+const describeWithFirestore = process.env.FIRESTORE_EMULATOR_HOST ? describe : describe.skip;
 
 async function clearCollection(name: string): Promise<void> {
   const snap = await db.collection(name).get();
@@ -67,11 +54,19 @@ async function clearCollection(name: string): Promise<void> {
   await batch.commit();
 }
 
-beforeEach(async () => {
-  await Promise.all(["products", "rankings", "feeds"].map(clearCollection));
-});
+describeWithFirestore("daily pipeline (Firestore emulator)", () => {
+  beforeAll(() => {
+    app = getApps().length === 0 ? initializeApp({ projectId: "kairos-jobs-test" }) : getApps()[0]!;
+    db = getFirestore(app);
+  });
 
-describe("daily pipeline (Firestore emulator)", () => {
+  afterAll(async () => {
+    if (app) await deleteApp(app);
+  });
+
+  beforeEach(async () => {
+    await Promise.all(["products", "rankings", "feeds"].map(clearCollection));
+  });
   it("writes latestVerdict/latestEstimates/ranks for every active product", async () => {
     const source = new FixtureSnapshotSource({
       p1: Array.from({ length: 20 }, (_, i) =>

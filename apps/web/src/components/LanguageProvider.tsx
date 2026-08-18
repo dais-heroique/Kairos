@@ -44,6 +44,31 @@ const LocaleContext = createContext<{
   labels: LOCALE_LABELS,
 });
 
+function isMessageRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function mergeMessages(
+  base: AbstractIntlMessages,
+  override: AbstractIntlMessages,
+): AbstractIntlMessages {
+  const merged: Record<string, unknown> = { ...base };
+
+  for (const [key, value] of Object.entries(override)) {
+    const baseValue = merged[key];
+    if (isMessageRecord(baseValue) && isMessageRecord(value)) {
+      merged[key] = mergeMessages(
+        baseValue as AbstractIntlMessages,
+        value as AbstractIntlMessages,
+      );
+    } else {
+      merged[key] = value;
+    }
+  }
+
+  return merged as AbstractIntlMessages;
+}
+
 function localeFromBrowser(): Locale {
   if (typeof navigator === "undefined") return "fr";
   const candidates = navigator.languages.length > 0 ? navigator.languages : [navigator.language];
@@ -85,7 +110,7 @@ export function LanguageProvider({
   }
 
   const messages = useMemo(
-    () => (locale === "fr" ? initialMessages : { ...fr, ...MESSAGE_OVERRIDES[locale] }),
+    () => (locale === "fr" ? initialMessages : mergeMessages(initialMessages, MESSAGE_OVERRIDES[locale])),
     [initialMessages, locale],
   );
 

@@ -95,6 +95,9 @@
     "appleButton": "Continue with Apple",
     "errorGeneric": "Something went wrong. Try again in a moment.",
     "errorInvalidEmail": "Invalid email address.",
+    "profileLoadErrorTitle": "Your profile is unavailable",
+    "profileLoadErrorBody": "We could not load your data. Check your connection and try again.",
+    "profileLoadErrorRetry": "Try again",
     "signupTitle": "Start for free",
     "signupSubtitle": "Enter your email to receive your Kairos link — no password and no card required.",
     "signupSendLinkButton": "Send my start link"

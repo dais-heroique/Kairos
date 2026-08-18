@@ -925,3 +925,15 @@ La mise à jour est terminée.
 ## Fin
 
 .
+
+## Corrections de production supplémentaires — 2026-08-18
+
+Le lot de sécurisation suivant est prêt : les dépendances signalées ont été mises à niveau ou surchargées (`next-intl` corrigé, `uuid`, `sharp`, `postcss`, `nanoid`) et `pnpm audit --prod` ne signale plus de vulnérabilité connue. Firebase CLI est maintenant une dépendance de développement, avec `firebase.test.json` pour isoler les émulateurs des règles Hosting.
+
+`RequireAuth` affiche maintenant une erreur localisée et récupérable si le profil Firestore ne peut pas être chargé. `LanguageProvider` fusionne les catalogues i18n récursivement afin de préserver les clés françaises manquantes dans une langue secondaire. Le bootstrap admin masque son action aux comptes non éligibles et reconnaît le rôle owner. Les routes produit naturelles sont redirigées par Firebase Hosting vers la route statique query-string fonctionnelle.
+
+Les tests Firestore et jobs sont ignorés proprement hors émulateur au lieu d’échouer ; les commandes d’intégration restent explicites. Validation finale : `pnpm typecheck`, `pnpm lint`, `pnpm build`, `pnpm test`, `pnpm test:rules`, `pnpm test:web-integration` et `pnpm test:jobs-integration` passent. Le build produit 42 routes statiques. Aucun paiement, run Apify ou déploiement production n’a été déclenché.
+
+### Point de reprise
+
+Commencer par `git status --short` et `git diff --check`, puis committer et pousser ce lot. Déployer Firebase avec une session authentifiée et vérifier la redirection `/produit/<id>` ainsi que l’état du checkout sur le domaine public.

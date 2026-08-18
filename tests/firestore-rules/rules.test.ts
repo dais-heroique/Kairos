@@ -667,13 +667,20 @@ describe("partnerCodes", () => {
 });
 
 describe("inviteCodes", () => {
-  it("blocks a non-admin from creating a code, allows an admin", async () => {
+  it("blocks a non-owner from creating a code, allows the owner", async () => {
     await testEnv.withSecurityRulesDisabled((ctx) =>
-      ctx
-        .firestore()
-        .collection("users")
-        .doc("admin1")
-        .set(validUser("admin1", { role: "admin" })),
+      Promise.all([
+        ctx
+          .firestore()
+          .collection("users")
+          .doc("admin1")
+          .set(validUser("admin1", { role: "admin" })),
+        ctx
+          .firestore()
+          .collection("users")
+          .doc("boss")
+          .set(validUser("boss", { role: "owner" })),
+      ]),
     );
 
     const stranger = testEnv.authenticatedContext("bob").firestore();
@@ -682,8 +689,13 @@ describe("inviteCodes", () => {
     );
 
     const admin = testEnv.authenticatedContext("admin1").firestore();
-    await assertSucceeds(
+    await assertFails(
       admin.collection("inviteCodes").doc("AMIS").set(validCode("AMIS")),
+    );
+
+    const owner = testEnv.authenticatedContext("boss").firestore();
+    await assertSucceeds(
+      owner.collection("inviteCodes").doc("AMIS").set(validCode("AMIS")),
     );
   });
 

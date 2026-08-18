@@ -135,8 +135,8 @@ export function PlanUpgradeModal({
             const added = newCapabilitiesOf(plan.slug);
             const total = CAPABILITIES_BY_PLAN[plan.slug].length;
             const price = planPriceCents(plan, period);
-            const isFeatured = plan.popular;
-
+            const isFeatured = plan.slug === "pro";
+            const monthlyEquivalent = formatYearlyAsMonthly(plan);
             return (
               <article
                 key={plan.slug}
@@ -163,9 +163,9 @@ export function PlanUpgradeModal({
                   <p className="mt-1 font-[family-name:var(--font-display)] text-2xl font-extrabold">
                     {formatPlanPrice(plan, period)}
                   </p>
-                  {period === "yearly" && formatYearlyAsMonthly(plan) && (
+                  {period === "yearly" && monthlyEquivalent !== null && (
                     <p className="text-xs font-semibold text-[color:var(--color-ink-muted)]">
-                      {t("yearlyEquivalent", { monthly: formatYearlyAsMonthly(plan) })}
+                      {t("yearlyEquivalent", { monthly: monthlyEquivalent })}
                     </p>
                   )}
                   <p className="mt-1 text-sm text-[color:var(--color-ink-muted)]">{plan.tagline}</p>

@@ -11,7 +11,14 @@
     "predeploy": ["pnpm --filter @kairos/functions run build"]
   },
   "hosting": {
-    "source": "apps/web"
+    "source": "apps/web",
+    "redirects": [
+      {
+        "source": "/produit/:id",
+        "destination": "/produit?id=:id",
+        "type": 301
+      }
+    ]
   },
   "emulators": {
     "auth": {

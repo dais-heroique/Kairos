@@ -10,25 +10,17 @@
     "build": "turbo run build",
     "lint": "turbo run lint",
     "typecheck": "turbo run typecheck",
-    "test": "turbo run test",
-    "test:rules": "firebase emulators:exec --only firestore \"pnpm --filter @kairos/firestore-rules-tests test\"",
-    "test:jobs-integration": "firebase emulators:exec --only firestore \"pnpm --filter @kairos/jobs test\"",
-    "test:web-integration": "firebase emulators:exec --only firestore,auth \"pnpm --filter @kairos/web test\"",
+    "test": "turbo run test --filter=!@kairos/firestore-rules-tests",
+    "test:rules": "firebase emulators:exec --config firebase.test.json --only firestore \"pnpm --filter @kairos/firestore-rules-tests test\"",
+    "test:jobs-integration": "firebase emulators:exec --config firebase.test.json --only firestore \"pnpm --filter @kairos/jobs test\"",
+    "test:web-integration": "firebase emulators:exec --config firebase.test.json --only firestore,auth \"pnpm --filter @kairos/web test\"",
     "emulators": "firebase emulators:start --import=./.emulator-data --export-on-exit",
     "deploy:prod": "./scripts/deploy.sh",
     "deploy:check": "./scripts/deploy.sh --dry-run"
   },
   "devDependencies": {
+    "firebase-tools": "^15.27.0",
     "turbo": "^2.5.0",
     "typescript": "^5.7.0"
-  },
-  "pnpm": {
-    "onlyBuiltDependencies": [
-      "@firebase/util",
-      "esbuild",
-      "protobufjs",
-      "sharp",
-      "unrs-resolver"
-    ]
   }
 }

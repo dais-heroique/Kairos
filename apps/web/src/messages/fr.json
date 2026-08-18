@@ -95,6 +95,9 @@
     "appleButton": "Continuer avec Apple",
     "errorGeneric": "Un problème est survenu. Réessaie dans un instant.",
     "errorInvalidEmail": "Adresse email invalide.",
+    "profileLoadErrorTitle": "Ton profil n'est pas disponible",
+    "profileLoadErrorBody": "Nous n'avons pas pu charger tes données. Vérifie ta connexion puis réessaie.",
+    "profileLoadErrorRetry": "Réessayer",
     "signupTitle": "Commence gratuitement",
     "signupSubtitle": "Entre ton email pour recevoir ton lien Kairos — sans mot de passe, sans carte bancaire.",
     "signupSendLinkButton": "Recevoir mon lien de démarrage"

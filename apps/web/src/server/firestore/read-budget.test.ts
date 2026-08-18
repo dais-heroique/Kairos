@@ -15,41 +15,7 @@ const MAX_READS_PER_PAGE = 5;
 let app: App;
 let db: Firestore;
 
-beforeAll(() => {
-  if (!process.env.FIRESTORE_EMULATOR_HOST) {
-    throw new Error(
-      "read-budget.test.ts requires the Firestore emulator — run via `pnpm test:web-integration`, not plain `pnpm test`",
-    );
-  }
-  // Même projectId que la config publique par défaut de
-  // apps/web/src/server/firebase-client.ts (utilisé par getRankingPageData
-  // en lecture côté SDK client) — l'émulateur Firestore isole les données
-  // par projectId, donc les deux SDK doivent viser le même ici.
-  app = getApps().length === 0 ? initializeApp({ projectId: "kairos-on" }) : getApps()[0]!;
-  db = getFirestore(app);
-});
-
-// Le catalogue n'est plus en lecture publique (voir firestore.rules) : une
-// lecture anonyme est désormais refusée, ce qui est le comportement voulu.
-// Ce test mesure un *nombre d'opérations*, pas les règles — il se place
-// donc dans la situation réelle, celle d'un utilisateur connecté.
-//
-// L'application cliente est initialisée ici sous le nom qu'utilise
-// getPublicFirestore(), qui la retrouvera au lieu d'en créer une seconde,
-// anonyme, dont les requêtes échoueraient.
-beforeAll(async () => {
-  const clientApp = initClientApp(
-    { apiKey: "fake-api-key", projectId: "kairos-on" },
-    "kairos-server-read",
-  );
-  const auth = getAuth(clientApp);
-  connectAuthEmulator(auth, "http://127.0.0.1:9099", { disableWarnings: true });
-  await signInAnonymously(auth);
-});
-
-afterAll(async () => {
-  if (app) await deleteApp(app);
-});
+const describeWithFirestore = process.env.FIRESTORE_EMULATOR_HOST ? describe : describe.skip;
 
 async function clearCollection(name: string): Promise<void> {
   const snap = await db.collection(name).get();
@@ -59,11 +25,35 @@ async function clearCollection(name: string): Promise<void> {
   await batch.commit();
 }
 
-beforeEach(async () => {
-  await Promise.all(["rankings", "shops", "products"].map(clearCollection));
-});
+describeWithFirestore("getRankingPageData — Firestore read budget", () => {
+  beforeAll(() => {
+    // Même projectId que la config publique par défaut de
+    // apps/web/src/server/firebase-client.ts (utilisé par getRankingPageData
+    // en lecture côté SDK client) — l'émulateur Firestore isole les données
+    // par projectId, donc les deux SDK doivent viser le même ici.
+    app = getApps().length === 0 ? initializeApp({ projectId: "kairos-on" }) : getApps()[0]!;
+    db = getFirestore(app);
+  });
 
-describe("getRankingPageData — Firestore read budget", () => {
+  // Le catalogue n'est plus en lecture publique : ce test mesure le nombre
+  // d'opérations dans la situation réelle d'un utilisateur connecté.
+  beforeAll(async () => {
+    const clientApp = initClientApp(
+      { apiKey: "fake-api-key", projectId: "kairos-on" },
+      "kairos-server-read",
+    );
+    const auth = getAuth(clientApp);
+    connectAuthEmulator(auth, "http://127.0.0.1:9099", { disableWarnings: true });
+    await signInAnonymously(auth);
+  });
+
+  afterAll(async () => {
+    if (app) await deleteApp(app);
+  });
+
+  beforeEach(async () => {
+    await Promise.all(["rankings", "shops", "products"].map(clearCollection));
+  });
   it("stays within budget for a 100-item ranking with 40 distinct shops", async () => {
     const shopIds = Array.from({ length: 40 }, (_, i) => `shop-${i}`);
     await Promise.all(
@@ -110,7 +100,7 @@ describe("getRankingPageData — Firestore read budget", () => {
   });
 });
 
-describe("getProductDetail — Firestore read budget", () => {
+describeWithFirestore("getProductDetail — Firestore read budget", () => {
   it("stays within budget for a product detail page", async () => {
     await db.collection("shops").doc("shop-1").set({ name: "Ma Boutique" });
     await db.collection("products").doc("p1").set({ title: "Produit test", shopId: "shop-1" });

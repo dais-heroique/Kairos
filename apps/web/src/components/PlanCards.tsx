@@ -116,6 +116,7 @@ function PlanGrid({ compact, period }: { compact: boolean; period: BillingPeriod
         const added = isFirst ? [...CAPABILITIES_BY_PLAN[plan.slug]] : newCapabilitiesOf(plan.slug);
         const inherits = isFirst ? null : PLANS[index - 1]!.name;
         const total = CAPABILITIES_BY_PLAN[plan.slug].length;
+        const monthlyEquivalent = formatYearlyAsMonthly(plan);
 
         return (
           <div
@@ -150,9 +151,9 @@ function PlanGrid({ compact, period }: { compact: boolean; period: BillingPeriod
               {/* Le prix annuel ramené au mois : sans lui, comparer 19 €/mois
                   à 190 €/an demande de sortir une calculette. Calculé à
                   partir du montant réel, jamais saisi à part. */}
-              {period === "yearly" && formatYearlyAsMonthly(plan) && (
+              {period === "yearly" && monthlyEquivalent !== null && (
                 <p className="text-xs font-semibold text-[color:var(--color-ink-muted)]">
-                  {t("yearlyEquivalent", { monthly: formatYearlyAsMonthly(plan) })}
+                  {t("yearlyEquivalent", { monthly: monthlyEquivalent })}
                 </p>
               )}
               <p className="text-sm text-[color:var(--color-ink-muted)]">{plan.tagline}</p>
