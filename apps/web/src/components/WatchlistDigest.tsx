@@ -60,11 +60,10 @@ export function WatchlistDigest() {
       <PaywallGate
         capability="alerts"
         entitlements={entitlements}
-        title="Ce qui a bougé sur tes produits suivis"
+        title="Évolution des produits suivis"
         preview={
           <p className="text-sm text-[color:var(--color-ink-muted)]">
-            Ceux qui montent dans le classement, et ceux où la place commence
-            à se remplir.
+            Les produits dont le classement ou le niveau de concurrence évolue.
           </p>
         }
       >
@@ -138,7 +137,7 @@ function mouvementTexte(move: RankMove): string {
     morceaux.push(`toujours ${rang(move.to!)}`);
   }
 
-  // Le signal qui compte vraiment pour un créateur : la place se remplit.
+  // Le signal qui compte vraiment pour un créateur : l'évolution de la concurrence.
   if (move.saturationDelta !== null && move.saturationDelta >= 10) {
     morceaux.push(`la concurrence a pris ${move.saturationDelta} points`);
   } else if (move.saturationDelta !== null && move.saturationDelta <= -10) {

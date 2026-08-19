@@ -194,7 +194,7 @@ describe("PaywallGate", () => {
     const aVenir = newCapabilitiesOf("creator").filter(
       (c) => CAPABILITY_INFO[c].status === "soon",
     );
-    expect(screen.queryAllByText("pas encore là")).toHaveLength(aVenir.length);
+    expect(screen.queryAllByText("Bientôt disponible")).toHaveLength(aVenir.length);
   });
 
   // Régression du 2026-08-14, signalée par l'utilisateur : le paywall

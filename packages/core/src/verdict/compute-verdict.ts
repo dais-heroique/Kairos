@@ -280,6 +280,10 @@ function pickVerdictLabel(
  * weights vient de config/weights.ts, surchargeable depuis un document
  * Firestore config/scoringWeights, jamais en dur ailleurs dans le code.
  */
+function formatDays(days: number): string {
+  return `${days} ${days === 1 ? "jour" : "jours"}`;
+}
+
 export function computeVerdict(
   snapshots: ProductSnapshot[],
   weights: ScoringWeights = DEFAULT_SCORING_WEIGHTS,
@@ -300,7 +304,7 @@ export function computeVerdict(
       reasoning: [
         sorted.length === 0
           ? "On n'a encore aucun relevé sur ce produit — impossible de se prononcer, donc on reste prudent."
-          : `Trop récent : ${sorted.length} jour(s) de recul seulement, il en faut au moins ${thresholds.minSnapshotsAbsolute} pour dire quoi que ce soit. On reste prudent en attendant.`,
+          : `Trop récent : ${formatDays(sorted.length)} de recul seulement, il en faut au moins ${thresholds.minSnapshotsAbsolute} pour dire quoi que ce soit. On reste prudent en attendant.`,
       ],
       computedAt,
     };
@@ -335,7 +339,7 @@ export function computeVerdict(
   let verdict = pickVerdictLabel(phase, saturationScore, thresholds);
   const salesPct = Math.round(ratio * 100);
   const reasoning: string[] = [
-    `${PHASE_LABELS[phase].short} depuis ${daysInPhase} jour(s) — les ventes ont ${salesPct >= 0 ? "augmenté" : "baissé"} de ${Math.abs(salesPct)}%.`,
+    `${PHASE_LABELS[phase].short} depuis ${formatDays(daysInPhase)} — les ventes ont ${salesPct >= 0 ? "augmenté" : "baissé"} de ${Math.abs(salesPct)} % sur la période observée.`,
     `Concurrence : ${Math.round(saturationScore)} sur 100. Ce qui pèse le plus : ${DRIVER_LABELS[topDriver] ?? topDriver}.`,
   ];
 
@@ -348,7 +352,7 @@ export function computeVerdict(
 
   if (maxGap > thresholds.maxAllowedGapDays) {
     reasoning.push(
-      `Il manque ${maxGap} jour(s) de relevés — du coup on est moins sûr du temps qu'il te reste.`,
+      `Il manque ${formatDays(maxGap)} de relevés — le niveau de confiance sur le temps restant est donc plus faible.`,
     );
   }
 

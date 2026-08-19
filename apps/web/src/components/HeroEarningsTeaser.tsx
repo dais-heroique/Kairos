@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useLocale, useTranslations } from "next-intl";
 import { computeEarnings, DEFAULT_EARNINGS_CONFIG } from "@kairos/core";
 import { EstimatedValue } from "@/components/EstimatedValue";
 
@@ -26,6 +27,8 @@ const EXAMPLE_COMMISSION_PCT = 28;
 
 export function HeroEarningsTeaser() {
   const [views, setViews] = useState(10_000);
+  const t = useTranslations("Home");
+  const locale = useLocale();
   const stepIndex = Math.max(
     0,
     VIEWS_STEPS.reduce(
@@ -46,7 +49,7 @@ export function HeroEarningsTeaser() {
   });
 
   const eur = (v: number) =>
-    v.toLocaleString("fr-FR", {
+    v.toLocaleString(locale, {
       style: "currency",
       currency: "EUR",
       maximumFractionDigits: 0,
@@ -56,7 +59,7 @@ export function HeroEarningsTeaser() {
     <div className="kai-card flex flex-col gap-3">
       <label className="flex flex-col gap-2">
         <span className="flex items-baseline justify-between gap-2">
-          <span className="text-sm font-semibold">Vues par vidéo</span>
+          <span className="text-sm font-semibold">{t("heroViewsLabel")}</span>
           <input
             type="number"
             min={MIN_VIEWS}
@@ -70,7 +73,7 @@ export function HeroEarningsTeaser() {
               }
             }}
             className="kai-input w-28 px-2 py-1 text-right font-[family-name:var(--font-mono)] text-sm font-bold"
-            aria-label="Nombre de vues par vidéo"
+            aria-label={t("heroViewsInputAria")}
           />
         </span>
         <input
@@ -81,13 +84,13 @@ export function HeroEarningsTeaser() {
           value={stepIndex}
           onChange={(event) => setViews(VIEWS_STEPS[Number(event.target.value)]!)}
           className="w-full accent-[var(--color-coral)]"
-          aria-label="Choisir un palier de vues par vidéo"
+          aria-label={t("heroViewsSliderAria")}
         />
       </label>
 
       <div className="flex flex-col gap-0.5" aria-live="polite">
           <span className="text-xs text-[color:var(--color-ink-muted)]">
-          Simulation pour {views.toLocaleString("fr-FR")} vues · produit exemple à 16,90 € · commission 28 %
+          {t("heroSimulationLabel", { views: views.toLocaleString(locale) })} · produit exemple à 16,90 € · commission 28 %
         </span>
         <EstimatedValue
           range={earnings}
@@ -97,10 +100,7 @@ export function HeroEarningsTeaser() {
       </div>
 
       <p className="text-[11px] leading-relaxed text-[color:var(--color-ink-muted)]">
-        <strong>Simulation pédagogique, pas un relevé TikTok Shop.</strong> Calculée
-        par le moteur Kairos avec une hypothèse de conversion prudente et les
-        retours déduits. Ce n&apos;est pas une prévision individuelle : toujours une
-        fourchette, jamais un chiffre garanti.
+        <strong>{t("heroSimulationNoteTitle")}</strong> {t("heroSimulationNoteBody")}
       </p>
     </div>
   );

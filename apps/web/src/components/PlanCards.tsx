@@ -181,7 +181,7 @@ function PlanGrid({ compact, period }: { compact: boolean; period: BillingPeriod
             </p>
 
             <p className="text-sm font-semibold">
-              {inherits ? t("inheritsPlus", { inherits }) : t("availableNow")}
+              {inherits ? t("inheritsPlus", { inherits }) : t("availableNow", { plan: plan.name })}
             </p>
 
             <ul className="flex flex-1 flex-col gap-2">

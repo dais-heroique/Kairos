@@ -10,8 +10,8 @@ import { CheckoutError, isCheckoutConfigured, startCheckout } from "@/lib/stripe
 type PaidPlan = Extract<PlanSlug, "creator" | "pro">;
 
 const CHECKOUT_COPY = {
-  fr: { legalReadMore: "Lire les CGU/CGV et le droit de rétractation", legalAcceptance: "J'ai lu et j'accepte les CGU/CGV de Kairos.", paymentOpening: "Ouverture du paiement…", paymentError: "Le paiement n'a pas pu démarrer. Réessaie dans un instant." },
-  en: { legalReadMore: "Read the Terms and withdrawal policy", legalAcceptance: "I have read and accept the Kairos Terms of Use and Sale.", paymentOpening: "Opening checkout…", paymentError: "Checkout could not be started. Please try again." },
+  fr: { legalReadMore: "Consulter les CGU, les CGV et les informations sur le droit de rétractation", legalAcceptance: "J'ai lu et j'accepte les Conditions générales d'utilisation et les Conditions générales de vente de KAIROS.", paymentOpening: "Ouverture du paiement…", paymentError: "Le paiement n'a pas pu démarrer. Réessaie dans un instant." },
+  en: { legalReadMore: "Read the Terms of Use, Terms of Sale and withdrawal information", legalAcceptance: "I have read and accept KAIROS's Terms of Use and Terms of Sale.", paymentOpening: "Opening checkout…", paymentError: "Checkout could not be started. Please try again." },
   de: { legalReadMore: "Bedingungen und Widerrufsbelehrung lesen", legalAcceptance: "Ich habe die Nutzungs- und Verkaufsbedingungen von Kairos gelesen und akzeptiere sie.", paymentOpening: "Zahlung wird geöffnet…", paymentError: "Die Zahlung konnte nicht gestartet werden. Bitte versuche es erneut." },
   es: { legalReadMore: "Leer las condiciones y la política de desistimiento", legalAcceptance: "He leído y acepto las condiciones de uso y venta de Kairos.", paymentOpening: "Abriendo el pago…", paymentError: "No se ha podido iniciar el pago. Inténtalo de nuevo." },
   it: { legalReadMore: "Leggi le condizioni e il diritto di recesso", legalAcceptance: "Ho letto e accetto le condizioni d'uso e di vendita di Kairos.", paymentOpening: "Apertura del pagamento…", paymentError: "Non è stato possibile avviare il pagamento. Riprova." },

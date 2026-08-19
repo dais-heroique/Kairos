@@ -49,7 +49,7 @@ export function VerdictShowcase() {
           de cliquer. */}
       <div
         role="tablist"
-        aria-label="Situations typiques"
+        aria-label="Recommandations illustrées"
         className="grid grid-cols-2 gap-2 md:grid-cols-4"
       >
         {scenarios.map(({ preset, verdict: v }) => {
@@ -134,7 +134,7 @@ export function VerdictShowcase() {
           ne constitue pas un relevé live ni une prédiction de durée.
 {" "}
           <Link href="/methode" className="underline">
-            Pousse les curseurs toi-même
+            Explore les paramètres de la démo
           </Link>
           .
         </p>

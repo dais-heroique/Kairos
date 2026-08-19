@@ -13,11 +13,11 @@ export const SITE_URL = (
 
 export const SITE_NAME = "KAIROS";
 
-export const SITE_TAGLINE = "Analyse le timing des produits TikTok Shop avant la saturation.";
+export const SITE_TAGLINE = "Évalue le moment d'entrer sur les produits TikTok Shop.";
 
 export const SITE_DESCRIPTION =
   "KAIROS est un outil d'analyse TikTok Shop pour les créateurs et affiliés : " +
-  "évalue le timing d'un produit, la concurrence, la saturation et un gain estimé " +
+  "évalue le moment d'entrer sur un produit, la concurrence et un gain estimé " +
   "à partir de tes vues. Commence gratuitement, sans promesse de revenu garanti.";
 
 /**

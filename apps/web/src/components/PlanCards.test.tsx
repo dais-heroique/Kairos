@@ -57,11 +57,11 @@ describe("PlanCards", () => {
   // échouait le jour où on les livrait toutes. L'invariant utile est
   // l'inverse : toute capacité annoncée sans être livrée doit porter sa
   // mention, à l'endroit exact où elle est annoncée.
-  it("marque « pas encore là » sur chaque capacité non livrée, et sur aucune autre", () => {
+  it("marque « Bientôt disponible » sur chaque capacité non livrée, et sur aucune autre", () => {
     renderWithIntl(<PlanCards />);
 
     const soon = Object.values(CAPABILITY_INFO).filter((c) => c.status === "soon");
-    expect(screen.queryAllByText("pas encore là")).toHaveLength(
+    expect(screen.queryAllByText("Bientôt disponible")).toHaveLength(
       // Une capacité à venir apparaît une fois en tête de la carte qui
       // l'ajoute ; l'hérité replié ne la répète pas.
       soon.length,

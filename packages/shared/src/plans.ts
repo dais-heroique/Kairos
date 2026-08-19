@@ -59,15 +59,15 @@ export interface CapabilityInfo {
 export const CAPABILITY_INFO: Record<Capability, CapabilityInfo> = {
   rankings: {
     label:
-      "La liste des produits TikTok Shop qui marchent en ce moment, avec pour chacun : vas-y, trouve un angle, méfie-toi, ou laisse tomber",
+      "Les produits TikTok Shop actuellement en tendance, avec une recommandation claire pour chacun : entrer, trouver un angle, surveiller ou éviter",
     status: "live",
   },
   earningsTop10: {
-    label: "Ce que tu toucherais sur les 10 premiers produits de la liste",
+    label: "Une estimation de tes gains pour les 10 premiers produits de la liste",
     status: "live",
   },
   earningsAll: {
-    label: "Ce que tu toucherais sur tous les produits, pas seulement les 10 premiers",
+    label: "Une estimation de tes gains pour tous les produits de la liste",
     status: "live",
   },
   watchlist: {
@@ -76,12 +76,12 @@ export const CAPABILITY_INFO: Record<Capability, CapabilityInfo> = {
     status: "live",
   },
   simulator: {
-    label: "Un curseur pour essayer : si je fais 50 000 vues sur ce produit, je touche combien ?",
+    label: "Un simulateur pour estimer tes gains selon le nombre de vues",
     status: "live",
   },
   productHistory: {
     label:
-      "La courbe d'un produit jour après jour : ses ventes, et combien de créateurs en parlent déjà",
+      "L'historique d'un produit : évolution des ventes et de la concurrence au fil des relevés",
     status: "live",
   },
   brief: {
@@ -105,8 +105,7 @@ export const CAPABILITY_INFO: Record<Capability, CapabilityInfo> = {
     status: "live",
   },
   rankTrend: {
-    label:
-      "La trajectoire d'un produit dans le classement : 34e il y a deux semaines, 6e aujourd'hui",
+    label: "L'évolution de la position d'un produit dans le classement au fil du temps",
     status: "live",
   },
   productCompare: {
@@ -206,9 +205,9 @@ export function freeBriefsRemaining(unlockedCount: number): number {
  * que ce fichier existe pour empêcher.
  */
 export const FREE_PLAN_NOTES: readonly string[] = [
-  `${FREE_LIMITS.briefs === 1 ? "Un texte de tournage offert" : `${FREE_LIMITS.briefs} textes de tournage offerts`}, sur le produit de ton choix`,
+  `${FREE_LIMITS.briefs === 1 ? "Un texte de tournage inclus" : `${FREE_LIMITS.briefs} textes de tournage inclus`}, sur le produit de ton choix`,
   `Jusqu'à ${FREE_LIMITS.watchlist} produits suivis en même temps`,
-  `Les gains chiffrés sur les ${FREE_LIMITS.earningsTop} premiers produits de la liste`,
+  `Une estimation de gains affichée pour les ${FREE_LIMITS.earningsTop} premiers produits ; les autres restent visibles sans montant`,
 ];
 
 /**
@@ -254,7 +253,7 @@ export const PLANS: PlanDefinition[] = [
     yearlyPriceCents: 0,
     tagline: "Pour découvrir KAIROS sans engagement",
     highlight:
-      "Toute la liste des produits, la recommandation pour chacun, et un texte de tournage offert",
+      "Toute la liste des produits, une recommandation pour chacun et un premier texte de tournage inclus",
     popular: false,
   },
   {
@@ -267,7 +266,7 @@ export const PLANS: PlanDefinition[] = [
     // les deux est une publicité mensongère, pas un bug d'affichage.
     priceCents: 1900,
     yearlyPriceCents: 19000,
-    tagline: "Pour qui poste chaque semaine",
+    tagline: "Pour les créateurs qui publient chaque semaine",
     highlight: "Tes gains sur tous les produits, les courbes, et le texte à dire",
     popular: true,
   },
@@ -281,7 +280,7 @@ export const PLANS: PlanDefinition[] = [
     priceCents: 3900,
     yearlyPriceCents: 39000,
     tagline: "Pour les créateurs qui veulent aller plus loin",
-    highlight: "Suivre la trajectoire d'un produit sur plusieurs semaines",
+    highlight: "Analyser l'évolution des produits et comparer tes opportunités",
     popular: false,
   },
 ];

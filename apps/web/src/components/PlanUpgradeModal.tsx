@@ -3,7 +3,6 @@
 import { useEffect, useId, useState } from "react";
 import { useTranslations } from "next-intl";
 import {
-  CAPABILITIES_BY_PLAN,
   CAPABILITY_INFO,
   formatPlanPrice,
   formatYearlyAsMonthly,
@@ -133,7 +132,6 @@ export function PlanUpgradeModal({
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           {PAID_PLANS.map((plan) => {
             const added = newCapabilitiesOf(plan.slug);
-            const total = CAPABILITIES_BY_PLAN[plan.slug].length;
             const price = planPriceCents(plan, period);
             const isFeatured = plan.slug === "pro";
             const monthlyEquivalent = formatYearlyAsMonthly(plan);
@@ -191,10 +189,6 @@ export function PlanUpgradeModal({
                     </li>
                   ))}
                 </ul>
-
-                <p className="border-t pt-3 text-xs font-semibold text-[color:var(--color-ink-muted)]" style={{ borderColor: "var(--color-border)" }}>
-                  {t("featureTotal", { count: total })}
-                </p>
 
                 {price === null ? (
                   <p className="text-center text-sm font-semibold text-[color:var(--color-ink-muted)]">

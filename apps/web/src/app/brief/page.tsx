@@ -200,7 +200,7 @@ function BriefContent() {
   if (item === null) {
     return (
       <p className="kai-card m-5 text-sm text-[color:var(--color-ink-muted)]">
-        Produit introuvable dans le classement du jour.{" "}
+        Produit introuvable dans les données actuellement disponibles.{" "}
         <Link href="/classements/produits" className="underline">
           Voir les classements
         </Link>

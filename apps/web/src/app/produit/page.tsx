@@ -115,7 +115,7 @@ function ProduitContent() {
   if (item === null) {
     return (
       <p className="kai-card m-5 text-sm text-[color:var(--color-ink-muted)]">
-        Ce produit n&apos;est pas dans le classement du jour.{" "}
+        Ce produit n&apos;est pas dans les données actuellement disponibles.{" "}
         <Link href="/classements/produits" className="underline">
           Voir les classements
         </Link>
