@@ -16,7 +16,8 @@
     "test:web-integration": "firebase emulators:exec --config firebase.test.json --only firestore,auth \"pnpm --filter @kairos/web test\"",
     "emulators": "firebase emulators:start --import=./.emulator-data --export-on-exit",
     "deploy:prod": "./scripts/deploy.sh",
-    "deploy:check": "./scripts/deploy.sh --dry-run"
+    "deploy:check": "./scripts/deploy.sh --dry-run",
+    "recover:apify": "pnpm --filter @kairos/jobs recover:apify"
   },
   "devDependencies": {
     "firebase-tools": "^15.27.0",
