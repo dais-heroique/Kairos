@@ -105,12 +105,8 @@ export function VerdictShowcase() {
             bar={verdict.saturationScore}
           />
           <Stat
-            label="Il te reste"
-            value={
-              verdict.windowDaysRemaining.high > 0
-                ? `${verdict.windowDaysRemaining.low}–${verdict.windowDaysRemaining.high} jours`
-                : "la vague est passée"
-            }
+            label="Fenêtre estimée"
+            value={verdict.windowDaysRemaining.high > 0 ? "à confirmer" : "vague passée"}
           />
         </div>
 
@@ -133,9 +129,10 @@ export function VerdictShowcase() {
         </ul>
 
         <p className="text-xs leading-relaxed text-[color:var(--color-ink-muted)]">
-          DÉMO : le calcul ci-dessus tourne réellement dans ton navigateur,
-          avec le moteur de l&apos;application, mais les scénarios ne sont pas des
-          relevés live d&apos;un produit TikTok Shop.{" "}
+                    DÉMO : les produits et scénarios ci-dessus sont fictifs. Le calcul tourne
+          réellement dans ton navigateur avec le moteur de l&apos;application, mais il
+          ne constitue pas un relevé live ni une prédiction de durée.
+{" "}
           <Link href="/methode" className="underline">
             Pousse les curseurs toi-même
           </Link>

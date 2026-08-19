@@ -42,26 +42,26 @@ export const SCENARIO_PRESETS: Array<{
 }> = [
   {
     id: "pepite",
-    label: "La pépite",
-    hint: "Personne n'en parle encore",
+    label: "Entrer maintenant",
+    hint: "Peu de créateurs sont positionnés",
     params: { days: 10, salesMultiplier: 2.6, competingShops: 2, creators: 4, priceDropPct: 0 },
   },
   {
     id: "montee",
-    label: "Ça monte",
-    hint: "Les premiers créateurs arrivent",
+    label: "Entrer avec un angle",
+    hint: "La concurrence commence à augmenter",
     params: { days: 30, salesMultiplier: 3, competingShops: 15, creators: 34, priceDropPct: 6 },
   },
   {
     id: "ruee",
-    label: "La ruée",
-    hint: "Tout le monde s'y met en même temps",
+    label: "Surveiller",
+    hint: "La concurrence se densifie rapidement",
     params: { days: 20, salesMultiplier: 1.9, competingShops: 40, creators: 60, priceDropPct: 40 },
   },
   {
     id: "trop-tard",
-    label: "Trop tard",
-    hint: "La vague est passée",
+    label: "Éviter",
+    hint: "Les signaux sont en recul",
     params: { days: 45, salesMultiplier: 0.45, competingShops: 26, creators: 30, priceDropPct: 28 },
   },
 ];

@@ -115,7 +115,6 @@ function PlanGrid({ compact, period }: { compact: boolean; period: BillingPeriod
         const isFirst = index === 0;
         const added = isFirst ? [...CAPABILITIES_BY_PLAN[plan.slug]] : newCapabilitiesOf(plan.slug);
         const inherits = isFirst ? null : PLANS[index - 1]!.name;
-        const total = CAPABILITIES_BY_PLAN[plan.slug].length;
         const monthlyEquivalent = formatYearlyAsMonthly(plan);
 
         return (
@@ -247,7 +246,7 @@ function PlanGrid({ compact, period }: { compact: boolean; period: BillingPeriod
               <details className="group">
                 <summary className="flex cursor-pointer list-none items-center justify-between gap-2 text-xs font-semibold text-[color:var(--color-ink-muted)]">
                   <span>
-                    {t("inheritedFeatures", { inherits, count: total - added.length })}
+                    {t("inheritedFeatures", { inherits })}
                   </span>
                   <span
                     aria-hidden
@@ -274,15 +273,6 @@ function PlanGrid({ compact, period }: { compact: boolean; period: BillingPeriod
                 </ul>
               </details>
             )}
-
-            {/* Ce total rééquilibre les colonnes : Pro n'ajoute qu'une ligne,
-                mais en donne neuf. */}
-            <p
-              className="border-t pt-3 text-xs font-semibold text-[color:var(--color-ink-muted)]"
-              style={{ borderColor: "var(--color-border)" }}
-            >
-              {t("featureTotal", { count: total })}
-            </p>
 
             {!compact && <PlanCta plan={plan} period={period} />}
           </div>

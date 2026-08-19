@@ -91,7 +91,7 @@ export const CAPABILITY_INFO: Record<Capability, CapabilityInfo> = {
   },
   alerts: {
     label:
-      "Ce qui a bougé sur tes produits suivis depuis ta dernière visite : ceux qui montent, et ceux où la place se remplit",
+      "Ce qui a bougé sur tes produits suivis depuis ta dernière visite : ceux qui montent et ceux où la concurrence augmente",
     status: "soon",
   },
   // ---- Ce qui distingue Pro -----------------------------------------------
@@ -115,7 +115,7 @@ export const CAPABILITY_INFO: Record<Capability, CapabilityInfo> = {
     status: "live",
   },
   dataExport: {
-    label: "Sortir tes classements et ta liste de suivi en tableau (CSV)",
+    label: "Exporter tes classements et ta liste de suivi en CSV",
     status: "live",
   },
 };
@@ -252,7 +252,7 @@ export const PLANS: PlanDefinition[] = [
     name: "Radar",
     priceCents: 0,
     yearlyPriceCents: 0,
-    tagline: "Pour voir si l'outil te parle",
+    tagline: "Pour découvrir KAIROS sans engagement",
     highlight:
       "Toute la liste des produits, la recommandation pour chacun, et un texte de tournage offert",
     popular: false,
@@ -280,8 +280,8 @@ export const PLANS: PlanDefinition[] = [
     // n'a pas — il ajoute quatre fonctionnalités au même produit.
     priceCents: 3900,
     yearlyPriceCents: 39000,
-    tagline: "Pour en faire un vrai revenu",
-    highlight: "Suivre un produit sur plusieurs semaines",
+    tagline: "Pour les créateurs qui veulent aller plus loin",
+    highlight: "Suivre la trajectoire d'un produit sur plusieurs semaines",
     popular: false,
   },
 ];

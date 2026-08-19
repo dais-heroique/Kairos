@@ -4,7 +4,7 @@ import { cleanup, render, screen } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { NextIntlClientProvider } from "next-intl";
 import fr from "@/messages/fr.json";
-import { CAPABILITIES_BY_PLAN, CAPABILITY_INFO, PLANS } from "@kairos/shared";
+import { CAPABILITY_INFO } from "@kairos/shared";
 
 // PlanCards importe SubscribeButton, qui remonte jusqu'au SDK Firebase et
 // à sa validation d'environnement. Rien de tout ça n'est utile ici : ce
@@ -47,13 +47,10 @@ describe("PlanCards", () => {
     expect(new Set(lines).size).toBe(lines.length);
   });
 
-  it("affiche le total de chaque plan — sinon le plus cher paraît le plus pauvre", () => {
+  it("n’affiche pas de compteur global de fonctionnalités", () => {
     renderWithIntl(<PlanCards />);
-
-    for (const plan of PLANS) {
-      const total = CAPABILITIES_BY_PLAN[plan.slug].length;
-      expect(screen.getAllByText(`${total} fonctionnalités au total`).length).toBeGreaterThan(0);
-    }
+    expect(screen.queryByText(/fonctionnalités au total|features in total/)).toBeNull();
+    expect(screen.getAllByText(/Voir aussi les capacités de/).length).toBeGreaterThan(0);
   });
 
   // Ce test disait « il doit exister au moins une capacité à venir », ce qui

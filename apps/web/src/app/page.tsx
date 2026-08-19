@@ -1,11 +1,13 @@
 import { useTranslations } from "next-intl";
 import Link from "next/link";
+import { computeEarnings, DEFAULT_EARNINGS_CONFIG } from "@kairos/core";
 import {
   FaqJsonLd,
   OrganizationJsonLd,
   SoftwareApplicationJsonLd,
   WebSiteJsonLd,
 } from "@/components/JsonLd";
+import { EstimatedValue } from "@/components/EstimatedValue";
 import { HeroEarningsTeaser } from "@/components/HeroEarningsTeaser";
 import { PlanCards } from "@/components/PlanCards";
 import { ProductTour } from "@/components/ProductTour";
@@ -119,6 +121,16 @@ function Chip({ text }: { text: string }) {
 }
 
 function HeroCardStack({ t }: { t: T }) {
+  const demoEarnings = computeEarnings({
+    expectedViews: 10_000,
+    followerRange: "5k_20k",
+    niche: "beaute",
+    medianConversionRate: DEFAULT_EARNINGS_CONFIG.defaultConversionRate,
+    priceCents: 1690,
+    commissionRatePct: 28,
+    estimatedReturnRatePct: DEFAULT_EARNINGS_CONFIG.defaultReturnRatePct,
+  });
+
   return (
     <div className="relative w-full max-w-[320px]">
       <div
@@ -154,12 +166,18 @@ function HeroCardStack({ t }: { t: T }) {
           >
             {t("heroCardEarningsLabel")}
           </p>
-          <p
-            className="font-[family-name:var(--font-mono)] text-2xl font-bold"
-            style={{ color: "var(--color-success)" }}
-          >
-            3,80–6,10€
-          </p>
+                      <EstimatedValue
+              range={demoEarnings}
+              format={(value) =>
+                value.toLocaleString("fr-FR", {
+                  style: "currency",
+                  currency: "EUR",
+                  maximumFractionDigits: 0,
+                })
+              }
+              className="font-[family-name:var(--font-mono)] text-2xl font-bold"
+            />
+
         </div>
 
         <svg viewBox="0 0 260 60" className="w-full" aria-hidden>

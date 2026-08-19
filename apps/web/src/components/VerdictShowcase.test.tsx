@@ -26,7 +26,7 @@ describe("VerdictShowcase", () => {
 
     expect(tabs).toHaveLength(SCENARIO_PRESETS.length);
     for (const preset of SCENARIO_PRESETS) {
-      expect(screen.getByRole("tab", { name: new RegExp(preset.label) })).toBeDefined();
+      expect(screen.getAllByRole("tab", { name: new RegExp(preset.label) }).length).toBeGreaterThan(0);
     }
   });
 

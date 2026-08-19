@@ -2,8 +2,8 @@ import type { VerdictLabel } from "@kairos/shared";
 
 const VERDICT_LABELS: Record<VerdictLabel, string> = {
   entrer_maintenant: "Entrer maintenant",
-  avec_un_angle: "Avec un angle",
-  risque: "Risque",
+  avec_un_angle: "Entrer avec un angle",
+  risque: "Surveiller",
   eviter: "Éviter",
 };
 

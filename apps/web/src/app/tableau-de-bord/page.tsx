@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
+import { useTranslations } from "next-intl";
 import { computeEarnings, DEFAULT_EARNINGS_CONFIG } from "@kairos/core";
 import {
   crowdingWording,
@@ -39,8 +40,8 @@ const STATUS_SHORT: Record<string, string> = {
   posted: "Publié",
 };
 
-const eur = (v: number) =>
-  v.toLocaleString("fr-FR", { style: "currency", currency: "EUR", maximumFractionDigits: 0 });
+const eur = (v: number, locale = "fr-FR") =>
+  v.toLocaleString(locale, { style: "currency", currency: "EUR", maximumFractionDigits: 0 });
 
 function Stat({
   label,
@@ -127,6 +128,7 @@ function ProductLine({
 
 function DashboardContent() {
   const { firebaseUser, userDoc } = useAuth();
+  const t = useTranslations("Dashboard");
   const [opportunities, setOpportunities] = useState<ProductRankItem[] | null>(null);
   const [products, setProducts] = useState<ProductRankItem[]>([]);
   const [watchlist, setWatchlist] = useState<WatchlistEntry[]>([]);
@@ -238,27 +240,26 @@ function DashboardContent() {
 
         {profileIncomplete && (
           <div className="kai-card text-sm">
-            <p className="font-[family-name:var(--font-display)] font-bold">
-              Tes gains ne sont pas encore calculables
+                          <p className="font-[family-name:var(--font-display)] font-bold">
+              {t("profileIncompleteTitle")}
+
             </p>
             <p className="text-[color:var(--color-ink-muted)]">
-              Il manque encore ton profil créateur.{" "}
+              {t("profileIncompleteBody")} {" "}
               <Link href="/onboarding/profil" className="underline">
-                Compléter mon profil
+                {t("completeProfile")}
               </Link>
             </p>
           </div>
         )}
 
         {dashboard === null && (
-          <p className="text-sm text-[color:var(--color-ink-muted)]">Chargement…</p>
+          <p className="text-sm text-[color:var(--color-ink-muted)]">{t("loading")}</p>
         )}
 
         {dashboard && dashboard.totalAnalysed === 0 && (
           <div className="kai-card text-sm text-[color:var(--color-ink-muted)]">
-            Aucun produit n&apos;est encore classable de façon fiable. Les
-            produits en observation restent affichés plus bas avec leur suivi
-            réel ; le verdict apparaîtra dès que l&apos;historique sera suffisant.
+            {t("noReliableProducts")}
           </div>
         )}
 
@@ -276,7 +277,7 @@ function DashboardContent() {
                 style={{ backgroundColor: "var(--color-success-soft)", borderColor: "transparent" }}
               >
                 <span className="text-xs font-semibold uppercase tracking-wide" style={{ color: "var(--color-success)" }}>
-                  Ta semaine, si tu tournes ces {dashboard.focus.length} produits
+                  {t("weekPotential", { count: dashboard.focus.length })}
                 </span>
                 <p className="font-[family-name:var(--font-display)] text-3xl font-extrabold">
                   <EstimatedValue
@@ -285,7 +286,7 @@ function DashboardContent() {
                   />
                 </p>
                 <p className="text-xs text-[color:var(--color-ink-muted)]">
-                  Une vidéo par produit, comparaison faite pour 1 000 vues.
+                  {t("viewsBasis")}
                 </p>
               </section>
             )}
@@ -293,30 +294,30 @@ function DashboardContent() {
             {/* ---------- Chiffres clés ---------- */}
             <div className="grid grid-cols-2 gap-2">
               <Stat
-                label="Encore jouables"
+                label={t("stillPlayable")}
                 value={String(dashboard.openWindowCount)}
-                hint={`sur ${dashboard.totalAnalysed} produits suivis`}
+                hint={t("trackedProducts", { count: dashboard.totalAnalysed })}
                 tone="success"
               />
               <Stat
-                label="Bientôt trop tard"
+                label={t("closingSoon")}
                 value={String(dashboard.closingSoon.length)}
-                hint="moins de 3 semaines devant"
+                hint={t("lessThanThreeWeeks")}
                 tone={dashboard.closingSoon.length > 0 ? "coral" : undefined}
               />
               <Stat
-                label="Tu les suis"
+                label={t("following")}
                 value={String(watchlist.length)}
                 hint={
                   dashboard.awaitingSample > 0
-                    ? `${dashboard.awaitingSample} échantillon(s) en attente`
-                    : "produits suivis"
+                    ? t("pendingSamples", { count: dashboard.awaitingSample })
+                    : t("tracked")
                 }
               />
               <Stat
-                label="À éviter"
+                label={t("avoid")}
                 value={String(dashboard.avoid.length)}
-                hint="trop de monde, ou ça retombe"
+                hint={t("crowdedOrFalling")}
               />
             </div>
 
@@ -331,8 +332,8 @@ function DashboardContent() {
                     className="text-[11px] font-bold uppercase tracking-wide"
                     style={{ color: "var(--color-coral)" }}
                   >
-                    À tourner en priorité
-                    {dashboard.topPick.matchesNiche && " · dans ta niche"}
+                    {t("priority")}
+                    {dashboard.topPick.matchesNiche && ` · ${t("inNiche")}`}
                   </span>
                   <VerdictBadge verdict={dashboard.topPick.item.verdict} />
                 </div>
@@ -360,7 +361,7 @@ function DashboardContent() {
                 {dashboard.topPick.earnings && (
                   <p className="text-sm">
                     <span className="text-[color:var(--color-ink-muted)]">
-                      Pour 1 000 vues :{" "}
+                      {t("perThousandViews")} {" "}
                     </span>
                     <EstimatedValue
                       range={dashboard.topPick.earnings}
@@ -388,10 +389,10 @@ function DashboardContent() {
 
                 {windowRangeOf(dashboard.topPick.item) && (
                   <p className="text-xs text-[color:var(--color-ink-muted)]">
-                    Il te reste environ :{" "}
+                    {t("remainingWindow")} {" "}
                     <EstimatedValue
                       range={windowRangeOf(dashboard.topPick.item)!}
-                      format={(v) => `${v} j`}
+                      format={(v) => `${v} ${t("daysShort")}`}
                     />
                   </p>
                 )}
@@ -403,13 +404,13 @@ function DashboardContent() {
                     disabled={added.has(dashboard.topPick.item.id)}
                     className="kai-btn-primary flex-1 disabled:opacity-50"
                   >
-                    {added.has(dashboard.topPick.item.id) ? "Ajouté ✓" : "Suivre ce produit"}
+                    {added.has(dashboard.topPick.item.id) ? t("added") : t("followProduct")}
                   </button>
                   <Link
                     href={`/simulateur?id=${encodeURIComponent(dashboard.topPick.item.id)}`}
                     className="kai-btn-outline flex-1 text-center"
                   >
-                    Simuler
+                    {t("simulate")}
                   </Link>
                 </div>
               </section>

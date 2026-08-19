@@ -183,8 +183,9 @@ export function ProductTour() {
               </Row>
             ))}
             <Caption>
-              Toujours une fourchette avec son niveau de confiance, jamais un
-              chiffre unique. Retours déduits, taux de conversion prudent.
+              DÉMO : les montants sont calculés sur des produits fictifs, 10 000 vues
+              et une commission indicative. Ce ne sont pas des commissions TikTok
+              relevées sur un compte affilié ni une prévision de revenu.
             </Caption>
           </>
         )}
@@ -215,9 +216,9 @@ export function ProductTour() {
       </div>
 
       <p className="text-center text-xs text-[color:var(--color-ink-muted)]">
-        Produits d&apos;exemple. Les verdicts, les gains et le texte
-        ci-dessus sortent des moteurs de l&apos;application, calculés dans ton
-        navigateur.
+        DÉMO — produits fictifs. Les moteurs tournent dans ton navigateur pour
+        illustrer le fonctionnement ; dans KAIROS, les données collectées et les
+        estimations calculées sont toujours identifiées séparément.
       </p>
     </div>
   );
@@ -241,7 +242,7 @@ function Row({
       <div className="flex min-w-0 flex-1 flex-col gap-1">
         <p className="truncate text-sm font-bold">{product.title}</p>
         <p className="text-xs text-[color:var(--color-ink-muted)]">
-          {product.shop} · {product.commissionRatePct} % de commission ·{" "}
+          {product.shop} · commission indicative (démo) : {product.commissionRatePct} % ·{" "}
           {(product.priceCents / 100).toFixed(2).replace(".", ",")} €
         </p>
         {children}

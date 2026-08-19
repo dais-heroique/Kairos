@@ -2,6 +2,7 @@
 
 import { useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
+import { useLocale, useTranslations } from "next-intl";
 import { computeEarnings, DEFAULT_EARNINGS_CONFIG } from "@kairos/core";
 import { BottomNav } from "@/components/BottomNav";
 import { EstimatedValue } from "@/components/EstimatedValue";
@@ -19,6 +20,11 @@ const DEFAULT_CONVERSION_PCT = DEFAULT_EARNINGS_CONFIG.defaultConversionRate * 1
 
 export function SimulateurContent() {
   const { userDoc } = useAuth();
+  const t = useTranslations("Simulator");
+  const locale = useLocale();
+  const formatCurrency = (value: number) =>
+    value.toLocaleString(locale, { style: "currency", currency: "EUR", maximumFractionDigits: 0 });
+  const formatNumber = (value: number) => value.toLocaleString(locale);
   const market = primaryMarketOf(userDoc);
   // « Simuler » depuis une fiche produit ou le tableau de bord doit ouvrir
   // le simulateur *sur ce produit*, pas sur le premier de la liste.
@@ -65,7 +71,7 @@ export function SimulateurContent() {
       <div className="flex min-h-dvh flex-col">
         <BottomNav />
         <div className="flex flex-1 flex-col items-center justify-center gap-2 kai-shell text-center">
-          <p className="text-sm text-[color:var(--color-ink-muted)]">Chargement…</p>
+          <p className="text-sm text-[color:var(--color-ink-muted)]">{t("loading")}</p>
         </div>
       </div>
     );
@@ -77,8 +83,7 @@ export function SimulateurContent() {
         <BottomNav />
         <div className="flex flex-1 flex-col items-center justify-center gap-2 kai-shell text-center">
           <p className="text-sm text-[color:var(--color-ink-muted)]">
-            Pas encore de produits à simuler — reviens une fois le classement
-            alimenté par la collecte réelle.
+            {t("empty")}
           </p>
         </div>
       </div>
@@ -91,16 +96,16 @@ export function SimulateurContent() {
 
       <header className="kai-shell pt-6 pb-2">
         <h1 className="font-[family-name:var(--font-display)] text-2xl font-extrabold">
-          Simulateur de gains
+          {t("title")}
         </h1>
         <p className="mt-1 text-sm text-[color:var(--color-ink-muted)]">
-          Bouge les curseurs — le montant réagit en direct.
+          {t("subtitle")}
         </p>
       </header>
 
       <div className="flex flex-1 flex-col gap-6 kai-shell py-4">
         <label className="flex flex-col gap-1 text-sm font-medium">
-          Produit
+          {t("product")}
           <select
             value={productId}
             onChange={(e) => setProductId(e.target.value)}
@@ -112,7 +117,7 @@ export function SimulateurContent() {
               // d'Android ignore `text-overflow`, et un titre TikTok Shop
               // complet y occupe trois lignes.
               <option key={p.id} value={p.id}>
-                {(p.priceCents / 100).toFixed(2)} € · {shortTitle(p.title, 34)}
+                {formatCurrency(p.priceCents / 100)} · {shortTitle(p.title, 34)}
               </option>
             ))}
           </select>
@@ -123,7 +128,7 @@ export function SimulateurContent() {
 
         <div className="kai-card flex flex-col items-center gap-1 py-8">
           <p className="text-xs font-semibold tracking-wide text-[color:var(--color-ink-muted)] uppercase">
-            Gains estimés
+            {t("estimatedEarnings")}
           </p>
           {earnings && (
             <p
@@ -133,11 +138,7 @@ export function SimulateurContent() {
               <EstimatedValue
                 range={earnings}
                 format={(v) =>
-                  v.toLocaleString("fr-FR", {
-                    style: "currency",
-                    currency: "EUR",
-                    maximumFractionDigits: 0,
-                  })
+                  formatCurrency(v)
                 }
               />
             </p>
@@ -147,22 +148,20 @@ export function SimulateurContent() {
               laisser croire à une panne devant un tiret immobile. */}
           {product.commissionRatePct <= 0 && (
             <p className="max-w-xs text-center text-xs text-[color:var(--color-ink-muted)]">
-              Le taux de commission de ce produit n&apos;a pas été collecté.
-              Sans lui, aucun gain n&apos;est calculable — choisis un autre
-              produit pour voir le simulateur réagir.
+              {t("missingCommission")}
             </p>
           )}
         </div>
 
         <label className="flex flex-col gap-2 text-sm font-medium">
           <span className="flex justify-between">
-            <span>Vues simulées</span>
+            <span>{t("simulatedViews")}</span>
             <span className="font-[family-name:var(--font-mono)]">
-              {views.toLocaleString("fr-FR")}
+              {formatNumber(views)}
             </span>
           </span>
           <p className="text-xs text-[color:var(--color-ink-muted)]">
-            Ici, tu poses toi-même une hypothèse de portée ; elle ne vient pas de ton profil.
+            {t("viewsHint")}
           </p>
           <input
             type="range"
@@ -177,7 +176,7 @@ export function SimulateurContent() {
 
         <label className="flex flex-col gap-2 text-sm font-medium">
           <span className="flex justify-between">
-            <span>Taux de conversion</span>
+            <span>{t("conversionRate")}</span>
             <span className="font-[family-name:var(--font-mono)]">
               {conversionPct.toFixed(2)}%
             </span>
@@ -199,9 +198,7 @@ export function SimulateurContent() {
         </label>
 
         <p className="text-xs text-[color:var(--color-ink-muted)]">
-          {commissionLabel(product.commissionRatePct, product.commissionIsEstimated)} · taux de retour estimé{" "}
-          {DEFAULT_EARNINGS_CONFIG.defaultReturnRatePct} % · calcul réel
-          (packages/core, pas une formule de démonstration).
+          {commissionLabel(product.commissionRatePct, product.commissionIsEstimated)} · {t("methodNote")} {DEFAULT_EARNINGS_CONFIG.defaultReturnRatePct} % · {t("realCalculation")}
         </p>
       </div>
     </div>
