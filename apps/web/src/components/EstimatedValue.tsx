@@ -1,20 +1,14 @@
 import type { EstimatedRange } from "@kairos/shared";
 
-const METHOD_LABELS: Record<EstimatedRange["method"], string> = {
-  historical_regression: "régression historique",
-  category_benchmark: "benchmark catégorie",
-  seller_declared: "déclaré par le vendeur",
-  ground_truth_calibrated: "calibré sur données réelles",
-  insufficient_data: "données insuffisantes",
-  // Dit à l'utilisateur d'où vient vraiment le chiffre : un relevé
-  // recopié à la main depuis l'espace affilié, pas un calcul de KAIROS.
-  manual_entry: "relevé manuel",
-};
+import { useLocale, useTranslations } from "next-intl";
 
-function formatConfidence(confidence: number): string {
-  if (confidence >= 0.75) return "fiable";
-  if (confidence >= 0.4) return "à confirmer";
-  return "peu fiable";
+function formatConfidence(
+  confidence: number,
+  t: (key: "reliable" | "toConfirm" | "lowConfidence") => string,
+): string {
+  if (confidence >= 0.75) return t("reliable");
+  if (confidence >= 0.4) return t("toConfirm");
+  return t("lowConfidence");
 }
 
 function confidenceColor(confidence: number): string {
@@ -36,7 +30,10 @@ export function EstimatedValue({
   format?: (value: number) => string;
   className?: string;
 }) {
-  const fmt = format ?? ((v: number) => v.toLocaleString("fr-FR"));
+  const t = useTranslations("Estimates");
+  const locale = useLocale();
+  const fmt = format ?? ((v: number) => v.toLocaleString(locale));
+  const methodLabel = t(`method.${range.method}`);
 
   // Une estimation impossible ne s'affiche pas comme une estimation nulle.
   // « 0 €–0 € » se lit « ce produit ne rapporte rien » ; ce qu'il faut lire
@@ -44,20 +41,20 @@ export function EstimatedValue({
   // exactement ce que la règle « jamais un nombre nu » cherche à empêcher.
   if (range.method === "insufficient_data") {
     return (
-      <span className={className} title={METHOD_LABELS[range.method]}>
+      <span className={className} title={methodLabel}>
         <span className="font-[family-name:var(--font-mono)]">—</span>
         <span
           className="ml-1.5 text-xs font-semibold"
           style={{ color: "var(--color-ink-muted)" }}
         >
-          (données insuffisantes)
+          ({t("insufficientData")})
         </span>
       </span>
     );
   }
 
   return (
-    <span className={className} title={METHOD_LABELS[range.method]}>
+    <span className={className} title={methodLabel}>
       <span className="font-[family-name:var(--font-mono)]">
         {fmt(range.low)}–{fmt(range.high)}
       </span>
@@ -65,7 +62,7 @@ export function EstimatedValue({
         className="ml-1.5 text-xs font-semibold"
         style={{ color: confidenceColor(range.confidence) }}
       >
-        ({formatConfidence(range.confidence)})
+        ({formatConfidence(range.confidence, t)})
       </span>
     </span>
   );

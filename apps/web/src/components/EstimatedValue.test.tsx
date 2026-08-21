@@ -1,13 +1,20 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it } from "vitest";
+import type { ReactNode } from "react";
 import { cleanup, render, screen } from "@testing-library/react";
+import { NextIntlClientProvider } from "next-intl";
+import fr from "@/messages/fr.json";
 import { EstimatedValue } from "./EstimatedValue";
 
 afterEach(cleanup);
 
+function renderWithIntl(ui: ReactNode) {
+  return render(<NextIntlClientProvider locale="fr" messages={fr}>{ui}</NextIntlClientProvider>);
+}
+
 describe("EstimatedValue", () => {
   it("affiche la fourchette et la confiance d'une estimation normale", () => {
-    render(
+    renderWithIntl(
       <EstimatedValue
         range={{ low: 120, high: 260, confidence: 0.8, method: "historical_regression" }}
       />,
@@ -21,7 +28,7 @@ describe("EstimatedValue", () => {
   // ce qui s'affichait sur tout le classement quand le profil créateur
   // n'avait pas de vues moyennes renseignées.
   it("n'affiche jamais 0–0 quand l'estimation est impossible", () => {
-    render(
+    renderWithIntl(
       <EstimatedValue
         range={{ low: 0, high: 0, confidence: 0, method: "insufficient_data" }}
       />,
@@ -32,7 +39,7 @@ describe("EstimatedValue", () => {
   });
 
   it("applique le format fourni", () => {
-    render(
+    renderWithIntl(
       <EstimatedValue
         range={{ low: 12, high: 30, confidence: 0.5, method: "manual_entry" }}
         format={(v) => `${v}€`}

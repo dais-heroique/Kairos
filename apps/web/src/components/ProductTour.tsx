@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useLocale, useTranslations } from "next-intl";
 import {
   buildBrief,
   computeEarnings,
@@ -79,6 +80,8 @@ const EXAMPLE_VIEWS = 10_000;
 
 export function ProductTour() {
   const [tab, setTab] = useState<TabId>("liste");
+  const t = useTranslations("Home");
+  const locale = useLocale();
   const today = useMemo(() => new Date(), []);
 
   // Un seul calcul pour les quatre onglets : mêmes produits, mêmes
@@ -110,27 +113,29 @@ export function ProductTour() {
     <div className="flex flex-col gap-4">
       <div
         role="tablist"
-        aria-label="Les écrans de l'application"
+        aria-label={t("tourAria")}
         className="grid grid-cols-2 gap-2 md:grid-cols-4"
       >
-        {TABS.map((t) => {
-          const selected = t.id === tab;
+        {TABS.map((tabOption) => {
+          const selected = tabOption.id === tab;
           return (
             <button
-              key={t.id}
+              key={tabOption.id}
               type="button"
               role="tab"
               aria-selected={selected}
-              onClick={() => setTab(t.id)}
+              onClick={() => setTab(tabOption.id)}
               className="flex flex-col items-start gap-0.5 rounded-xl px-3 py-2.5 text-left transition-colors"
               style={{
                 backgroundColor: selected ? "var(--color-bg)" : "transparent",
                 border: `1.5px solid ${selected ? "var(--color-accent)" : "var(--color-border)"}`,
               }}
             >
-              <span className="text-sm font-bold">{t.label}</span>
+              <span className="text-sm font-bold">
+                {tabOption.id === "liste" ? t("tourTabList") : tabOption.id === "gains" ? t("tourTabEarnings") : tabOption.id === "courbe" ? t("tourTabChart") : t("tourTabScript")}
+</span>
               <span className="text-[11px] text-[color:var(--color-ink-muted)]">
-                {t.hint}
+                {tabOption.id === "liste" ? t("tourHintList") : tabOption.id === "gains" ? t("tourHintEarnings") : tabOption.id === "courbe" ? t("tourHintChart") : t("tourHintScript")}
               </span>
             </button>
           );
@@ -154,8 +159,7 @@ export function ProductTour() {
               </Row>
             ))}
             <Caption>
-              Chaque ligne porte la recommandation calculée sur ce produit —
-              pas un score à interpréter.
+              {t("tourListCaption")}
             </Caption>
           </>
         )}
@@ -166,12 +170,12 @@ export function ProductTour() {
               <Row key={product.title} product={product}>
                 <div className="flex flex-wrap items-baseline gap-2">
                   <span className="text-xs text-[color:var(--color-ink-muted)]">
-                    Pour {EXAMPLE_VIEWS.toLocaleString("fr-FR")} vues :
+                    {t("tourViewsLabel", { views: EXAMPLE_VIEWS.toLocaleString(locale) })}
                   </span>
                   <EstimatedValue
                     range={earnings}
                     format={(v) =>
-                      v.toLocaleString("fr-FR", {
+                      v.toLocaleString(locale, {
                         style: "currency",
                         currency: "EUR",
                         maximumFractionDigits: 0,
@@ -183,9 +187,7 @@ export function ProductTour() {
               </Row>
             ))}
             <Caption>
-              DÉMO : les montants sont calculés sur des produits fictifs, 10 000 vues
-              et une commission indicative. Ce ne sont pas des commissions TikTok
-              relevées sur un compte affilié ni une prévision de revenu.
+              {t("tourEarningsCaption")}
             </Caption>
           </>
         )}
@@ -205,9 +207,7 @@ export function ProductTour() {
             </div>
             <SnapshotChart snapshots={lead.snapshots} />
             <Caption>
-              Les ventes, les boutiques qui le vendent et les créateurs qui en
-              parlent, sur la même échelle de temps. C&apos;est là qu&apos;on
-              voit une fenêtre se refermer.
+              {t("tourChartCaption")}
             </Caption>
           </>
         )}
@@ -216,9 +216,7 @@ export function ProductTour() {
       </div>
 
       <p className="text-center text-xs text-[color:var(--color-ink-muted)]">
-        DÉMO — produits fictifs. Les moteurs tournent dans ton navigateur pour
-        illustrer le fonctionnement ; dans KAIROS, les données collectées et les
-        estimations calculées sont toujours identifiées séparément.
+        {t("tourDisclaimer")}
       </p>
     </div>
   );
@@ -268,6 +266,7 @@ function BriefPreview({
 }: {
   row: { product: TourProduct; verdict: ReturnType<typeof computeVerdict> };
 }) {
+  const t = useTranslations("Home");
   const brief = useMemo(
     () =>
       buildBrief({
@@ -301,7 +300,7 @@ function BriefPreview({
         <div className="min-w-0">
           <p className="truncate text-sm font-bold">{row.product.title}</p>
           <p className="text-xs text-[color:var(--color-ink-muted)]">
-            Accroche choisie pour : {PHASE_LABELS[row.verdict.phase].short}
+            {t("tourHookLabel", { phase: PHASE_LABELS[row.verdict.phase].short })}
           </p>
         </div>
       </div>
@@ -311,7 +310,7 @@ function BriefPreview({
         style={{ backgroundColor: "var(--color-success-soft)" }}
       >
         <p className="text-[11px] font-bold tracking-wide uppercase" style={{ color: "var(--color-success)" }}>
-          La première phrase
+          {t("tourFirstLine")}
         </p>
         <p className="mt-1 text-sm font-semibold">
           « {brief.hooks[0]?.spokenLine} »
@@ -323,13 +322,11 @@ function BriefPreview({
         style={{ backgroundColor: "var(--color-surface)" }}
       >
         {excerpt.join("\n")}
-        {truncated && `\n… encore ${lines.length - excerpt.length} séquence${lines.length - excerpt.length > 1 ? "s" : ""}`}
+        {truncated && `\n… ${t("tourMoreSequences", { count: lines.length - excerpt.length })}`}
       </pre>
 
       <Caption>
-        Minuté seconde par seconde, avec le plan des images à filmer. La
-        mention « Collaboration commerciale » est écrite dans le script — le
-        même contrôle de conformité qui protège tes vidéos relit celui-ci.
+        {t("tourScriptCaption")}
       </Caption>
     </>
   );
