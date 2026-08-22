@@ -226,7 +226,7 @@ export function RankingControls({
             aria-pressed={filters.verdicts.has(v)}
             onClick={() => toggleVerdict(v)}
           >
-            {t(`verdict.${VERDICT_KEYS[v]}`)}
+            {t(VERDICT_KEYS[v])}
           </button>
         ))}
 

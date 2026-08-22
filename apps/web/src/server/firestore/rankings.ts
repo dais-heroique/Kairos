@@ -162,6 +162,8 @@ export interface RankingPageData {
   marketVerified?: boolean;
 }
 
+const MAX_RANKING_AGE_DAYS = 21;
+
 // 2 opérations Firestore au total quelle que soit la taille du
 // classement (≤100 items) : 1 lecture du document rankings/*, 1 requête
 // groupée pour les noms de boutique. Bien sous le budget de 5.
@@ -187,10 +189,18 @@ export async function getRankingPageData(
 
   const isDemo = (rankingDoc as unknown as { isDemo?: boolean }).isDemo === true;
   const sourceMarket = (rankingDoc as unknown as { sourceMarket?: Market }).sourceMarket ?? null;
-  // Les documents sans provenance sont des legacy documents. Les laisser
-  // passer sous FR reproduirait exactement le bug US→FR découvert à l'audit.
-  // Les données de démo restent visibles, car elles sont explicitement marquées.
-  if (!isDemo && sourceMarket !== market) {
+  const documentMarket = (rankingDoc as unknown as { market?: Market }).market ?? null;
+  const generatedAtMs = Date.parse(rankingDoc.generatedAt);
+  const isRecentEnough = Number.isFinite(generatedAtMs)
+    && Date.now() - generatedAtMs <= MAX_RANKING_AGE_DAYS * 24 * 60 * 60 * 1000;
+  // Un document explicitement issu d'un autre marché est toujours rejeté.
+  // Pour les anciens documents sans sourceMarket, on peut toutefois utiliser
+  // la provenance du document et sa fraîcheur : cela conserve les résultats
+  // FR récents après une interruption de collecte, sans réintroduire le bug
+  // US→FR. Au-delà de trois semaines, l'interface préfère signaler l'absence
+  // de données plutôt que présenter un classement trompeusement actuel.
+  const marketMatches = sourceMarket ? sourceMarket === market : documentMarket === market;
+  if (!isDemo && (!marketMatches || !isRecentEnough)) {
     return {
       items: [],
       generatedAt: rankingDoc.generatedAt,
